@@ -12,5 +12,6 @@
 add2 <- function(x, y) {
   x + y
   z <- x + y
+  z2 <- z^2
   return (z)
 }
