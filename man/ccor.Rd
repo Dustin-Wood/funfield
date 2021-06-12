@@ -2,7 +2,7 @@
 % Please edit documentation in R/ccor.R
 \name{ccor}
 \alias{ccor}
-\title{Scale-Centered (or 'Cohen') Correlations}
+\title{Scale-Centered (or 'Cohen', rc) Correlations}
 \usage{
 ccor(x, smin, smax)
 ccor(x, smin = 1, smax = 6) #e.g., standard 1-5 Likert scale

@@ -1,4 +1,4 @@
-#' Scale-Centered (or 'Cohen') Correlations
+#' Scale-Centered (or 'Cohen', rc) Correlations
 #'
 #' @description
 #' Estimate correlations between variables where the scale midpoint serves as the reflection point for estimating correlations.
