@@ -21,4 +21,6 @@ given current field
 \details{
 Input \code{s} can be either a single situation or a range of
 possible situations, with the situational states for each given on a separate row
+
+(Hopefully this will soon be completely outmoded and replaced with 'expOutcomesFF')
 }

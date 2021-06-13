@@ -12,7 +12,7 @@
 
 fieldResults <- function(fModel,covMat,sampleN) {
 
-  fit_r1 <- sem(fModel, sample.cov=covMat, sample.nobs = sampleN)
+  fit_r1 <- lavaan::sem(fModel, sample.cov=covMat, sample.nobs = sampleN)
 
   # get the functional field matrices out of the damn lavaan output. Somehow this seems to work...
   fittedmatrix<-fit_r1@Model@GLIST$beta
@@ -25,18 +25,18 @@ fieldResults <- function(fModel,covMat,sampleN) {
   r1_MO<-covMat[MO,MO]
   d_descriptives  <- cbind(r1_MO[,1],diag(as.matrix(r1_MO)^.5))
 
-  res_r1 <- as.matrix(round(resid(fit_r1)$cov,4)) #on many occasions, this does NOT seem to provide the results that it should.
+  res_r1 <- as.matrix(round(stats::resid(fit_r1)$cov,4)) #on many occasions, this does NOT seem to provide the results that it should.
 
   #Standard output if desired.
   #summary(fit_r1)
 
   #extract the parameters
-  parTable_r1 <- parTable(fit_r1)
+  parTable_r1 <- lavaan::parTable(fit_r1)
   parTable_r1$t <- parTable_r1$est/parTable_r1$se
   parTable_r1$effNX <- sampleN
   parTable_r1$p <- round(2*pt(-abs(parTable_r1$t),df=sampleN-1),4)
 
-  outfit_r1 <- parameterEstimates(fit_r1)
+  outfit_r1 <- lavaan::parameterEstimates(fit_r1)
   outfit_r1$Neff <- sampleN
   outfit_r1[4:10] <-round(outfit_r1[4:10],3)
 
@@ -49,7 +49,7 @@ fieldResults <- function(fModel,covMat,sampleN) {
 
 
   #look at how well each feature in the model is predicted.
-  R_fit_r1 <- as.matrix(inspect(fit_r1, "rsquare")^.5)
+  R_fit_r1 <- as.matrix(lavaan::inspect(fit_r1, "rsquare")^.5)
 
   #extract info re: the Ms and SDs of effects from the overall and low/high groups.
   #eCov_all_MO<-eCov_all[MO,MO]

@@ -9,6 +9,15 @@ Description: A group of functions that are useful for estimation of functional f
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-Imports: 
-Suggests: qgraph, psych
+Suggests: 
+    qgraph,
+    psych,
+    knitr,
+    rmarkdown
 RoxygenNote: 7.1.1
+VignetteBuilder: knitr
+Imports: 
+    reshape2,
+    dplyr,
+    lavaan,
+    stats

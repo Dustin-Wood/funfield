@@ -16,13 +16,12 @@
 
 
 ecov_big <- function(wFFdata) {
-  library(dplyr)
   #1. Compute effectA*effectB elements.
-  data_long <- melt(wFFdata, id=c("P_ID","S_ID"))
-  data_long <- rename(data_long, fA=variable, xA=value)
+  data_long <- reshape2::melt(wFFdata, id=c("P_ID","S_ID"))
+  data_long <- dplyr::rename(data_long, fA=variable, xA=value)
   data_big <-merge(wFFdata,data_long,by.x = c("P_ID","S_ID"))
-  FF_data_big <- melt(data_big, id=c("P_ID","S_ID","fA","xA"))
-  FF_data_big <- rename(FF_data_big, fB=variable,xB=value)
+  FF_data_big <- reshape2::melt(data_big, id=c("P_ID","S_ID","fA","xA"))
+  FF_data_big <- dplyr::rename(FF_data_big, fB=variable,xB=value)
   FF_data_big$xAB<-FF_data_big$xA*FF_data_big$xB
 
   return(FF_data_big)

@@ -12,7 +12,7 @@
 
 ecov <- function(data,fA=fA,fB=fB,dAdB=xAB) {
 
-  ecov <- dcast(data, fA ~ fB, value.var = dAdB, sum, na.rm=TRUE)
+  ecov <- recast::dcast(data, fA ~ fB, value.var = dAdB, sum, na.rm=TRUE)
   ecov <- ecov[-1]
   ecov <- ecov / ecov[1,1] #this effectively divides by (sum of pvoi*svoi)
   rownames(ecov) <- colnames(ecov)
