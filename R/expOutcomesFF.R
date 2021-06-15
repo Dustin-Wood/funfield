@@ -10,7 +10,6 @@
 #' @return 'Situation log' - detailing \code{sit} level of situational forces,
 #'  \code{dit} new disturbances, and \code{fit} structure of the field at time \code{t}
 #'
-#'
 #' @export
 expOutcomesFF <- function(s,i=0,ffield=ff,plan=DoNothing){
   d<-s*0; d[i]<-1 #d = disturbance (in first round: usually from action)
@@ -33,10 +32,16 @@ expOutcomesFF <- function(s,i=0,ffield=ff,plan=DoNothing){
 
   qF <- sitlog$fit[[i]]$ft
   #detail sources of forces
-  present <- qF; present[present==0]<-NA; present[present!=0]<-"afforded"; qFactors<-surgery(qF,present)
-  plani <-qF;   plani[,]<-NA; plani<-plan(plani); plani[plani==1]<-"plani";   qFactors<-surgery(qFactors,plani)
+    #TBD: this is currently missing script for creating 'afforded' paths
+  present <- qF; present[present==0]<-NA; present[present!=0]<-"afforded";
+    qFactors<-surgery(qF,present)
+  plani <-qF;   plani[,]<-NA; plani<-plan(plani); plani[plani==1]<-"plani";
+    qFactors<-surgery(qFactors,plani)
   #color-code nodes by sources of forces
-  graphColor <- qFactors;  graphColor[graphColor=="potential"]<-"gray91";   graphColor[graphColor=="afforded"]<-"black";  graphColor[graphColor=="plani"]<-"limegreen"
+  graphColor <- qFactors;
+    graphColor[graphColor=="potential"]<-"gray91";
+    graphColor[graphColor=="afforded"]<-"black";
+    graphColor[graphColor=="plani"]<-"limegreen"
   sitlog$graphColor <- graphColor
   return(sitlog)
 }
