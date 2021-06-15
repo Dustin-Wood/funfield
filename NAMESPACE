@@ -3,6 +3,7 @@
 export(ccor)
 export(ecov)
 export(ecov_big)
+export(ecov_long)
 export(expEffects.voi)
 export(expOutcomes)
 export(expOutcomesFF)

@@ -1,0 +1,59 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# funfield
+
+<!-- badges: start -->
+
+<!-- badges: end -->
+
+The `funfield` package is designed to help with a number of tasks relevant to the estimation of *functional field models*. These are intended to serve a number of functions:
+
+-   Represent a person's belief system, and show how these beliefs, combined with their understanding of the objects present (or conditions 'true') at a given time create their situation.
+
+-   Detail how the expected outcomes of performing certain actions in certain situations (perhaps as rated in an *elaborated situational judgment task,* or *ESJT*) can be modeled as a covariance structure.
+
+-   Detail how this *expected outcome covariance matrix* can be modeled as a product of the person's *functional field model*.
+
+-   Graphically represent the functional field model as a graphical causal model or path diagram.
+
+-   Provide formal representations of psychological concepts and characteristics, such as what it means to call an action *assertive* or *difficult,* or to call a person *caring* or *callous*.
+
+## References
+
+An overview of functional field models can be found in these papers:
+
+---
+title: "My Document"
+bibliography: references.bib
+link-citations: true
+---
+
+-   Wood, D. (in press). Formally representing how psychological processes shape actions and one another using functional fields. In D. Wood, S. J. Read, P. D. Harms, & A. Slaughter (Eds.), *Measuring and Modeling Persons and Situations.* Elsevier. ([preprint](https://psyarxiv.com/nj3wf/))
+
+-   Wood, D. (in press). Using functional field models to represent dark leadership. In P. Harms (Ed.) *Dark and Destructive Leadership*. Information Age Publishing.
+
+-   Wood, D., Spain, S. M., Monroe, B. M., & Harms, P. D. (2021). Using functional fields to represent accounts of the psychological processes that produce actions. In J. F. Rauthmann (Ed.), *Handbook of Personality Dynamics and Processes* (pp. 643–668). Academic Press.
+
+-   Wood, D., Spain, S. M., & Harms, P.D. (2020). Functional approaches to representing the interplay of situations, traits, and behavior. In D. C. Funder, R. A. Sherman, & J. F. Rauthmann (Eds.), *Handbook of Psychological Situations* (pp. 179–202). Oxford.
+
+## Installation
+
+The `funfield` package is currently only available as a development version, which can be downloaded from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("Dustin-Wood/funfield")
+```
