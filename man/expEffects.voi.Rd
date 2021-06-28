@@ -4,14 +4,14 @@
 \alias{expEffects.voi}
 \title{Expected Effects of Variable-of-Interest}
 \usage{
-expEffects.voi(FFdata, voiset, voi)
+expEffects.voi(ESJT, voiset, voi)
 }
 \arguments{
-\item{FFdata}{Functional field dataset}
+\item{ESJT}{Functional field dataset}
 
 \item{voiset}{situational variable of interest}
 
-\item{voi}{,  name of the variable of interest}
+\item{voi}{name of the variable of interest}
 }
 \value{
 expected effects for situational VOI

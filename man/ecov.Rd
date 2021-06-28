@@ -4,23 +4,30 @@
 \alias{ecov}
 \title{Effect Covariance Matrix}
 \usage{
-ecov(data,fA,fB,dAdB="cov")
+ecov(data,fX,fY,dXdY="cov")
 }
 \arguments{
-\item{data}{Input matrix}
+\item{data}{effect covariance elements (should be generated from \code{ecov_long})}
 
-\item{fA}{Variable containing the X expected outcome feature names}
+\item{fX}{Variable containing the X expected outcome feature names}
 
-\item{fB}{Variable containing the Y expected outcome feature names}
+\item{fY}{Variable containing the Y expected outcome feature names}
 
-\item{dAdB}{Variable containing the product of A and B expected effects (note: should be in quotation marks, as in "r" or "cov")}
+\item{dXdY}{Variable containing the product of X and Y expected effects}
+
+\item{order}{specification of the order you would like the variables to be
+ordered within the output (defaults to \code{NA} if none given)}
 }
 \value{
 Expected effect covariance matrix
 }
 \description{
-Creates the effect covariance matrix from the long-format P*S effect file (usually estimated by function \code{ecov_big})
+Creates the effect covariance matrix from the long-format
+P*S*I effect file (usually estimated by function \code{ecov_long})
 }
 \details{
-Note: this function depends on having loaded \code{reshape2} package
+This function utilizes functions from \code{plyr} and \code{tidyr}
+
+This will also place features in alphabetical order - which is almost always suboptimal.
+This can be altered by specifying an 'order' argument.
 }

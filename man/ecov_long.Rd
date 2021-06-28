@@ -4,19 +4,22 @@
 \alias{ecov_long}
 \title{Estimate Action Expected-Outcome Covariance Elements}
 \usage{
-ecov_long(wFFdata, P_ID = "P_ID", S_ID = "S_ID", A_ID = "A_ID")
+ecov_long(eData, p = "p", s = "s", i = "i", addDidi = T)
 }
 \arguments{
-\item{wFFdata}{weighted functional field data}
+\item{eData}{expected effect data}
 
-\item{P_ID}{variable identifying 'person' (or respondent) - give in "quotemarks"}
+\item{p}{variable identifying 'person' (or respondent) - give in "quotemarks"}
 
-\item{S_ID}{variable identifying 'situation' (or scenario) - give in "quotemarks"}
+\item{s}{variable identifying 'situation' (or scenario) - give in "quotemarks"}
 
-\item{A_ID}{variable identifying 'action' (or response) - give in "quotemarks"}
+\item{i}{variable identifying 'action' (or response) - give in "quotemarks"}
+
+\item{addDidi}{should you add the 'did_i' variable as element for effect covariance matrix?
+Defaults to \code{TRUE}.}
 }
 \value{
-Effect covariance matrix
+Effect covariance elements
 }
 \description{
 Compute all possible products of effects for all
@@ -24,10 +27,10 @@ features from weighted ESJT data, \code{wFFdata}.
      The average of the \code{dAdB} elements will ultimately
 equal the covariances forming the expectancy matrix used to
 estimate functional field models.
-     Note #1: this function a more generalized version of function \code{ecov_big}, which 
+     Note #1: this function a more generalized version of function \code{ecov_big}, which
 provides flexibility of allowing multiple actions per scenario
      Note #2: this function assumes that the features have a "meaningful zero point."
-That is a \code{0} should mean "no effect", and negative values should mean 
+That is a \code{0} should mean "no effect", and negative values should mean
 "negative effect", and positive values should mean "positive effect", with greater
 deviations from zero meaning "stronger effect."  If data is not prepared this way,
 the results are not very likely to be meaningful.
@@ -35,6 +38,7 @@ the results are not very likely to be meaningful.
 Note: data can be weighted using \code{sweighteddata} function
 }
 \details{
-Usage notes: FFdata should have format of \code{P_ID}, \code{S_ID}, \code{A_ID}, as first three columns,
-followed by effect ratings, and end in \code{Likelihood}
+Usage notes: eData should typically have format of \code{p}, \code{s}, \code{i}, as first three columns,
+followed by effect ratings, and end in \code{Likelihood}.  If there is a preferred ordering
+of columns, you should put eData into that ordering *before* running this code.
 }

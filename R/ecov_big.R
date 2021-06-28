@@ -21,16 +21,15 @@
 #' @export
 
 
-ecov_big <- function(wFFdata) {
+ecov_big <- function(wFFdata, P_ID = "P_ID", S_ID = "S_ID") {
   #1. Compute effectA*effectB elements.
-  data_long <- reshape2::melt(wFFdata, id=c("P_ID","S_ID"))
-  data_long <- dplyr::rename(data_long, fA=variable, xA=value)
-  data_big <-merge(wFFdata,data_long,by.x = c("P_ID","S_ID"))
-  FF_data_big <- reshape2::melt(data_big, id=c("P_ID","S_ID","fA","xA"))
-  FF_data_big <- dplyr::rename(FF_data_big, fB=variable,xB=value)
-  FF_data_big$xAB<-FF_data_big$xA*FF_data_big$xB
+  data_long <- reshape2::melt(wFFdata, id=c(P_ID,S_ID))
+  data_long <- dplyr::rename(data_long, fX=variable, dX=value)
+  data_big <-merge(wFFdata,data_long,by.x = c(P_ID,S_ID))
+  FF_data_big <- reshape2::melt(data_big, id=c(P_ID,S_ID,"fX","dX"))
+  FF_data_big <- dplyr::rename(FF_data_big, fY=variable,dY=value)
+  FF_data_big$dXdY<-FF_data_big$dX*FF_data_big$dY
 
   return(FF_data_big)
-
 }
 

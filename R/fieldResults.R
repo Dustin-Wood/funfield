@@ -14,7 +14,7 @@ fieldResults <- function(fModel,covMat,sampleN) {
 
   fit_r1 <- lavaan::sem(fModel, sample.cov=covMat, sample.nobs = sampleN)
 
-  # get the functional field matrices out of the damn lavaan output. Somehow this seems to work...
+  # get the functional field matrices out of the lavaan output.
   fittedmatrix<-fit_r1@Model@GLIST$beta
   colnames(fittedmatrix)<-fit_r1@Model@dimNames[[1:2]]
   rownames(fittedmatrix)<-colnames(fittedmatrix)
@@ -24,8 +24,7 @@ fieldResults <- function(fModel,covMat,sampleN) {
   MO<-colnames(fittedmatrix)[-1]
   r1_MO<-covMat[MO,MO]
   d_descriptives  <- cbind(r1_MO[,1],diag(as.matrix(r1_MO)^.5))
-
-  res_r1 <- as.matrix(round(stats::resid(fit_r1)$cov,4)) #on many occasions, this does NOT seem to provide the results that it should.
+  res_r1 <- as.matrix(round(lavaan::resid(fit_r1)$cov,4)) #on many occasions, this does NOT seem to provide the results that it should.
 
   #Standard output if desired.
   #summary(fit_r1)

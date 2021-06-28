@@ -4,14 +4,17 @@
 \alias{sweighteddata}
 \title{Situation Weighted Data}
 \usage{
-sweighteddata(FFdata, voiset, voi)
+sweighteddata(ESJT, voiset, voi)
 }
 \arguments{
-\item{FFdata}{ESJT raw data; must be headed with three variables (**which are...?**)}
+\item{ESJT}{ESJT raw data; must be headed with three variables: \code{p, s, i} -
+for 'Person', 'Situation', '[Initiated] action', respectively}
 
 \item{voiset}{Set containing the variable of interest}
 
 \item{voi}{Name of the specific variable within the voiset you wish to weight by}
+
+\item{bySet}{columns you wish to match by (defaults to 'situation & action')}
 }
 \value{
 The expected effects of the action, weighted by the action's situation-diagnosticity
