@@ -18,11 +18,11 @@ pvoi <-scale(voi)
 #force the VOI onto a [-1,1] scale.
 pvoi <- pvoi / max(abs(pvoi),na.rm = TRUE)
 
-#optional code to create high/med/low level groups.
-zL <- ifelse(pvoi < 0, abs(pvoi),0)
-zM <- 1 - abs(pvoi)
-zH <- ifelse(pvoi > 0, pvoi,0)
+#create high/med/low level groups
+L <- ifelse(pvoi < 0, abs(pvoi),0)
+M <- 1 - abs(pvoi)
+H <- ifelse(pvoi > 0, pvoi,0)
 
-voigroup<-data.frame(zL,zM,zH)
+voigroup<-data.frame(L,M,H)
 return(voigroup)
 }

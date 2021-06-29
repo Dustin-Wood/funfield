@@ -4,13 +4,14 @@
 #' @param fModel field model, specifying which paths are freely estimated vs.
 #' constrained to zero
 #' @param covMat covariance matrix to be fit to a field model
-#' @param sampleN sample size associated with the covariance matrix
+#' @param sampleN sample size associated with the covariance matrix (defaults to '4', which
+#' will basically make sure everything is as \code{ns} as possible)
 #' @return list with estimated (1) expectancy matrix (as correlations), (2) field matrix, and (3) discrepancy matrix (i.e., expectancy matrix not predicted by field matrix)
 #' @details **This package needs to be further developed to provide p values for paths and other matters
 #'
 #' @export
 
-fieldResults <- function(fModel,covMat,sampleN) {
+fieldResults <- function(fModel,covMat, sampleN = 4) {
 
   fit_r1 <- lavaan::sem(fModel, sample.cov=covMat, sample.nobs = sampleN)
 

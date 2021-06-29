@@ -4,7 +4,7 @@
 \alias{fieldResults}
 \title{Main Functional Field Results}
 \usage{
-fieldResults(fModel, covMat, sampleN)
+fieldResults(fModel, covMat, sampleN = 4)
 }
 \arguments{
 \item{fModel}{field model, specifying which paths are freely estimated vs.
@@ -12,7 +12,8 @@ constrained to zero}
 
 \item{covMat}{covariance matrix to be fit to a field model}
 
-\item{sampleN}{sample size associated with the covariance matrix}
+\item{sampleN}{sample size associated with the covariance matrix (defaults to '4', which
+will basically make sure everything is as \code{ns} as possible)}
 }
 \value{
 list with estimated (1) expectancy matrix (as correlations), (2) field matrix, and (3) discrepancy matrix (i.e., expectancy matrix not predicted by field matrix)
