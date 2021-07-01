@@ -15,8 +15,8 @@ ecov_long(eData, p = "p", s = "s", i = "i", addDidi = T)
 
 \item{i}{variable identifying 'action' (or response) - give in "quotemarks"}
 
-\item{addDidi}{should you add the 'did_i' variable as element for effect covariance matrix?
-Defaults to \code{TRUE}.}
+\item{addDidi}{should you add the 'did_i' variable as element for effect covariance matrix,
+if not already present? Defaults to \code{TRUE}.}
 }
 \value{
 Effect covariance elements
