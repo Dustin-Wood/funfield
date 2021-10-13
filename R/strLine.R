@@ -8,11 +8,13 @@
 #' @param rmvLast remove the final variable (e.g., if it is Likelihood
 #' ratings provided at different portion of survey)
 #' @details It is recommended within Wood, Lowman, & Harms (202x) that
-#' respondents showing 10% straightlining by this index be removed from all analyses
+#' respondents showing 10\% straightlining by this index be removed from all analyses
 #' @return per0.p - the percentage of situation-action pairs in which
 #' the respondent showed zero response variability whatsoever.
-#'
 #' @export
+#' @examples
+#' #combine this function and recommended screen into a single statement:
+#' analysiscases <- subset(strLine(ESJT), per0.p > .25)
 
 
 strLine <- function(ESJT, rmvLast=T) {
@@ -22,6 +24,7 @@ strLine <- function(ESJT, rmvLast=T) {
     varE.pi<-ddply(PSIdata, .(p,s,i), function(x) (sd(as.matrix(x[4:ncol(x)]),na.rm = T)))
   }
   per0.p<-ddply(varE.pi, .(p), function(x) sum(x$V1 == 0)/nrow(x))
+  colnames(per0.p) <- c("p","per0.p")
   return(per0.p)
 }
 
