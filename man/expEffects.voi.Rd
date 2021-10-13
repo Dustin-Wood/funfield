@@ -7,7 +7,7 @@
 expEffects.voi(ESJT, voiset, voi)
 }
 \arguments{
-\item{ESJT}{Functional field dataset}
+\item{ESJT}{Expected effect data}
 
 \item{voiset}{situational variable of interest}
 
@@ -18,4 +18,8 @@ expected effects for situational VOI
 }
 \description{
 Give the average effects associated with this type of situation specified as the situational variable of interest (s_voi)
+
+Note: this function is currently defunct; it doesn't handle 'i' feature appropriately
+I believe same functionality exists through combination
+of \code{siWeightedData} and \code{ecov_long} and \code{ecov}
 }

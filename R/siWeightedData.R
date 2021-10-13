@@ -9,7 +9,8 @@
 #' siWeightedData(ESJT, voiset, "voi")
 #' @param ESJT ESJT raw data; must be headed with three variables: \code{p, s, i} -
 #' for 'Person', 'Situation', '[Initiated] action', respectively
-#' @param voiset Set containing the variable of interest
+#' @param voiset Set containing the variable of interest; must be headed with ONLY
+#' variables  \code{s, i}.
 #' @param voi Name of the specific variable within the voiset you wish to weight by
 #' - should be a variable name given in "quotes"
 #' @param bySet columns you wish to match by (defaults to 'situation & action')

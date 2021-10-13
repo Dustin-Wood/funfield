@@ -10,7 +10,8 @@ siWeightedData(ESJT, voiset, "voi")
 \item{ESJT}{ESJT raw data; must be headed with three variables: \code{p, s, i} -
 for 'Person', 'Situation', '[Initiated] action', respectively}
 
-\item{voiset}{Set containing the variable of interest}
+\item{voiset}{Set containing the variable of interest; must be headed with ONLY
+variables  \code{s, i}.}
 
 \item{voi}{Name of the specific variable within the voiset you wish to weight by
 - should be a variable name given in "quotes"}
