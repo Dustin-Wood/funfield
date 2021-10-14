@@ -15,13 +15,13 @@
 #' #combine this function and recommended screen into a single statement:
 #' analysiscases <- subset(sdESJT(ESJT), sdE.p > .25)
 
-sdESJT <- function(ESJT, rmvLast=T) {
+sdESJT <- function(PSIdata, rmvLast=T) {
   if(rmvLast==T){
-    sdE.p<-ddply(PSIdata, .(p), function(x) sd(as.matrix(x[4:(ncol(x)-1)],na.rm=T)))
+    sdE.p<-plyr::ddply(PSIdata, "p", function(x) sd(as.matrix(x[4:(ncol(x)-1)],na.rm=T)))
   }  else {
-    sdE.p<-ddply(PSIdata, .(p), function(x) sd(as.matrix(x[4:ncol(x)],na.rm=T)))
+    sdE.p<-plyr::ddply(PSIdata, "p", function(x) sd(as.matrix(x[4:ncol(x)],na.rm=T)))
   }
-  colnames(sdE.p) <- c("p","sdE")
+  colnames(sdE.p) <- c("p","sdE.p")
   return(sdE.p)
 }
 
