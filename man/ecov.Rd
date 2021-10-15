@@ -19,7 +19,7 @@ ecov(data,fX,fY,dXdY="cov")
 ordered within the output (defaults to \code{NA} if none given)}
 }
 \value{
-Expected effect covariance matrix
+Expected effect covariance (and correlation) matrix; & associated sample sizes
 }
 \description{
 Creates the effect covariance matrix from the long-format

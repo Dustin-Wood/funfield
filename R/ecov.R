@@ -7,7 +7,7 @@
 #' @param dXdY Variable containing the product of X and Y expected effects
 #' @param order specification of the order you would like the variables to be
 #' ordered within the output (defaults to \code{NA} if none given)
-#' @return Expected effect covariance matrix
+#' @return Expected effect covariance (and correlation) matrix; & associated sample sizes
 #' @usage ecov(data,fX,fY,dXdY="cov")
 #' @details This function utilizes functions from \code{plyr} and \code{tidyr}
 #'
@@ -25,13 +25,14 @@ ecov <- function(data,fX="fX",fY="fY",dXdY="dXdY", order=NA) {
   ecov <- ecov3[-1]
   ecov <- as.matrix(ecov)
   rownames(ecov) <- colnames(ecov)
+  np <- length(table(data$p))
   npsi <- ecov["did_i","did_i"] #this is the total number of person-situation-action observations aggregated
   ecov <- ecov / ecov["did_i","did_i"] #this effectively divides by (sum of pvoi*svoi)
   r <- cov2cor(ecov)
-  e <- list(ecov,r,npsi)
+  e <- list(ecov,r,npsi,np)
   if(is.na(order[1]) == F) {
   e <- list(ecov[order,order],r[order,order],npsi)
   }
-  names(e) <- c("ecov","r","npsi")
+  names(e) <- c("ecov","r","npsi","np")
   return (e)
 }
