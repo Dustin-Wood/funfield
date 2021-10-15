@@ -20,7 +20,7 @@
 #'
 #' @export
 
-ecov.lmh <- function(PSI, pVars, voi, p = "p", cuts = "z"){
+ecov.lmh <- function(PSI, pVars, voi, p = "p", cuts = "z", per = F){
   ##create a small file to merge variable of interest with PSI file
   pVOI<-data.frame(pVars[p],pVars[voi])
   colnames(pVOI)<-c("p","voi")
@@ -28,7 +28,7 @@ ecov.lmh <- function(PSI, pVars, voi, p = "p", cuts = "z"){
   #create specific covariance matrices for low, medium, & high levels of the variable of interest
   PSI2<- merge(PSI,pVOI, by = p)
   if(cuts[1] == "z"){group<-zgroups(as.matrix(PSI2$voi))}
-  if(cuts[1] != "z"){group<-lmhgroups(PSI2$voi,cuts)}
+  if(cuts[1] != "z"){group<-lmhgroups(PSI2$voi,cuts,per)}
   PSI.L <- data.frame(PSI2[1:3],PSI2[4:(ncol(PSI2)-1)]*sqrt(group$L))
   PSI.M <- data.frame(PSI2[1:3],PSI2[4:(ncol(PSI2)-1)]*sqrt(group$M))
   PSI.H <- data.frame(PSI2[1:3],PSI2[4:(ncol(PSI2)-1)]*sqrt(group$H))
@@ -38,9 +38,10 @@ ecov.lmh <- function(PSI, pVars, voi, p = "p", cuts = "z"){
   x$M <- ecov(ecov_long(PSI.M))
   x$H <- ecov(ecov_long(PSI.H))
 
-  x$L$nP <- sum(group$L, na.rm = T)
-  x$M$nP <- sum(group$M, na.rm = T)
-  x$H$nP <- sum(group$H, na.rm = T)
+  group2<-data.frame(PSI2[1],group)
+  x$L$nP <- sum(ddply(group2, "p", function(x) mean(x$L, na.rm = T))[2], na.rm = T)
+  x$M$nP <- sum(ddply(group2, "p", function(x) mean(x$M, na.rm = T))[2], na.rm = T)
+  x$H$nP <- sum(ddply(group2, "p", function(x) mean(x$H, na.rm = T))[2], na.rm = T)
 
   return(x)
 }

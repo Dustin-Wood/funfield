@@ -4,13 +4,13 @@
 \alias{sdESJT}
 \title{Standard deviation of ESJT ratings}
 \usage{
-sdESJT(ESJT, rmvLast = T)
+sdESJT(PSIdata, rmvLast = T)
 }
 \arguments{
-\item{ESJT}{ESJT matrix (should have 'p','s','i' as their first three features)}
-
 \item{rmvLast}{remove the final variable (e.g., if it is Likelihood
 ratings provided at different portion of survey)}
+
+\item{ESJT}{ESJT matrix (should have 'p','s','i' as their first three features)}
 }
 \value{
 sdE.p - the percentage of situation-action pairs in which

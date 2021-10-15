@@ -4,7 +4,7 @@
 \alias{lmhgroups}
 \title{Create Low-Medium-High Subgroups at Specified Levels}
 \usage{
-lmhgroups(voi, cuts)
+lmhgroups(voi, cuts, per = F)
 }
 \arguments{
 \item{voi}{variable of interest}
@@ -12,6 +12,10 @@ lmhgroups(voi, cuts)
 \item{cuts}{Two numbers specifying (1) highest value for LOW membership,
 and (2) lowest value for HIGH membership.
 Remainder will be placed in MIDDLE group.}
+
+\item{per}{Should VOI be converted to a 'percentage rank' variable? (Default to \code{F})
+If \code{T} then \code{cuts} shift to becoming probabilities to cut at
+(i.e., values should be between 0 and 1)}
 }
 \value{
 weight for low, medium, and high z-score groups
@@ -23,4 +27,8 @@ should be placed in a 'low', 'medium' or 'high' subgroup
 \details{
 Note that the sum of the three groups will equal the total sample
 of non-missing values.  Can be used in combination  with \code{effectiveN}.
+}
+\examples{
+#create about equal sized subgroups (~33\%) if(!) there are no ties in data
+xcuts<-lmhgroups(x, cuts = c(1/3,2/3), per = T)
 }

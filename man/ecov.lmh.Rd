@@ -4,7 +4,7 @@
 \alias{ecov.lmh}
 \title{Expected-Outcome Covariance Matrices for Low, Med, High Subgroups on a Variable of Interest}
 \usage{
-ecov.lmh(PSI, pVars, voi, p = "p", cuts = "z")
+ecov.lmh(PSI, pVars, voi, p = "p", cuts = "z", per = F)
 }
 \arguments{
 \item{PSI}{the Person-Situation-Action expected effects relevant to the analysis}
