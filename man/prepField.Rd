@@ -9,6 +9,9 @@ prepField(matLayout)
 \arguments{
 \item{matLayout}{Specified \emph{variable type} and \emph{variable name}}
 }
+\value{
+Various objects that will be useful for creating fields from a prespecified matrix
+}
 \description{
 This function will create the layout for the functional field
 matrix, and help to maintain consistency between the field matrix and

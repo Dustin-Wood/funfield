@@ -15,7 +15,7 @@
 #'     \code{c} = choice point / chance nodes
 #'     \code{x} = continuous variables
 #'     \code{a} = appraisal nodes - indicate where a decision will be made through a maximization or threshold rule
-#'
+#' @return Various objects that will be useful for creating fields from a prespecified matrix
 #' @export
 
 prepField <- function(matLayout) {
@@ -55,16 +55,9 @@ prepField <- function(matLayout) {
   rownames(fmat) <- vnames
   colnames(fmat) <- rownames(fmat)
 
-  #create empty field matrix for every single object
-    #...probably should eliminate this bit, and the associated 'ff' from output
-  ff <- list()
-  for(i in 1:length(vnames)) {
-    ff[[vnames[i]]] <- fmat
-  }
 
-
-  fprops <- list(matLayout,numLayout,vnames,vtype,vshapes,vsizes,flabels,fmat,ff)
-  names(fprops) <- c("matLayout","numLayout","vnames","vtype","vshapes","vsizes","flabels","fmat","ff")
+  fprops <- list(matLayout,numLayout,vnames,vtype,vshapes,vsizes,flabels,fmat)
+  names(fprops) <- c("matLayout","numLayout","vnames","vtype","vshapes","vsizes","flabels","fmat")
 
   return(fprops)
 }
