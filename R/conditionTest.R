@@ -26,8 +26,8 @@ conditionTest <- function(PSIdata.cond, hiCond, loCond, locEE){
   PSIdata.HL$condition <- as.numeric(PSIdata.HL$condition)
 
   #test all of the differences for significance all at once
-  test.r<-ddply(PSIdata.MvS, .(s,i), function(x) corr.test(x$condition,x[locEE])$r)
-  test.p<-ddply(PSIdata.MvS, .(s,i), function(x) corr.test(x$condition,x[locEE])$p)
+  test.r<-ddply(PSIdata.HL, .(s,i), function(x) corr.test(x$condition,x[locEE])$r)
+  test.p<-ddply(PSIdata.HL, .(s,i), function(x) corr.test(x$condition,x[locEE])$p)
 
   results <- list(test.r, test.p)
   names(results) <- c("rXCond","pXCond")
