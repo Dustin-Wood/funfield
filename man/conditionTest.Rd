@@ -4,7 +4,7 @@
 \alias{conditionTest}
 \title{Test of Condition Differences across Situation-Action (s,i) Pairs}
 \usage{
-ecov(data,fX,fY,dXdY="cov")
+conditionTest(PSIdata.cond, hiCond, loCond, locEE)
 }
 \arguments{
 \item{PSIdata.cond}{PSI-structured datafile, with "condition" as the final}
@@ -18,8 +18,11 @@ associations - usually something like \code{c(4:8)},
 as first three columns should be \code{p,s,i}}
 }
 \value{
-Correlations and p-Values linking expected outcome
+Means, correlations and p-values linking expected outcome
 ratings to high/low condition levels
+\item{siMeans}{Situation-Action mean ratings, given in separate dataframe by condition}
+\item{rXCond}{correlation between expected effect (X) and condition (L=-1,H=1)}
+\item{pXCond}{statistical significance of these correlations (or mean difference, which is equivalent, btw)}
 }
 \description{
 Test whether a (dichotomous) condition produces mean-level

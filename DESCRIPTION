@@ -4,8 +4,18 @@ Title: Functional Field Functions
 Version: 0.1.0
 Author: Dustin Wood
 Maintainer: Dustin Wood <dustinwood79@gmail.com>
-Description: A group of functions that are useful for estimation of functional field models, either from Elaborated Situational Judgment Test (ESJT) data, or from direct specification of a model.
-    This package relies heavily on functions built in other libraries, especially psych, qgraph, and plyr.
+Description: A group of functions that are useful for estimation 
+    of functional field models, either from Elaborated Situational 
+    Judgment Test (ESJT) data, or from direct specification of a model.
+    Functions include:
+    - Some indices useful for data quality screens (e.g., 'straight-lining' behavior
+    across particular action ratings; low variability screens)
+    - Adjustments for response variability
+    - Calculating fields for 'low', 'medium' and 'high' subgroups
+    Note that many of the functions assume the data is structured to have \emph{p, s, i}
+    as the first three columns.  See Wood
+    Note that this package relies heavily on functions built in 
+    other libraries, especially \code{psych}, \code{qgraph}, and \code{plyr}.
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true

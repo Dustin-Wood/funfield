@@ -4,12 +4,13 @@
 \alias{strLine}
 \title{Percentage Straight-Lining Behavior Within Actions}
 \usage{
-strLine(ESJT, rmvLast = T)
+strLine(ESJT, locX = c(4:(ncol(ESJT) - 1)))
 }
 \arguments{
 \item{ESJT}{ESJT matrix (should have 'p','s','i' as their first three features)}
 
-\item{rmvLast}{remove the final variable (e.g., if it is Likelihood
+\item{locX}{location of expected outcome ratings (note: default generously assumes
+the prescribed 'c(p,s,i,...,Likelihood)' data structure)
 ratings provided at different portion of survey)}
 }
 \value{
@@ -21,10 +22,13 @@ This will return the percentage of situation-action pairs for which the
 respondent showed zero response variability.
 }
 \details{
-It is recommended within Wood, Lowman, & Harms (202x) that
-respondents showing 10\% straightlining by this index be removed from all analyses
+It is recommended within that respondents showing
+10\% straightlining by this index be removed from all analyses,
+however less stringent cutoffs (e.g., 25\%) might be employed when
+respondents rate very few features (e.g., 5 or less) or if all features
+are desirable, both of which can make straight-lining behavior less suspect
 }
 \examples{
 #combine this function and recommended screen into a single statement:
-analysiscases <- subset(strLine(ESJT), per0.p > .25)
+analysiscases <- subset(strLine(ESJT), per0.p > .10)
 }
