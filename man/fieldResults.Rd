@@ -10,18 +10,24 @@ fieldResults(fModel, covMat, sampleN = 4)
 \item{fModel}{field model, specifying which paths are freely estimated vs.
 constrained to zero}
 
-\item{covMat}{covariance matrix to be fit to a field model}
+\item{covMat}{covariance matrix to be fit to a field model (can be either a correlation
+or covariance matrix)}
 
 \item{sampleN}{sample size associated with the covariance matrix (defaults to '4', which
 will basically make sure everything is as \code{ns} as possible)}
 }
 \value{
-list with estimated (1) expectancy matrix (as correlations), (2) field matrix, and (3) discrepancy matrix (i.e., expectancy matrix not predicted by field matrix)
+list with estimated:
+\item{eMatrix}{expectancy matrix}
+\item{fMatrix}{field matrix}
+\item{uMatrix}{'uniqueness' matrix (i.e., expectancy matrix not predicted by field matrix)}
+\item{parTable}{parameter estimates, with associated significance values}
 }
 \description{
 Fit values of paths for a functional field, given an associated
 \emph{expectancy} matrix.
 }
 \details{
-**This package needs to be further developed to provide p values for paths and other matters
+**This package needs to be further developed to address the problem with
+misestimating the uMatrix when 'did_i' predicts every other variable (as desirable on occasion)
 }
