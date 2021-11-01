@@ -21,6 +21,7 @@ list with estimated:
 \item{eMatrix}{expectancy matrix}
 \item{fMatrix}{field matrix}
 \item{uMatrix}{'uniqueness' matrix (i.e., expectancy matrix not predicted by field matrix)}
+\item{uMatrix2}{'uniqueness' matrix2 (a crude work-around for when lavaan does not want to estimate correctly; see https://github.com/yrosseel/lavaan/issues/44}
 \item{parTable}{parameter estimates, with associated significance values}
 }
 \description{
@@ -28,6 +29,8 @@ Fit values of paths for a functional field, given an associated
 \emph{expectancy} matrix.
 }
 \details{
-**This package needs to be further developed to address the problem with
-misestimating the uMatrix when 'did_i' predicts every other variable (as desirable on occasion)
+Note that the \code{uMatrix2} is a servicable means of estimating
+the unpredicted residuals in some of the models where lavaan does not want
+to provide the path-analysis implied residuals. But it should only work when
+the model is a DAG that has been placed to have rows in 'causal order'
 }
