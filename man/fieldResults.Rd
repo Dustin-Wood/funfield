@@ -32,5 +32,8 @@ Fit values of paths for a functional field, given an associated
 Note that the \code{uMatrix2} is a servicable means of estimating
 the unpredicted residuals in some of the models where lavaan does not want
 to provide the path-analysis implied residuals. But it should only work when
-the model is a DAG that has been placed to have rows in 'causal order'
+the model is a DAG that has been placed to have rows in 'causal order'.
+    There is also a problem with how \code{uMatrix2} is estimated (the final covariance
+    is always misestimated) which I assume
+    involves a bad interaction with how \code{expOutcomes} function closes out
 }
