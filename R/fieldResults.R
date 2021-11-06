@@ -37,7 +37,7 @@ fieldResults <- function(fModel,covMat, sampleN = 4) {
     doi <- rep(0,ncol(fieldmatrix_r1))
     doi[i] <-  sqrt(1 - diag(totalE)[i]) #activate node, but discount by the degree to which it has already been activated by other variables previously
     effect.i<-colSums(expOutcomes(doi,fieldmatrix_r1))
-    E.i<-as.matrix(effect.i)%*%t(as.matrix(effect.i))
+    E.i<-as.matrix(effect.i)%*%t(as.matrix(effect.i)) #what are the total implied covariation from activating i?
     totalE <- totalE + E.i
   }
 

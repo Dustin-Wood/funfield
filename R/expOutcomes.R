@@ -12,10 +12,10 @@
 #' @export
 
 expOutcomes <- function(s,ff) {
-  e_t <- matrix(0,length(s),length(s))
+  e_t <- matrix(0,length(s)+1,length(s))
   e_t[1,] <- s
   i=2
-  for (i in 2:length(s)) {
+  for (i in 2:(length(s)+1)) {
     e_t[i,] <- e_t[i-1,]%*%ff
   }
   return(e_t)

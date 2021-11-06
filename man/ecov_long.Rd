@@ -4,7 +4,14 @@
 \alias{ecov_long}
 \title{Estimate Action Expected-Outcome Covariance Elements}
 \usage{
-ecov_long(eData, p = "p", s = "s", i = "i", addDidi = T)
+ecov_long(
+  eData,
+  p = "p",
+  s = "s",
+  i = "i",
+  fcols = c(4:ncol(eData)),
+  addDidi = T
+)
 }
 \arguments{
 \item{eData}{expected effect data}
@@ -14,6 +21,9 @@ ecov_long(eData, p = "p", s = "s", i = "i", addDidi = T)
 \item{s}{variable identifying 'situation' (or scenario) - give in "quotemarks"}
 
 \item{i}{variable identifying 'action' (or response) - give in "quotemarks"}
+
+\item{fcols}{columns with variables for field matrix - defaults
+to c(4:ncol(eData)) assuming a c(p,s,i,(etc)) data structure}
 
 \item{addDidi}{should you add the 'did_i' variable as element for effect covariance matrix,
 if not already present? Defaults to \code{TRUE}.}

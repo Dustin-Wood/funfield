@@ -17,6 +17,8 @@
 #' @param p variable identifying 'person' (or respondent) - give in "quotemarks"
 #' @param s variable identifying 'situation' (or scenario) - give in "quotemarks"
 #' @param i variable identifying 'action' (or response) - give in "quotemarks"
+#' @param fcols columns with variables for field matrix - defaults
+#' to c(4:ncol(eData)) assuming a c(p,s,i,(etc)) data structure
 #' @param addDidi should you add the 'did_i' variable as element for effect covariance matrix,
 #' if not already present? Defaults to \code{TRUE}.
 #' @return Effect covariance elements
@@ -27,21 +29,21 @@
 #'
 #' @export
 
-ecov_long <- function(eData, p = "p", s = "s", i = "i",addDidi = T) {
+ecov_long <- function(eData, p = "p", s = "s", i = "i", fcols = c(4:ncol(eData)) ,addDidi = T) {
 
-#0.  Add the 'did_i' column to the set before estimating covariance elements
-      #note: requires both option set to 'TRUE' and 'did_i' is not already present
+  #0.  Add the 'did_i' column to the set before estimating covariance elements
+  #note: requires both option set to 'TRUE' AND 'did_i' is not already present
   if(addDidi == T & (('did_i' %in% colnames(eData)) == F)) {
-  eData<-data.frame(eData[1:3],1,eData[4:ncol(eData)])
-  colnames(eData)[4] <- "did_i"
-}
+    eData<-data.frame(eData[p],eData[s],eData[i],1,eData[fcols])
+    colnames(eData)[4] <- "did_i"
+  } else {
+    eData<-data.frame(eData[p],eData[s],eData[i],eData[fcols])
+  }
 
-  #1. Compute effectA*effectB elements.
-  #data_long <- reshape2::melt(eData, id=c(p,s,i))
+  #1. Compute deviationA*deviationB elements.
   data_long <- tidyr::pivot_longer(eData,cols = 4:ncol(eData),  names_to = "fX", values_to = "dX")
   data_longer <-merge(data_long,eData,by = c(p,s,i))
   eData_long <- tidyr::pivot_longer(data_longer,cols = 6:ncol(data_longer),  names_to = "fY", values_to = "dY")
   eData_long$dXdY<-eData_long$dX*eData_long$dY
   return(eData_long)
-
 }
