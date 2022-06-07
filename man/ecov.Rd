@@ -17,6 +17,10 @@ ecov(data,fX,fY,dXdY="cov")
 
 \item{order}{specification of the order you would like the variables to be
 ordered within the output (defaults to \code{NA} if none given)}
+
+\item{byP}{Do a 'two-step aggregation' in which observations are averaged within-person first,
+so that all participants observations are weighted equally (for instance: if one participant
+rated 8 scenarios, and another only rated 1).}
 }
 \value{
 Expected effect covariance (and correlation) matrix; & associated sample sizes

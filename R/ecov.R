@@ -7,6 +7,9 @@
 #' @param dXdY Variable containing the product of X and Y expected effects
 #' @param order specification of the order you would like the variables to be
 #' ordered within the output (defaults to \code{NA} if none given)
+#' @param byP Do a 'two-step aggregation' in which observations are averaged within-person first,
+#' so that all participants observations are weighted equally (for instance: if one participant
+#' rated 8 scenarios, and another only rated 1).
 #' @return Expected effect covariance (and correlation) matrix; & associated sample sizes
 #' @usage ecov(data,fX,fY,dXdY="cov")
 #' @details This function utilizes functions from \code{plyr} and \code{tidyr}
@@ -18,9 +21,14 @@
 #'
 #' @export
 
-ecov <- function(data,fX="fX",fY="fY",dXdY="dXdY", order=NA) {
-
+ecov <- function(data,fX="fX",fY="fY",dXdY="dXdY", order=NA, byP = T) {
+  if(byP == T){
+  ecov1 <- plyr::ddply(data,.(p,fX,fY), function(x) colMeans(x["dXdY"]))
+  ecov2 <- plyr::ddply(ecov1,.(fX,fY), function(x) colMeans(x["dXdY"]))
+  }
+  if(byP == F){
   ecov2 <- plyr::ddply(data,.(fX,fY), function(x) colSums(x["dXdY"]))
+  }
   ecov3 <- tidyr::pivot_wider(ecov2,names_from = fY, values_from = dXdY)
   ecov <- ecov3[-1]
   ecov <- as.matrix(ecov)
@@ -30,6 +38,7 @@ ecov <- function(data,fX="fX",fY="fY",dXdY="dXdY", order=NA) {
   ecov <- ecov / ecov["did_i","did_i"] #this effectively divides by (sum of pvoi*svoi)
   r <- cov2cor(ecov)
   e <- list(ecov,r,npsi,np)
+  #place in specified order, if given
   if(is.na(order[1]) == F) {
   e <- list(ecov[order,order],r[order,order],npsi)
   }
