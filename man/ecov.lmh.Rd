@@ -32,6 +32,3 @@ the strategy employed by the \code{zgroups} function, which attempts
 to approximate how observations are weighted when calculating a
 correlation coefficient.
 }
-\details{
-
-}

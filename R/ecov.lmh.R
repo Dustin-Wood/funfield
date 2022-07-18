@@ -16,8 +16,6 @@
 #' @return Effect covariance matrices (and sample sizes) for \code{zL, zM, zH}
 #' (low, medium, and high z-scores on the person variable of interest)
 #' subgroups
-#' @details
-#'
 #' @export
 
 ecov.lmh <- function(PSI, pVars, voi, p = "p", cuts = "z", per = F){
