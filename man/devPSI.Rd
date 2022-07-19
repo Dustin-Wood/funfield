@@ -4,7 +4,7 @@
 \alias{devPSI}
 \title{Deviation Action Scoring of PSI matrix}
 \usage{
-devPSI(PSIdata, locX = c(4:ncol(PSIdata)), min_i = T)
+devPSI(PSIdata, locX = c(4:ncol(PSIdata)), min_i = F)
 }
 \arguments{
 \item{PSIdata}{PSI-structured dataframe (should have 'p','s','i' as their first three features)}
@@ -12,6 +12,8 @@ devPSI(PSIdata, locX = c(4:ncol(PSIdata)), min_i = T)
 \item{locX}{location of expected outcome ratings (note: default generously assumes
 the prescribed 'c(p,s,i,...,Likelihood)' data structure)
 ratings provided at different portion of survey)}
+
+\item{min_i}{Return only the minimum value of i (often i=1)?}
 }
 \value{
 deviated ratings of effects of action i as rated by p within situation s
@@ -27,7 +29,9 @@ This essentially forces 'deviation' scoring.  It also assumes that
 the actions with the lowest value (so if coded as '1,2,3...' then will only return '1';
 if '2.1,2.2,2.3,...' will only return '2.1', and so on). When nI = 2 for each
 situation, deviation scoring will force i=1 and i=2 to be perfect reflections of one
-another, so only one (i=1) is retained.
+another, so only one (i=1) is retained.  This can be useful to help avoid artificial
+inflation of sample size (although other strategies, like multilevel modeling in lavaan,
+may be preferable to address this issue).
 
 Also note that in this case, if the deviations are doubled, you will obtain the
 simple difference between i=1 and i=2 for each feature.
