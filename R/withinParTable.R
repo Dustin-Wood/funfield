@@ -11,7 +11,7 @@
 
 withinParTable <- function(fit, data) {
   #adjust sig information for artificial inflation (due to general sample-size doubling)
-  fit@ParTable$se.adj <- fit@ParTable$se * sqrt(nrow(SL3)) /sqrt(length(table(data$p)))
+  fit@ParTable$se.adj <- fit@ParTable$se * sqrt(nrow(data)) /sqrt(length(table(data$p)))
   fit@ParTable$z.adj <- fit@ParTable$est/fit@ParTable$se.adj
   fit@ParTable$p.adj=2*pnorm(-abs(fit@ParTable$z.adj))
 
