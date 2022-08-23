@@ -7,14 +7,20 @@
 #' @param locX location of expected outcome ratings (note: default generously assumes
 #' the prescribed 'c(p,s,i,...,Likelihood)' data structure)
 #' ratings provided at different portion of survey)
-#' @param min_i Return only the minimum value of i (often i=1)?
+#' @param max_i Return only the maximum value of i (often i=1)
+#' @param dbl Double the deviation scores
+#' (this will mainly make sense to do if nI = 2 and max_i = T,
+#' in which case scores will be difference scores rather than deviation scores)
+#' @examples (develop some example code)
 #' @details This essentially forces 'deviation' scoring.  It also assumes that
-#' 'i' is coded as a numerical variable, and if 'min_i' is selected will return only
-#' the actions with the lowest value (so if coded as '1,2,3...' then will only return '1';
-#' if '2.1,2.2,2.3,...' will only return '2.1', and so on). When nI = 2 for each
-#' situation, deviation scoring will force i=1 and i=2 to be perfect reflections of one
-#' another, so only one (i=1) is retained.  This can be useful to help avoid artificial
-#' inflation of sample size (although other strategies, like multilevel modeling in lavaan,
+#' 'i' is coded as a numerical variable, and if 'max_i' is selected, this will only return
+#' the actions with the highest value.  It is recommended this is only used when
+#' have been coded where i = 1 for the focal action, i = 0 for a contrasting action,
+#' and other actions i have been excluded (maybe by subsetting), so that nI = 2.
+#' Note that when nI = 2, the deviation scores will be reflections of one another.
+#' In which case, keeping only the maximum i (which should be i=1)  can be useful
+#' to help avoid artificial inflation of sample size
+#' (although other strategies, like multilevel modeling in lavaan,
 #' may be preferable to address this issue).
 #'
 #' Also note that in this case, if the deviations are doubled, you will obtain the
@@ -23,7 +29,7 @@
 #' from the person's average rating of actions in that situation.
 #' @export
 
-devPSI <- function(PSIdata, locX=c(4:ncol(PSIdata)),min_i = F) {
+devPSI <- function(PSIdata, locX=c(4:ncol(PSIdata)),max_i = F,dbl = F) {
   #make sure everything is sorted before doing dangerous merge later
   PSIdata <- with(PSIdata, PSIdata[order(p,s,i),])
 
@@ -35,8 +41,12 @@ devPSI <- function(PSIdata, locX=c(4:ncol(PSIdata)),min_i = F) {
   devPSI <- data.frame(PSIdata[1:3],devPS[3:ncol(devPS)])
 
   #optional return only first action
-  if(min_i == T) {
-    devPSI<-ddply(devPSI, .(p,s), function(x) subset(x, i == min(i)))
+  if(max_i == T) {
+    devPSI<-ddply(devPSI, .(p,s), function(x) subset(x, i == max(i)))
+  }
+
+  if(dbl == T) {
+    devPSI[4:ncol(devPSI)] <- devPSI[4:ncol(devPSI)]*2
   }
   return(devPSI)
 }
