@@ -64,6 +64,8 @@ diffFieldOverlays  <- function(fitPars, fmatrix, sigOnly = F) {
   params3<-plyr::dlply(fitPars2, "mod", function(x) x)
 
   #function to blast separate parameters into separate field matrices
+      #e.g., if in row i: X = "Speed", Y = "Ticket", and est = .20,
+      #then create matrix element: f[Speed,Ticket] = .20
   matrify <- function(fmatrix,x){
     for(i in 1:nrow(x)) {
       fmatrix[x[i,"X"],x[i,"Y"]] <- x[i,"est"]
