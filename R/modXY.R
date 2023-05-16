@@ -3,35 +3,40 @@
 #' ('Model 1' in Wood, Harms, & Cho, 2023) for all measured potential mediators of the
 #' [Action->Likelihood] association.
 #' ** continue editing here...**
-#' @param PSIdata dataset in a PSI long format
+#' @param data dataset in a PSI long format
 #' @param Z moderator variable (it will be standardized)
-#' @param jSet location of the set of variables that will be explored as moderated by Z
+#' @param xSet location of the set of variables that will be explored as moderated by Z (one at a time)
 #' @param Y the dependent variable (often "likelihood" - but not necessarily)
 #' @return Will return the main effects of the outcomes, and their z-moderated effect
 #' @details This adjusts for degrees of freedom by using 'p' as a clustering variable in lavaan
 #'
 #' @export
 
-ModXY <- function(PSIdata,Z,jSet,Y) {
+modXY <- function(data,Z,xSet,Y) {
 
-ModModel <- 'Y ~ 1 + Z + B1_Y1*X1 + BZ_Y1*X1:Z'
+ModModel <- 'Y ~ 1 + Z + B1_YX*X + BZ_YX*X:Z'
 
 moderatorTest <- function(x) {
   test <- data
-  test$X1 <- x
+  test$X <- x
   test["Y"] <- test[Y]
   sem(ModModel,test,cluster="p")
 }
 #run the thing through each mediator variable...
 data["Z"] <- scale(data[Z]) #name of moderator
-x<-apply(data[jSet],2,moderatorTest)
+x<-apply(data[xSet],2,moderatorTest)
+
+parView<-function(fit,split = "est",dec = 2){
+  x <- parameterestimates(fit)
+  return(cbind(x[1:which(colnames(x)==split)-1],round(x[(which(colnames(x)==split)):(which(colnames(x)=="z"))],dec),round(x["pvalue"],dec+2)))
+}
 
   #...and extract the overall and Z-moderated effect of X1 on Y information
-  BZ_Y1<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="BZ_Y1",])
-  B1_Y1<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="B1_Y1",])
+  BZ_YX<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="BZ_YX",])
+  B1_YX<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="B1_YX",])
 
-  out<-list(BZ_Y1,B1_Y1)
-  names(out)<-c("BZ_Y1","B1_Y1")
+  out<-list(BZ_YX,B1_YX)
+  names(out)<-c("BZ_YX","B1_YX")
   return(out)
 }
 
