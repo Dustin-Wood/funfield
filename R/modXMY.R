@@ -47,7 +47,7 @@ x<-apply(data[jSet],2,moderatorTest)
   indX1MZY<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="indX1MZY",])
   indXZM1Y<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="indXZM1Y",])
 
-  paths<-cbind(X,B1_MX["est"],paste0(BZ_MX[,"est"],"*(Z_",Z,")"),BZ_MX[,".id"],B1_YM["est"],paste0(BZ_YM[,"est"],"*(Z_",Z,")"),Y,ifelse(indXZM1Y[,"pvalue"]<.05,"*"," "),ifelse(indX1MZY[,"pvalue"]<.05,"*"," "))
+  paths<-cbind(X,B1_MX["est"],paste0(BZ_MX[,"est"],"*(Z_",Z,")"),BZ_MX[,".id"],B1_YM["est"],paste0(BZ_YM[,"est"],"*(Z_",Z,")"),Y,ifelse((indXZM1Y[,"est"]>0&indXZM1Y[,"pvalue"]<.05),"+",ifelse((indX1MZY[,"est"]<0&indX1MZY[,"pvalue"]<.05),"-"," ")),ifelse((indX1MZY[,"est"]>0&indX1MZY[,"pvalue"]<.05),"+",ifelse((indX1MZY[,"est"]<0&indX1MZY[,"pvalue"]<.05),"-"," ")))
   colnames(paths) <- c("X","b1_MX","bZ_MX","M","b1_YX","bZ_YX","Y","bZ_MX*b1_YM","b1_MX*bZ_YM")
 if(all == F){
   out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths)
