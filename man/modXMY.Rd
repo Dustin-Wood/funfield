@@ -20,7 +20,11 @@ modXMY(data, X, Y, Z, jSet, all = F)
 \item{all}{include the full lavaan results for each variable (default to \code{F})}
 }
 \value{
-Will return the main effects of forces along the mediational pathway, and the z-moderation of each force
+Will return the main effects of forces along the mediational pathway,
+and the z-moderation of each force.
+
+Will also print out some summary sheets ('paths' and 'paths2') as a
+means of helping pull out key results
 }
 \description{
 This will run and extract single-mediator moderated-mediation models

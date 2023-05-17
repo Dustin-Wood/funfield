@@ -8,7 +8,11 @@
 #' @param X the initiating variable
 #' @param Y the dependent variable (often "likelihood" - but not necessarily)
 #' @param all include the full lavaan results for each variable (default to \code{F})
-#' @return Will return the main effects of forces along the mediational pathway, and the z-moderation of each force
+#' @return Will return the main effects of forces along the mediational pathway,
+#' and the z-moderation of each force.
+#'
+#' Will also print out some summary sheets ('paths' and 'paths2') as a
+#' means of helping pull out key results
 #' @details This adjusts for degrees of freedom by using 'p' as a clustering variable in lavaan
 #'
 #' @export
@@ -23,7 +27,7 @@ indX1MZY := B1_MX*BZ_YM
 indXZM1Y := BZ_MX*B1_YM
 '
 
-parView<-function(fit,split = "est",dec = 2){
+parView<-function(fit,split = "est",dec = 3){
   x <- parameterestimates(fit)
   return(cbind(x[1:which(colnames(x)==split)-1],round(x[(which(colnames(x)==split)):(which(colnames(x)=="z"))],dec),round(x["pvalue"],dec+2)))
 }
@@ -47,15 +51,18 @@ x<-apply(data[jSet],2,moderatorTest)
   indX1MZY<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="indX1MZY",])
   indXZM1Y<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="indXZM1Y",])
 
-  paths<-cbind(X,B1_MX["est"],paste0(BZ_MX[,"est"],"*(Z_",Z,")"),BZ_MX[,".id"],B1_YM["est"],paste0(BZ_YM[,"est"],"*(Z_",Z,")"),Y,ifelse((indXZM1Y[,"est"]>0&indXZM1Y[,"pvalue"]<.05),"+",ifelse((indX1MZY[,"est"]<0&indX1MZY[,"pvalue"]<.05),"-"," ")),ifelse((indX1MZY[,"est"]>0&indX1MZY[,"pvalue"]<.05),"+",ifelse((indX1MZY[,"est"]<0&indX1MZY[,"pvalue"]<.05),"-"," ")))
+  paths<-cbind(X,B1_MX["est"],paste0(BZ_MX[,"est"],"*(Z_",Z,")"),BZ_MX[,".id"],B1_YM["est"],paste0(BZ_YM[,"est"],"*(Z_",Z,")"),Y,ifelse((indXZM1Y[,"est"]>0&indXZM1Y[,"pvalue"]<.05),"+",ifelse((indXZM1Y[,"est"]<0&indXZM1Y[,"pvalue"]<.05),"-"," ")),ifelse((indX1MZY[,"est"]>0&indX1MZY[,"pvalue"]<.05),"+",ifelse((indX1MZY[,"est"]<0&indX1MZY[,"pvalue"]<.05),"-"," ")))
   colnames(paths) <- c("X","b1_MX","bZ_MX","M","b1_YX","bZ_YX","Y","bZ_MX*b1_YM","b1_MX*bZ_YM")
+
+  paths2<-cbind(X,BZ_MX[,".id"],Y,Z,BZ_MX[,"est"],B1_YM["est"],indXZM1Y[,"est"],indXZM1Y[,"pvalue"],B1_MX["est"],BZ_YM[,"est"],indX1MZY[,"est"],indX1MZY[,"pvalue"])
+  colnames(paths2) <- c("X","M","Y","Z","BZ_MX","B1_LM","indbyZE","pindbyZE","B1_MX","BZ_LM","indbyZV","pindbyZV")
 if(all == F){
-  out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths)
-  names(out)<-c("BZ_YM","BZ_MX","B1_YM","B1_MX","indX1MZY","indXZM1Y","paths")
+  out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths,paths2)
+  names(out)<-c("BZ_YM","BZ_MX","B1_YM","B1_MX","indX1MZY","indXZM1Y","paths","paths2")
 }
   if(all == T){
-    out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths,x)
-    names(out)<-c("BZ_YM","BZ_MX","B1_YM","B1_MX","indX1MZY","indXZM1Y","paths","allResults")
+    out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths,paths2,x)
+    names(out)<-c("BZ_YM","BZ_MX","B1_YM","B1_MX","indX1MZY","indXZM1Y","paths","paths2","allResults")
   }
   return(out)
 
