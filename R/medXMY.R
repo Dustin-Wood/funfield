@@ -23,18 +23,20 @@
 #'
 
 medXMY <- function(data,X,Y,jSet,all=F) {
+
+  #utility function
   parView<-function(fit,split = "est",dec = 3){
-    x <- parameterestimates(fit)
+    x <- lavaan::parameterestimates(fit)
     return(cbind(x[1:which(colnames(x)==split)-1],round(x[(which(colnames(x)==split)):(which(colnames(x)=="z"))],dec),round(x["pvalue"],dec+2)))
   }
 
 
   #Minimal EV Model
   MedModel <- '
-M ~ 1 + B1_MX*X
-Y ~ 1 + B1_LX*X + B1_LM*M
-ind := B1_MX*B1_LM
-'
+    M ~ 1 + B1_MX*X
+    Y ~ 1 + B1_LX*X + B1_LM*M
+    ind := B1_MX*B1_LM
+  '
 
   MedModelTest <- function(x) {
     test <- data
@@ -54,8 +56,8 @@ ind := B1_MX*B1_LM
   allExps <- as.data.frame(paste0(Expect$est,"(",Expect$se,")",ifelse(Expect$pvalue<.05,"*","")))
   allVals <- as.data.frame(paste0(Value$est,"(",Value$se,")",ifelse(Value$pvalue<.05,"*","")))
   allEVInds <- as.data.frame(paste0(EVInd$est,"(",Value$se,")",ifelse(EVInd$pvalue<.05,"*",""),ifelse(EVInd$pvalue<.05 & EVInd$est>0,"(+)",ifelse(EVInd$pvalue<.05 & EVInd$est<0,"(-)",""))))
-  summary <- data.frame(testOut2$B1_MX.2,testOut2$B1_YM.2,testOut2$indXMY.2)
-  colnames(summary) <- c("B1_MX","B1_YM","B1_MX*B1_YM")
+  summary <- data.frame(X,Expect[".id"],Y,allExps,allVals,allEVInds)
+  colnames(summary) <- c("X","M","Y","B1_MX","B1_YM","B1_MX*B1_YM")
 
   if(all == F){
     out<-list(Expect,Value,EVInd,summary)
