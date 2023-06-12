@@ -15,9 +15,11 @@
 #' means of helping pull out key results
 #' @details This adjusts for degrees of freedom by using 'p' as a clustering variable in lavaan
 #'
+#' The general decomposition of indirect pathway is informed by Muller et al., 2005.
+#'
 #' @export
 
-modXMY <- function(data,X,Y,Z,jSet,all=F) {
+modmedXMY <- function(data,X,Y,Z,jSet,all=F) {
 
 ModMedModel <- '
 Y ~ 1 + Z + B1_YX*X + BZ_YX*X:Z
