@@ -58,13 +58,28 @@ x<-apply(data[jSet],2,moderatorTest)
 
   paths2<-cbind(X,BZ_MX[,".id"],Y,Z,BZ_MX[,"est"],B1_YM["est"],indXZM1Y[,"est"],indXZM1Y[,"pvalue"],B1_MX["est"],BZ_YM[,"est"],indX1MZY[,"est"],indX1MZY[,"pvalue"])
   colnames(paths2) <- c("X","M","Y","Z","BZ_MX","B1_LM","indbyZE","pindbyZE","B1_MX","BZ_LM","indbyZV","pindbyZV")
+
+#format to paste into table
+  allZExps <- as.data.frame(paste0(BZ_MX$est,"(",BZ_MX$se,")",
+                            ifelse(BZ_MX$pvalue<.05,"*",""),
+                            ifelse(indXZM1Y$pvalue<.05 & indXZM1Y$est>0,"(+)",
+                            ifelse(indXZM1Y$pvalue<.05 & indXZM1Y$est<0,"(-)",""))))
+  allZVals <- as.data.frame(paste0(BZ_YM$est,"(",BZ_YM$se,")",
+                            ifelse(BZ_YM$pvalue<.05,"*",""),
+                            ifelse(indX1MZY$pvalue<.05 & indX1MZY$est>0,"(+)",
+                            ifelse(indX1MZY$pvalue<.05 & indX1MZY$est<0,"(-)",""))))
+
+
+  summary <- data.frame(X,Expect[".id"],Y,allZExps,allZVals)
+  colnames(summary) <- c("X","M","Y","BZ_MX","BZ_YM")
+
 if(all == F){
-  out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths,paths2)
-  names(out)<-c("BZ_YM","BZ_MX","B1_YM","B1_MX","indX1MZY","indXZM1Y","paths","paths2")
+  out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths,paths2,summary)
+  names(out)<-c("BZ_YM","BZ_MX","B1_YM","B1_MX","indX1MZY","indXZM1Y","paths","paths2","summary")
 }
   if(all == T){
-    out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths,paths2,x)
-    names(out)<-c("BZ_YM","BZ_MX","B1_YM","B1_MX","indX1MZY","indXZM1Y","paths","paths2","allResults")
+    out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths,paths2,summary,x)
+    names(out)<-c("BZ_YM","BZ_MX","B1_YM","B1_MX","indX1MZY","indXZM1Y","paths","paths2","summary","allResults")
   }
   return(out)
 

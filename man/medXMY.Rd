@@ -36,4 +36,8 @@ Note that this model is referred to as the 'Minimal EV Model' in Wood et al., 20
 and will produce a simple mediational model that is equivalent to the common
 \code{c = a*b + c} formula found in mediational models, but using a different notation -
 specifically \code{B0_YX = B1_MX*B1_YM + B1_YX}.
+
+The B0_YX is returned as a bit of a quality check.  If the estimates, p values, etc, are not
+isn't the same across all cases, then this indicates that you did not get rid
+of cases with missing values, which is generally recommended.
 }
