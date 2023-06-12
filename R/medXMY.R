@@ -22,6 +22,7 @@
 #' @export
 #'
 
+
 medXMY <- function(data,X,Y,jSet,all=F) {
 
   #utility function
@@ -56,8 +57,13 @@ medXMY <- function(data,X,Y,jSet,all=F) {
   allExps <- as.data.frame(paste0(Expect$est,"(",Expect$se,")",ifelse(Expect$pvalue<.05,"*","")))
   allVals <- as.data.frame(paste0(Value$est,"(",Value$se,")",ifelse(Value$pvalue<.05,"*","")))
   allEVInds <- as.data.frame(paste0(EVInd$est,"(",Value$se,")",ifelse(EVInd$pvalue<.05,"*",""),ifelse(EVInd$pvalue<.05 & EVInd$est>0,"(+)",ifelse(EVInd$pvalue<.05 & EVInd$est<0,"(-)",""))))
+<<<<<<< HEAD
   summary <- data.frame(X,Expect[".id"],Y,allExps,allVals,allEVInds)
   colnames(summary) <- c("X","M","Y","B1_MX","B1_YM","B1_MX*B1_YM")
+=======
+  summary <- data.frame(allExps,allVals,allEVInds)
+  colnames(summary) <- c("B1_MX","B1_YM","B1_MX*B1_YM")
+>>>>>>> f2abc274abf94c407534fdf96985adc8fe62f7b5
 
   if(all == F){
     out<-list(Expect,Value,EVInd,summary)
