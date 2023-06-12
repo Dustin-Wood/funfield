@@ -19,6 +19,10 @@
 #' \code{c = a*b + c} formula found in mediational models, but using a different notation -
 #' specifically \code{B0_YX = B1_MX*B1_YM + B1_YX}.
 #'
+#' The B0_YX is returned as a bit of a quality check.  If the estimates, p values, etc, are not
+#' isn't the same across all cases, then this indicates that you did not get rid
+#' of cases with missing values, which is generally recommended.
+#'
 #' @export
 #'
 
@@ -35,8 +39,9 @@ medXMY <- function(data,X,Y,jSet,all=F) {
   #Minimal EV Model
   MedModel <- '
     M ~ 1 + B1_MX*X
-    Y ~ 1 + B1_LX*X + B1_LM*M
-    ind := B1_MX*B1_LM
+    Y ~ 1 + B1_YX*X + B1_YM*M
+    ind := B1_MX*B1_YM
+    B0_YX := ind + B1_YX
   '
 
   MedModelTest <- function(x) {
@@ -51,27 +56,24 @@ medXMY <- function(data,X,Y,jSet,all=F) {
 
   #...extract critical columns
   Expect<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="B1_MX",])
-  Value<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="B1_LM",])
+  Value<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="B1_YM",])
   EVInd<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="ind",])
+  Total<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="B0_YX",])
   #format to paste into table
   allExps <- as.data.frame(paste0(Expect$est,"(",Expect$se,")",ifelse(Expect$pvalue<.05,"*","")))
   allVals <- as.data.frame(paste0(Value$est,"(",Value$se,")",ifelse(Value$pvalue<.05,"*","")))
   allEVInds <- as.data.frame(paste0(EVInd$est,"(",Value$se,")",ifelse(EVInd$pvalue<.05,"*",""),ifelse(EVInd$pvalue<.05 & EVInd$est>0,"(+)",ifelse(EVInd$pvalue<.05 & EVInd$est<0,"(-)",""))))
-<<<<<<< HEAD
+
   summary <- data.frame(X,Expect[".id"],Y,allExps,allVals,allEVInds)
   colnames(summary) <- c("X","M","Y","B1_MX","B1_YM","B1_MX*B1_YM")
-=======
-  summary <- data.frame(allExps,allVals,allEVInds)
-  colnames(summary) <- c("B1_MX","B1_YM","B1_MX*B1_YM")
->>>>>>> f2abc274abf94c407534fdf96985adc8fe62f7b5
 
   if(all == F){
-    out<-list(Expect,Value,EVInd,summary)
-    names(out)<-c("B1_MX","B1_YM","indXMY","summary")
+    out<-list(Expect,Value,EVInd,summary,Total)
+    names(out)<-c("B1_MX","B1_YM","indXMY","summary","B0_YX")
   }
   if(all == T){
-    out<-list(Expect,Value,EVInd,summary,x)
-    names(out)<-c("B1_MX","B1_YM","indXMY","summary","allResults")
+    out<-list(Expect,Value,EVInd,summary,Total,x)
+    names(out)<-c("B1_MX","B1_YM","indXMY","summary","B0_YX","allResults")
   }
   return(out)
 
