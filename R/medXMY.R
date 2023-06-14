@@ -29,13 +29,6 @@
 
 medXMY <- function(data,X,Y,jSet,all=F) {
 
-  #utility function
-  parView<-function(fit,split = "est",dec = 3){
-    x <- lavaan::parameterestimates(fit)
-    return(cbind(x[1:which(colnames(x)==split)-1],round(x[(which(colnames(x)==split)):(which(colnames(x)=="z"))],dec),round(x["pvalue"],dec+2)))
-  }
-
-
   #Minimal EV Model
   MedModel <- '
     M ~ 1 + B1_MX*X
@@ -49,7 +42,7 @@ medXMY <- function(data,X,Y,jSet,all=F) {
     test["M"] <- x
     test["Y"] <- test[Y]
     test["X"] <- test[X]
-    sem(MedModel,test,cluster="p")
+    lavaan::sem(MedModel,test,cluster="p")
   }
   #run each mediator variable through Minimal EV Model, one at a time...
   x<-apply(data[jSet],2,MedModelTest)

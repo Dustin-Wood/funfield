@@ -28,8 +28,8 @@ devPSI <- function(PSIdata, locX=c(4:ncol(PSIdata))) {
   PSIdata <- with(PSIdata, PSIdata[order(p,s,i),])
 
   #kick out any cases that did not rate at least two actions
-  PSIdata <- ddply(PSIdata, .(p,s), function(x) subset(x, sum(!is.na(x$i))>1))
-  devPS <- ddply(PSIdata, .(p,s), function(x) sweep(x[locX],2, colMeans(x[locX], na.rm = T)))
+  PSIdata <- plyr::ddply(PSIdata, c("p","s"), function(x) subset(x, sum(!is.na(x$i))>1))
+  devPS <- plyr::ddply(PSIdata, c("p","s"), function(x) sweep(x[locX],2, colMeans(x[locX], na.rm = T)))
 
   #(dangerous merge)
   devPSI <- data.frame(PSIdata[1:3],devPS[3:ncol(devPS)])

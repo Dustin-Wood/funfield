@@ -20,16 +20,11 @@ moderatorTest <- function(x) {
   test <- data
   test$X <- x
   test["Y"] <- test[Y]
-  sem(ModModel,test,cluster="p")
+  lavaan::sem(ModModel,test,cluster="p")
 }
 #run the thing through each mediator variable...
 data["Z"] <- scale(data[Z]) #name of moderator
 x<-apply(data[xSet],2,moderatorTest)
-
-parView<-function(fit,split = "est",dec = 2){
-  x <- parameterestimates(fit)
-  return(cbind(x[1:which(colnames(x)==split)-1],round(x[(which(colnames(x)==split)):(which(colnames(x)=="z"))],dec),round(x["pvalue"],dec+2)))
-}
 
   #...and extract the overall and Z-moderated effect of X1 on Y information
   BZ_YX<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="BZ_YX",])

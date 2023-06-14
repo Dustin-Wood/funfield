@@ -29,17 +29,12 @@ indX1MZY := B1_MX*BZ_YM
 indXZM1Y := BZ_MX*B1_YM
 '
 
-parView<-function(fit,split = "est",dec = 3){
-  x <- parameterestimates(fit)
-  return(cbind(x[1:which(colnames(x)==split)-1],round(x[(which(colnames(x)==split)):(which(colnames(x)=="z"))],dec),round(x["pvalue"],dec+2)))
-}
-
 moderatorTest <- function(x) {
   test <- data
   test["M"] <- x
   test["Y"] <- test[Y]
   test["X"] <- test[X]
-  sem(ModMedModel,test,cluster="p")
+  lavaan::sem(ModMedModel,test,cluster="p")
 }
 #run the thing through each mediator variable...
 data["Z"] <- scale(data[Z]) #name of moderator
