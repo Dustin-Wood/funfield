@@ -73,6 +73,7 @@ x<-apply(data[jSet],2,moderatorTest)
   summary <- data.frame(X,BZ_MX[".id"],Y,allZExps,allZVals)
   colnames(summary) <- c("X","M","Y","BZ_MX","BZ_YM")
 
+
 if(all == F){
   out<-list(BZ_YM,BZ_MX,B1_YM,B1_MX,indX1MZY,indXZM1Y,paths,paths2,summary)
   names(out)<-c("BZ_YM","BZ_MX","B1_YM","B1_MX","indX1MZY","indXZM1Y","paths","paths2","summary")
