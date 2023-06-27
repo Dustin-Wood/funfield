@@ -19,20 +19,20 @@
 #' @return expected effects (difference) of focal action(s) from contrasting action(s)
 #' @export
 
-diffPSI <- function(devPSI, locX=c(4:ncol(PSIdata)),select_i = "max",dbl = T) {
+diffPSI <- function(devPSI, locX=c(4:ncol(devPSI)),select_i = "max",dbl = T) {
 
   #optional return only first action
   if(select_i == "max") {
-    diffPSI<-ddply(devPSI, .(p,s), function(x) subset(x, i == max(i)))
+    diffpsi<-plyr::ddply(devPSI, c("p","s"), function(x) subset(x, i == max(i)))
   }
 
   #optional return only first action
   if(select_i == "min") {
-    diffPSI<-ddply(devPSI, .(p,s), function(x) subset(x, i == min(i)))
+    diffpsi<-plyr::ddply(devPSI, c("p","s"), function(x) subset(x, i == min(i)))
   }
 
   if(dbl == T) {
-    diffPSI[4:ncol(devPSI)] <- diffPSI[4:ncol(diffPSI)]*2
+    diffpsi[locX] <- diffpsi[locX]*2
   }
-  return(diffPSI)
+  return(diffpsi)
 }

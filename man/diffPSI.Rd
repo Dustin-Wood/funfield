@@ -4,7 +4,7 @@
 \alias{diffPSI}
 \title{Difference Scoring of nI=2 PSI matrix}
 \usage{
-diffPSI(devPSI, locX = c(4:ncol(PSIdata)), select_i = "max", dbl = T)
+diffPSI(devPSI, locX = c(4:ncol(devPSI)), select_i = "max", dbl = T)
 }
 \arguments{
 \item{devPSI}{deviated PSI-structured dataframe (should have 'p','s','i' as their first three features)}

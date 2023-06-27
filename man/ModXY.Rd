@@ -7,7 +7,7 @@
 modXY(data, Z, xSet, Y)
 }
 \arguments{
-\item{data}{dataset in a PSI long format}
+\item{data}{dataset in a PSI long format, preferably using within-situation deviated scores}
 
 \item{Z}{moderator variable (it will be standardized)}
 

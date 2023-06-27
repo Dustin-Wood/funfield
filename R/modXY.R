@@ -3,7 +3,7 @@
 #' ('Model 1' in Wood, Harms, & Cho, 2023) for all measured potential mediators of the
 #' [Action->Likelihood] association.
 #' ** continue editing here...**
-#' @param data dataset in a PSI long format
+#' @param data dataset in a PSI long format, preferably using within-situation deviated scores
 #' @param Z moderator variable (it will be standardized)
 #' @param xSet location of the set of variables that will be explored as moderated by Z (one at a time)
 #' @param Y the dependent variable (often "likelihood" - but not necessarily)
@@ -14,7 +14,7 @@
 
 modXY <- function(data,Z,xSet,Y) {
 
-ModModel <- 'Y ~ 1 + Z + B1_YX*X + BZ_YX*X:Z'
+ModModel <- 'Y ~ B1_Y1*1 + BZ_Y1*Z + B1_YX*X + BZ_YX*X:Z'
 
 moderatorTest <- function(x) {
   test <- data
@@ -29,9 +29,12 @@ x<-apply(data[xSet],2,moderatorTest)
   #...and extract the overall and Z-moderated effect of X1 on Y information
   BZ_YX<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="BZ_YX",])
   B1_YX<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="B1_YX",])
+  BZ_Y1<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="BZ_Y1",])
+  B1_Y1<-plyr::ldply(x,function(x) parView(x)[parView(x)$label=="B1_Y1",])
+  #note: if using deviated scores, then B1_Y1 and BZ_Y1 parameters should equal exactly zero.
 
-  out<-list(BZ_YX,B1_YX)
-  names(out)<-c("BZ_YX","B1_YX")
+  out<-list(BZ_YX,B1_YX,BZ_Y1,B1_Y1)
+  names(out)<-c("BZ_YX","B1_YX","BZ_Y1","B1_Y1")
   return(out)
 }
 
