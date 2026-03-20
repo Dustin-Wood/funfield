@@ -16,9 +16,12 @@ fieldEditor <- function(fprops, fieldMatrix = NULL) {
   vt  <- fprops$vtype
   mat <- fprops$matLayout
 
-  # Map type codes to approximate visNetwork shapes
-  shape_map <- c(d = "triangle", o = "diamond", x = "square", c = "ellipse",
-                 a = "triangleDown", t = "ellipse", v = "diamond", V = "square",
+  # Map type codes to visNetwork shapes (approximating qgraph equivalents)
+  # d = rfTriangle (right-facing) -> triangle (up, distinct from a)
+  # a = lfTriangle (left-facing)  -> triangleDown (down, distinct from d)
+  # c = circle in qgraph          -> circle in visNetwork
+  shape_map <- c(d = "triangle", o = "diamond", x = "square", c = "circle",
+                 a = "triangleDown", t = "circle", v = "diamond", V = "square",
                  e = "square", y = "triangle", n = "triangleDown")
 
   shapes <- vapply(vt, function(t) {
@@ -126,7 +129,7 @@ fieldEditor <- function(fprops, fieldMatrix = NULL) {
       xr <- range(xs)
       yr <- range(ys)
       xn <- if (diff(xr) == 0) xs * 0 else 2 * (xs - xr[1]) / diff(xr) - 1
-      yn <- if (diff(yr) == 0) ys * 0 else 2 * (ys - yr[1]) / diff(yr) - 1
+      yn <- if (diff(yr) == 0) ys * 0 else -(2 * (ys - yr[1]) / diff(yr) - 1)
 
       layout_mat <- matrix(0, nrow = length(ids), ncol = 2)
       layout_mat[ids, 1] <- xn
