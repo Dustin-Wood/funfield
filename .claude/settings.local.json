@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(ls -1 /c/Users/dusti/Dropbox/R/funfield/R/*.R)",
+      "Bash(find /c/Users/dusti/Dropbox/R/funfield -type f \\\\\\(-name *.xlsx -o -name *.xls -o -name *.csv \\\\\\))",
+      "Bash(gh api:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl:*)",
+      "Skill(update-config)",
+      "Bash(Rscript -e \"devtools::document\\(\\)\")"
+    ]
+  }
+}
