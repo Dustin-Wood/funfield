@@ -1,0 +1,100 @@
+---
+title: "Moderated mediation with `pathXMY()`: the speeding ESJT example"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Moderated mediation with pathXMY(): the speeding ESJT example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This vignette walks through fitting an expectancy-value (EV) moderated
+mediation model to ESJT data using `pathXMY()`. We use the embedded
+`speedingESJT` dataset (Wood, Harms, & Cho, 2023).
+
+## The data
+
+```{r data}
+library(funfield)
+data(speedingESJT)
+str(speedingESJT[, 1:13])
+```
+
+302 participants each rated three speeds (at the limit, +5 mph, +10 mph) on
+their expected outcomes (`Crash`, `Injured`, `Ticket`, `MoneyCost`, `OnTime`,
+`IntQuality`, `FunDrive`, `Appropriate`) and on the likelihood `L` that they
+would take that action.
+
+## Within-person deviation
+
+`pathXMY()` fits a single-level path model with cluster-robust standard
+errors. To get correct within-person coefficients, deviate the Level 1
+variables before fitting:
+
+```{r deviate}
+L1 <- c("Speed","Crash","Injured","Ticket","MoneyCost","OnTime",
+        "IntQuality","FunDrive","Appropriate","L")
+dev <- speedingESJT
+for (v in L1) {
+  dev[[v]] <- ave(dev[[v]], dev$p, FUN = function(x) x - mean(x))
+}
+```
+
+`Z` (the trait moderator) is left as-is — `pathXMY()` will z-standardize it
+internally.
+
+## Normative model (no moderator)
+
+How does each potential outcome mediate the Speed -> Likelihood relationship,
+averaging across people?
+
+```{r normative}
+mediators <- c("Crash","Injured","Ticket","MoneyCost","OnTime",
+               "IntQuality","FunDrive","Appropriate")
+norm <- pathXMY(dev, X = "Speed", Y = "L", M = mediators)
+norm$tidy
+```
+
+Each mediator gets six rows: `B1_MX` (expectation: does Speed predict M?),
+`B1_YX` (direct effect of Speed on L not through this M), `B1_YM`
+(valuation: does M predict L?), and `ind` (the indirect product).
+
+## Moderated model: high vs. low SRFastDriver
+
+Does self-reported fast-driver trait moderate any of those paths?
+
+```{r moderated}
+mod <- pathXMY(dev, X = "Speed", Y = "L", M = mediators,
+               Z = "SRFastDriver")
+
+## The Z-moderation of the expectation arm (Speed -> M):
+subset(mod$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")]
+
+## The Z-moderation of the indirect effect (via expectation):
+subset(mod$tidy, param == "indZ_X")[, c("mediator","est","se","z","pvalue")]
+
+## The Z-moderation of the valuation arm (M -> L):
+subset(mod$tidy, param == "BZ_YM")[, c("mediator","est","se","z","pvalue")]
+```
+
+`BZ_MX` captures how the Speed -> M expectation differs across trait levels
+(self-reported fast drivers expect speeding to be less catastrophic and more
+enjoyable). `indZ_X = BZ_MX * B1_YM` is the corresponding Z-moderation of the
+indirect effect.
+
+## Bootstrap option for small samples
+
+With many clusters (here 302), delta-method CIs and cluster bootstrap CIs
+agree closely. For studies with fewer than 50 clusters, use `se = "boot"`:
+
+```{r boot, eval = FALSE}
+pathXMY(dev, X = "Speed", Y = "L", M = "Crash",
+        Z = "SRFastDriver", se = "boot", nboot = 1000)
+```
+
+## Function reference
+
+See `?pathXMY` and `?speedingESJT`.

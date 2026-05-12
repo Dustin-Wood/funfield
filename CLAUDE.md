@@ -38,6 +38,7 @@ All core functions assume input data has `p`, `s`, `i` as the **first three colu
 - `s` = Situation/scenario ID
 - `i` = Initiating action
 - Remaining columns = features/outcomes/ratings
+- the final column is generally 'Likelihood' (if we are trying to model what action a person will take)
 
 ### Core Computational Pipeline
 
@@ -76,7 +77,7 @@ Raw ESJT Data (p, s, i, ..., Likelihood)
 |---|---|
 | Field construction | `prepField()`, `fieldResults()`, `impliedCov()`, `expOutcomesFF()` |
 | Covariance estimation | `ecov()`, `ecov_long()`, `ecov_big()`, `ecov.lmh()` |
-| Mediation/moderation | `medXMY()`, `modXY()`, `modmedXMY()`, `devPSI()`, `diffPSI()` |
+| Mediation/moderation | `pathXMY()` (umbrella: X→M→Y, optional moderator), `devPSI()`, `diffPSI()` |
 | Data quality | `strLine()`, `sdESJT()`, `effectiveN()` |
 | Visualization | `fieldOverlays()`, `fieldPolygons()`, `vshapes()`, `vsizes()` |
 | Utilities | `parView()`, `surgery()`, `lmhgroups()`, `zPSI()` |
