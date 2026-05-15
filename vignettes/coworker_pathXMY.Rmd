@@ -175,6 +175,41 @@ magnitude: in manager scenarios, the combination of expecting more formal
 punishment *and* punishment's strong negative valuation substantially suppresses
 the indirect pull toward expressing disapproval through that path.
 
+### Decomposition and field view
+
+`pathXMY_decompose()` partitions the total Z-moderation (`BZ_YX[1]`)
+into expectation routing (`BZ_MX × B1_YM`), valuation routing
+(`B1_MX × BZ_YM`), and a residual direct term. The static
+`plotPathXMY()` shows the full field with `b1 + bZ(Z)` edge labels;
+the toggleable widget overlays the field at low / mid / high
+manager exposure.
+
+```{r decompose-manager}
+dec_m <- pathXMY_decompose(dat, X = "ExpDisapproval", Y = "Likelihood",
+                           M = mediators, Z = "manager", Z.within = TRUE)
+knitr::kable(dec_m$total, digits = 3,
+             caption = "Total moderation BZ_YX[1] for manager rank")
+```
+
+```{r plot-manager, fig.width = 10, fig.height = 7}
+plotPathXMY(dec_m,
+            X_label = "ExpDisapp", Y_label = "Likelihood",
+            Z_label = "manager",
+            title = "ExpDisapproval -> M -> Likelihood (Z = manager)")
+```
+
+```{r plot-manager-widget, eval = knitr::is_html_output()}
+plotPathXMY_widget(dec_m,
+                   X_label = "ExpDisapp", Y_label = "Likelihood",
+                   Z_label = "manager",
+                   Z_levels = c(-0.5, 0, 0.5))
+```
+
+Because `manager` is binary and within-person deviated, the
+practical range of `Z` is roughly ±0.5 — toggling `c(-0.5, 0,
++0.5)` approximates "less-manager / average / more-manager"
+exposure rather than the SD-based default.
+
 ## Situation-level moderation: perceived unethicality (WasUnethical)
 
 A second situation-level moderator comes from `$sit`: `WasUnethical`, rated
@@ -270,6 +305,37 @@ the same direction: perceived unethicality makes the full pathway from
 expressing-disapproval expectation to action likelihood substantially
 stronger.
 
+### Decomposition and field view
+
+```{r decompose-unethical}
+dec_ue <- pathXMY_decompose(dat3, X = "ExpDisapproval", Y = "Likelihood",
+                            M = mediators, Z = "WasUnethical",
+                            Z.within = TRUE)
+knitr::kable(dec_ue$total, digits = 3,
+             caption = "Total moderation BZ_YX[1] for WasUnethical")
+```
+
+```{r plot-unethical, fig.width = 10, fig.height = 7}
+plotPathXMY(dec_ue,
+            X_label = "ExpDisapp", Y_label = "Likelihood",
+            Z_label = "Unethical",
+            title = "ExpDisapproval -> M -> Likelihood (Z = WasUnethical)")
+```
+
+```{r plot-unethical-widget, eval = knitr::is_html_output()}
+plotPathXMY_widget(dec_ue,
+                   X_label = "ExpDisapp", Y_label = "Likelihood",
+                   Z_label = "Unethical",
+                   Z_levels = c(-0.5, 0, 0.5))
+```
+
+Scrub through to watch the field reshape: at low `Unethical` the
+`Appropriate` and `CompanySuccess` edges from `ExpDisapproval`
+are weak / negative; at high `Unethical` they swing strongly
+positive, and the `Likelihood` node shifts from red (don't do it)
+toward blue (do it). The whole expectancy-value field flips with
+perceived moral justification.
+
 ## Person-level moderation: boldness (IIDL_bold)
 
 Does trait boldness moderate these paths? The IIDL item for boldness asks
@@ -321,6 +387,36 @@ in the power hierarchy (as captured by the randomly assigned coworker rank)
 shapes expected outcomes far more pervasively than *who* you are in terms of
 self-reported boldness.
 
+### Decomposition and field view
+
+```{r decompose-bold}
+dec_b <- pathXMY_decompose(dat2, X = "ExpDisapproval", Y = "Likelihood",
+                           M = mediators, Z = "IIDL_bold",
+                           Z.within = FALSE)
+knitr::kable(dec_b$total, digits = 3,
+             caption = "Total moderation BZ_YX[1] for IIDL_bold")
+```
+
+```{r plot-bold, fig.width = 7, fig.height = 3.5}
+plotPathXMY(dec_b, mediator = "Appropriate",
+            X_label = "ExpDisapp", Y_label = "Likelihood",
+            Z_label = "bold",
+            title = "ExpDisapproval -> Appropriate -> Likelihood (Z = bold)")
+```
+
+```{r plot-bold-widget, eval = knitr::is_html_output()}
+plotPathXMY_widget(dec_b, mediator = "Appropriate",
+                   X_label = "ExpDisapp", Y_label = "Likelihood",
+                   Z_label = "bold")
+```
+
+The widget toggles `bold = -1, 0, +1` (one SD below the mean,
+mean, one SD above, on the z-standardized between-person scale).
+The change is subtle compared to the situation-level moderators —
+bolder respondents see expressing disapproval as more appropriate,
+but every other path is essentially fixed.
+
 ## Function reference
 
-See `?pathXMY`, `?esjtCov`, and `?coworkerESJT`.
+See `?pathXMY`, `?pathXMY_decompose`, `?plotPathXMY`,
+`?plotPathXMY_widget`, `?esjtCov`, and `?coworkerESJT`.

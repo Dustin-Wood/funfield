@@ -181,6 +181,36 @@ appeal of paid overtime comes from a sharper expected payoff on both
 financial and appropriateness grounds, not from a shrinking of
 expected costs.
 
+### Decomposition and field view
+
+```{r decompose-paid}
+dec_paid <- pathXMY_decompose(dat, X = "Overtime", Y = "Likelihood",
+                              M = mediators, Z = "paid", Z.within = FALSE)
+knitr::kable(dec_paid$total, digits = 3,
+             caption = "Total moderation BZ_YX[1] for pay status")
+```
+
+```{r plot-paid, fig.width = 10, fig.height = 7}
+plotPathXMY(dec_paid,
+            X_label = "Overtime", Y_label = "Likelihood",
+            Z_label = "paid",
+            title = "Overtime -> M -> Likelihood (Z = paid)")
+```
+
+```{r plot-paid-widget, eval = knitr::is_html_output()}
+plotPathXMY_widget(dec_paid,
+                   X_label = "Overtime", Y_label = "Likelihood",
+                   Z_label = "paid",
+                   Z_levels = c(-1, 1))
+```
+
+`paid` is binary (no / yes) and z-standardized inside `pathXMY()`,
+so `Z = -1` and `Z = +1` map exactly to "no pay offered" and "pay
+offered." The widget uses just those two frames. Toggling between
+them: the upper arms (`Finances`, `Appropriate`,
+`EmployerValuation`, `RaisePromotion`) all thicken when paid, while
+the cost edges (`Drained`, `Punished`) stay fixed.
+
 ## Person-level moderation: vTime
 
 `vTime` is the single-item self-report *"I value my time"* (SR_12 in
@@ -228,6 +258,33 @@ The corresponding indirect-path moderation is in the same direction
 for the same mediators, though only the largest ones reach
 significance after the multiplication by the valuation weights.
 
+### Decomposition and field view
+
+```{r decompose-vtime}
+dec_vt <- pathXMY_decompose(dat2, X = "Overtime", Y = "Likelihood",
+                            M = mediators, Z = "vTime", Z.within = FALSE)
+knitr::kable(dec_vt$total, digits = 3,
+             caption = "Total moderation BZ_YX[1] for vTime")
+```
+
+```{r plot-vtime, fig.width = 7, fig.height = 3.5}
+plotPathXMY(dec_vt, mediator = "Finances",
+            X_label = "Overtime", Y_label = "Likelihood",
+            Z_label = "vTime",
+            title = "Overtime -> Finances -> Likelihood (Z = vTime)")
+```
+
+```{r plot-vtime-widget, eval = knitr::is_html_output()}
+plotPathXMY_widget(dec_vt, mediator = "Finances",
+                   X_label = "Overtime", Y_label = "Likelihood",
+                   Z_label = "vTime")
+```
+
+The vTime moderation is subtle but consistent: as time-valuing
+rises, the `Overtime -> Finances` edge slightly thickens (people
+who value time more expect a larger financial return from
+agreeing). The other paths in the triangle are essentially fixed.
+
 ## Cross-scenario linkage
 
 `overtimeESJT$traits` and `speedingESJT$traits` carry the same 30
@@ -245,4 +302,5 @@ both <- merge(
 
 ## Function reference
 
-See `?pathXMY`, `?esjtFromQualtrics`, and `?overtimeESJT`.
+See `?pathXMY`, `?pathXMY_decompose`, `?plotPathXMY`,
+`?plotPathXMY_widget`, `?esjtFromQualtrics`, and `?overtimeESJT`.
