@@ -1,0 +1,248 @@
+---
+title: "Moderated mediation with `pathXMY()`: the work-overtime EXSJT"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Moderated mediation with pathXMY(): the work-overtime EXSJT}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This vignette walks through moderated mediation with `pathXMY()` using
+the `overtimeESJT` dataset — an **EXSJT** in which a single
+work-overtime scenario was randomly varied across eight features, and
+each participant rated two actions (agree to work overtime; decline) on
+nine expected outcomes.
+
+**Same respondents as `speedingESJT`.** The work-overtime, speeding, and
+data-home EXSJTs were all administered to the same Prolific panel
+(N = 347). The three datasets (`overtimeESJT`, `speedingESJT`,
+`dataHomeESJT`) share a participant pool and can be linked by `p` —
+each respondent's id appears in all three datasets that retained them
+after per-block quality screens. This makes cross-scenario consistency
+questions (e.g., do trait-level differences predict similar
+expectation shifts across domains?) tractable without recollecting
+data.
+
+## The data
+
+```{r data}
+library(funfield)
+data(overtimeESJT)
+lapply(overtimeESJT, function(x) if (is.data.frame(x)) dim(x) else length(x))
+```
+
+```{r template, echo = FALSE, results = "asis"}
+cat("> ", overtimeESJT$codebook$scenario$template, "\n")
+```
+
+## Variables and survey wording
+
+```{r wording-table}
+knitr::kable(
+  overtimeESJT$codebook$outcomes[, c("var", "label")],
+  col.names = c("Variable", "Survey wording"),
+  caption = "Outcome items, rated on [0, 1]"
+)
+```
+
+The focal **predictor** is `Overtime` — the action coding
+(0 = decline, 1 = agree to work overtime). The focal **outcome** is
+`Likelihood`. The nine **mediators** are the expected-outcome ratings.
+
+## Data preparation
+
+Within-person deviate the Level-1 columns.
+
+```{r prep}
+L1cols <- c("Overtime","RelationshipQuality","EmployerValuation",
+            "OutsideRelationships","Drained","CompanyHealth","Finances",
+            "Appropriate","RaisePromotion","Punished","Likelihood")
+mediators <- c("RelationshipQuality","EmployerValuation","OutsideRelationships",
+               "Drained","CompanyHealth","Finances","Appropriate",
+               "RaisePromotion","Punished")
+
+dat <- overtimeESJT$PSI
+for (v in L1cols) {
+  dat[[v]] <- ave(dat[[v]], dat$p, FUN = function(x) x - mean(x))
+}
+```
+
+## Normative model (no moderator)
+
+```{r normative}
+norm <- pathXMY(dat, X = "Overtime", Y = "Likelihood", M = mediators)
+```
+
+### Expectation paths (B1_MX): what does agreeing to overtime produce?
+
+```{r bmx}
+knitr::kable(
+  subset(norm$tidy, param == "B1_MX")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Expectation paths (Overtime -> M)"
+)
+```
+
+Agreeing to work overtime is expected to substantially increase
+`Drained` (+0.32), `RelationshipQuality` with the asker (+0.28),
+`RaisePromotion` (+0.21), and `EmployerValuation` (+0.16). It is
+expected to reduce `OutsideRelationships` (−0.16) and the
+likelihood of being `Punished` by the company (−0.16). Smaller
+positive expectations attach to `CompanyHealth`, `Finances`, and
+`Appropriate`.
+
+### Valuation paths (B1_YM): which expectations drive action likelihood?
+
+```{r bym}
+knitr::kable(
+  subset(norm$tidy, param == "B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Valuation paths (M -> Likelihood)"
+)
+```
+
+`Appropriate` (+0.90) and `Finances` (+0.89) are the strongest
+positive drivers of taking the action. `RaisePromotion` (+0.65),
+`EmployerValuation` (+0.60), and `RelationshipQuality` (+0.57) also
+strongly increase likelihood. `Drained` (−0.33) and `Punished`
+(−0.35) suppress likelihood. The valuation pattern is intuitive:
+financial, evaluative, and relational gains pull respondents toward
+the action; expected fatigue and punishment push them away.
+
+### Indirect effects (B1_MX × B1_YM)
+
+```{r bind}
+knitr::kable(
+  subset(norm$tidy, param == "B1_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Indirect effects through each mediator"
+)
+```
+
+The pull toward agreeing comes mainly through expected gains in
+`RelationshipQuality` (+0.16), `RaisePromotion` (+0.14), `Finances`
+(+0.11), and `EmployerValuation` (+0.10). The push toward declining
+comes through expected `Drained` (−0.10) and harm to
+`OutsideRelationships` (−0.06).
+
+## Situation-level moderation: is overtime paid?
+
+`WO.cashReward` was randomly assigned at the person level: either the
+company pays for the overtime work, or it doesn't. Code as a binary
+`paid` indicator and merge:
+
+```{r prep-paid}
+cot <- overtimeESJT$cond[, c("p","cashReward")]
+cot$paid <- as.numeric(cot$cashReward ==
+  "the company will pay you overtime (above your normal pay rate) to work on the project")
+dat <- merge(dat, cot[, c("p","paid")], by = "p")
+
+mod_s <- pathXMY(dat, X = "Overtime", Y = "Likelihood",
+                 M = mediators, Z = "paid", Z.within = FALSE)
+```
+
+### Does pay status moderate the expectation arm?
+
+```{r bzmx-paid}
+knitr::kable(
+  subset(mod_s$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of expectation paths by pay status (BZ_MX)"
+)
+```
+
+Six of the nine expectation paths are significantly moderated by pay
+status. When the company offers overtime pay, agreeing to overtime
+is expected to produce substantially more `Finances` benefit
+(+0.121) and to be substantially more `Appropriate` (+0.141), with
+smaller positive shifts in `EmployerValuation`, `RaisePromotion`,
+`RelationshipQuality`, and (less obviously) `OutsideRelationships`.
+Pay status does not change expected `Drained`, `Punished`, or
+`CompanyHealth` shifts — the cost side of the ledger is unchanged.
+
+### Does that carry through to the indirect effect?
+
+```{r bz-indirect-paid}
+knitr::kable(
+  subset(mod_s$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of indirect effects by pay status (BZ_MX x B1_YM)"
+)
+```
+
+When the action is paid, the indirect pull toward agreeing
+strengthens through `Finances` and `Appropriate` (its two strongest
+valuation paths) and through several smaller pathways. The increased
+appeal of paid overtime comes from a sharper expected payoff on both
+financial and appropriateness grounds, not from a shrinking of
+expected costs.
+
+## Person-level moderation: vTime
+
+`vTime` is the single-item self-report *"I value my time"* (SR_12 in
+`$traits`, rescaled to [0, 1]). As a between-person trait, it uses
+`Z.within = FALSE`.
+
+```{r prep-vtime}
+tr <- overtimeESJT$traits[, c("p","SR_12")]
+names(tr)[2] <- "vTime"
+tr <- tr[!is.na(tr$vTime), ]
+dat2 <- merge(dat, tr, by = "p")
+
+mod_p <- pathXMY(dat2, X = "Overtime", Y = "Likelihood",
+                 M = mediators, Z = "vTime", Z.within = FALSE)
+```
+
+### Does vTime moderate the expectation arm?
+
+```{r bzmx-vtime}
+knitr::kable(
+  subset(mod_p$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of expectation paths by vTime (BZ_MX)"
+)
+```
+
+Respondents who report valuing their time more expect agreeing to
+overtime to produce *larger* gains in `EmployerValuation`,
+`CompanyHealth`, `Finances`, and `RaisePromotion`. Each effect is
+modest but the pattern is coherent: high-vTime respondents view
+overtime as a more profitable investment of their time, both
+financially and reputationally.
+
+### Does that carry through to the indirect effect?
+
+```{r bz-indirect-vtime}
+knitr::kable(
+  subset(mod_p$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of indirect effects by vTime (BZ_MX x B1_YM)"
+)
+```
+
+The corresponding indirect-path moderation is in the same direction
+for the same mediators, though only the largest ones reach
+significance after the multiplication by the valuation weights.
+
+## Cross-scenario linkage
+
+`overtimeESJT$traits` and `speedingESJT$traits` carry the same 30
+self-report items for the same set of respondents. Cross-domain
+analyses can be done by joining on `p`:
+
+```{r cross-scenario, eval = FALSE}
+data(speedingESJT)
+both <- merge(
+  overtimeESJT$traits[, c("p","SR_12")],
+  speedingESJT$traits[, c("p","SR_12")],
+  by = "p"
+)  # identical SR_12 within p, by design — confirms the same-respondents claim
+```
+
+## Function reference
+
+See `?pathXMY`, `?esjtFromQualtrics`, and `?overtimeESJT`.

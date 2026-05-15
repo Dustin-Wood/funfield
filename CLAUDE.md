@@ -78,6 +78,7 @@ Raw ESJT Data (p, s, i, ..., Likelihood)
 | Field construction | `prepField()`, `fieldResults()`, `impliedCov()`, `expOutcomesFF()` |
 | Covariance estimation | `ecov()`, `ecov_long()`, `ecov_big()`, `ecov.lmh()` |
 | Mediation/moderation | `pathXMY()` (umbrella: X→M→Y, optional moderator), `devPSI()`, `diffPSI()` |
+| Data ingestion | `esjtFromQualtrics()` — build PSI/cond/sit/traits/codebook from raw Qualtrics data + colmap |
 | Data quality | `sdESJT()`, `effectiveN()` (plus `fancyr::strLine()`, `fancyr::prMaxSD()`, `fancyr::spi()`) |
 | Visualization | `fieldOverlays()`, `fieldPolygons()`, `vshapes()`, `vsizes()` |
 | Utilities | `parView()`, `surgery()`, `lmhgroups()`, `zPSI()` |
@@ -85,3 +86,14 @@ Raw ESJT Data (p, s, i, ..., Likelihood)
 ### Documentation
 
 All functions use roxygen2 (`#' @` tags). After editing function docs, run `devtools::document()` to regenerate `/man/*.Rd` files and `NAMESPACE`. The vignette at `vignettes/expOutcomes_vignette.Rmd` is incomplete.
+
+### Bundled datasets
+
+| Dataset | Description |
+|---|---|
+| `coworkerESJT` | 12-scenario assertiveness ESJT (within-person scenario variation). 249 persons × 12 situations × 2 actions. |
+| `speedingESJT` | Speeding EXSJT — single scenario, 6 randomly-varied factors per person, 3 speed-action choices. 333 persons. |
+| `overtimeESJT` | Work-overtime EXSJT — same respondent pool as `speedingESJT`. 329 persons × 2 actions; 8 randomly-varied factors. |
+| `dataHomeESJT` | Data-security EXSJT — same respondent pool. 332 persons × 2 actions; 3 randomly-varied factors. |
+
+The three EXSJT datasets share a participant pool (318 in common); each respondent's `p` is the same across datasets where they were retained after the per-block screens.
