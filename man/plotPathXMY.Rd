@@ -15,6 +15,7 @@ plotPathXMY(
   show_pvalues = FALSE,
   scale_max = 0.8,
   score_intensity_max = 1,
+  Z_value = NULL,
   title = NULL,
   filename = NULL,
   filetype = "png",
@@ -45,6 +46,16 @@ maximum thickness).}
 \item{score_intensity_max}{Numeric. The expected-score absolute value
 that maps to maximum color intensity. Default 1 (i.e. expected scores
 range over [-1, 1]).}
+
+\item{Z_value}{Optional numeric scalar. If supplied, the diagram is
+rendered \emph{conditional on Z at this value} — every coefficient
+becomes the effective slope at that Z (\code{b1 + bZ * Z_value}),
+node colors reflect expected scores at that Z, and edge labels show
+the single effective coefficient rather than the
+\code{b1 + bZ(Z)} decomposition. Set to e.g. \code{-1} or \code{+1}
+to view the field at a typical low or high level of a
+z-standardized between-person moderator. See also
+\code{\link{plotPathXMY_ZLH}} for a paired low/high view.}
 
 \item{title}{Optional plot title.}
 

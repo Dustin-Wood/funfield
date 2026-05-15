@@ -332,7 +332,7 @@ visualization style:
 **Single-mediator triangle** for the dominant route through
 `Appropriate`:
 
-```{r plot-appropriate, fig.width = 7, fig.height = 5}
+```{r plot-appropriate, fig.width = 7, fig.height = 3.5}
 plotPathXMY(dec, mediator = "Appropriate",
             X_label = "Speed", Y_label = "Likelihood",
             Z_label = "SRFast",
@@ -369,6 +369,34 @@ unaffected by Speed (near-white). The right column of edges shows
 the valuation weights (`B1_YM`). Edge thickness in the fan
 diagnoses where the indirect-effect mass concentrates.
 
+### Two-panel low-Z vs high-Z view
+
+`plotPathXMY_ZLH()` draws the field at a low and high value of `Z`
+side-by-side, with coefficients collapsed to their effective
+value at that `Z`. This makes the moderation visually concrete:
+edge widths thin out, node colors fade, and the implied total
+effect on `Y` shifts between panels.
+
+```{r plot-zlh-fan, fig.width = 12, fig.height = 6}
+plotPathXMY_ZLH(dec,
+                X_label = "Speed", Y_label = "Likelihood",
+                Z_label = "SRFast",
+                Z_levels = c(-1, 1))
+```
+
+At `SRFast = -1` (low fast-driver tendency) the expected costs of
+speeding are maximal: large red `Appropriate` node, thick negative
+edges from `Crash`/`Injured`/`Ticket`, and the `Likelihood` triangle
+glows deep red — the field predicts a substantial *decrease* in
+action likelihood as `Speed` rises.
+
+At `SRFast = +1` the same field has visibly attenuated: every cost
+mediator's Speed-loading shrinks (smaller numbers, thinner edges),
+the `Appropriate` node lightens, and the `Likelihood` triangle
+fades — the predicted decrease is much smaller. Self-reported fast
+drivers expect speeding to be less costly across the board, and
+the field-level summary captures all of those shifts at once.
+
 ### When does Term 2 carry the moderation?
 
 A counter-example shows valuation routing in isolation. Consider
@@ -399,7 +427,7 @@ significantly non-zero: skilled-driver respondents weight `Crash`
 do. Without `pathXMY_decompose()`, this valuation moderation would
 be invisible in the standard `BZ_MX` table.
 
-```{r plot-skill, fig.width = 7, fig.height = 5}
+```{r plot-skill, fig.width = 7, fig.height = 3.5}
 plotPathXMY(dec_sk, mediator = "Crash",
             X_label = "Speed", Y_label = "Likelihood",
             Z_label = "Skill",
@@ -423,5 +451,5 @@ tr$Open  <- rowMeans(cbind(tr$SR_27, 1 - tr$SR_28, tr$SR_29), na.rm = TRUE)
 
 ## Function reference
 
-See `?pathXMY`, `?pathXMY_decompose`, `?plotPathXMY`, and
-`?speedingESJT`.
+See `?pathXMY`, `?pathXMY_decompose`, `?plotPathXMY`,
+`?plotPathXMY_ZLH`, and `?speedingESJT`.
