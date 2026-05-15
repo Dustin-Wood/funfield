@@ -7,7 +7,7 @@
 plotPathXMY_widget(
   x,
   mediator = NULL,
-  Z_levels = c(-1, 1),
+  Z_levels = c(-1, 0, 1),
   Z_label = "Z",
   panel_titles = NULL,
   width = 9,
@@ -22,9 +22,11 @@ plotPathXMY_widget(
 \item{mediator, X_label, Y_label, Z_label, M_labels, digits, scale_max, score_intensity_max, ...}{Passed through to \code{\link{plotPathXMY}}. See there for details.}
 
 \item{Z_levels}{Numeric vector of Z values to render, one frame each.
-Default \code{c(-1, 1)} for a low / high toggle on a z-standardized
-between-person moderator. Pass e.g. \code{seq(-2, 2, by = 0.5)} for
-finer-grained scrubbing.}
+Default \code{c(-1, 0, 1)} — one SD below the mean, the mean, and
+one SD above, for a z-standardized between-person moderator. Linear
+models make path weights between these endpoints trivially
+interpolatable; values at \eqn{|Z| > 1} are often out of the
+well-supported range of the data so are not in the default.}
 
 \item{panel_titles}{Optional character vector of titles, one per
 frame. If \code{NULL}, titles are auto-generated using \code{Z_label}

@@ -408,15 +408,17 @@ widget with Back / Forward buttons.
 
 ```{r plot-widget, eval = knitr::is_html_output()}
 plotPathXMY_widget(dec,
-                   Z_levels = c(-2, -1, 0, 1, 2),
                    X_label = "Speed", Y_label = "Likelihood",
                    Z_label = "SRFast")
 ```
 
-This view only renders in HTML output. In PDF it is skipped.
-With `Z_levels = seq(-2, 2, by = 0.5)` you get a finer scrub;
-with just `c(-1, 1)` it behaves like the two-panel view but
-overlaid in place.
+The default `Z_levels = c(-1, 0, 1)` toggles between one SD below
+the mean, the mean, and one SD above. The widget renders in HTML
+output only; in PDF the chunk is skipped. Path coefficients are
+linear in `Z` so frames between the endpoints are trivially
+interpolatable; values at `|Z| > 1` are often outside the
+well-supported range of the data, so are not in the default —
+pass an explicit `Z_levels` vector if you want a wider range.
 
 ### When does Term 2 carry the moderation?
 
@@ -453,6 +455,19 @@ plotPathXMY(dec_sk, mediator = "Crash",
             X_label = "Speed", Y_label = "Likelihood",
             Z_label = "Skill",
             title = "Speed -> Crash -> Likelihood (Z = DrivingSkill)")
+```
+
+Toggling through `Skill = -1, 0, +1` makes the valuation-only
+moderation pattern especially clear: the `Speed -> Crash` edge
+barely budges (BZ_MX is null), while the `Crash -> Likelihood`
+edge steepens as `Skill` rises — and the `Likelihood` node
+correspondingly deepens in red. The whole change rides on a
+single arm.
+
+```{r plot-skill-widget, eval = knitr::is_html_output()}
+plotPathXMY_widget(dec_sk, mediator = "Crash",
+                   X_label = "Speed", Y_label = "Likelihood",
+                   Z_label = "Skill")
 ```
 
 ## Scoring named trait composites
