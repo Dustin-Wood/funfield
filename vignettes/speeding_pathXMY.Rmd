@@ -313,28 +313,61 @@ moderation routed through *multiple mediators jointly*. With a
 single mediator in the model, every other mediator's contribution
 gets absorbed into the residual.
 
-### Triangle diagram for the dominant route
+### Field-style diagrams
 
-`plotPathXMY()` renders the single-mediator triangle with all three
-path coefficients in the `b1 + bZ(Z)` notation. Highlighting the
-moderation arm helps locate the route at a glance.
+`plotPathXMY()` renders the X-M-Y structure in the funfield
+visualization style:
+
+- Nodes are colored by their **expected score when X is held at 1**
+  — positive in blue, negative in red, gradient by magnitude. X is
+  by definition full blue (score = 1); each mediator is colored by
+  its `B1_MX` coefficient; Y is colored by the implied total effect
+  at X=1.
+- Y (Likelihood) is drawn as a left-facing triangle to signal that
+  it's the focal action node.
+- Edges are **dashed for negative**, **solid for positive**, with
+  thickness scaled by path magnitude (`negDashed = TRUE`,
+  `maximum = 0.8`). Edge labels show the full `b1 + bZ(Z)` form.
+
+**Single-mediator triangle** for the dominant route through
+`Appropriate`:
 
 ```{r plot-appropriate, fig.width = 7, fig.height = 5}
 plotPathXMY(dec, mediator = "Appropriate",
             X_label = "Speed", Y_label = "Likelihood",
             Z_label = "SRFast",
-            highlight = "BZ_MX",
             title = "Speed -> Appropriate -> Likelihood (Z = SRFastDriver)")
 ```
 
 Reading the diagram: a one-unit increase in `Speed` lowers
-`Appropriate` by 0.45 *on average*, but among fast drivers (high
-`SRFast`) that drop is **dampened** by +0.14 — they perceive faster
-driving as less of an appropriateness violation. `Appropriate`
-strongly drives `Likelihood` (+0.53) and that valuation is *not*
-moderated by `SRFast` (≈ +0.00). The residual `BZ_YX[2]` (+0.18)
-reflects the joint contribution of the seven other mediators not
-shown.
+`Appropriate` by 0.45 *on average* (dashed edge, negative), but
+among fast drivers (high `SRFast`) that drop is dampened by +0.14
+— they perceive faster driving as less of an appropriateness
+violation. `Appropriate` strongly drives `Likelihood` (+0.53,
+solid) and that valuation is *not* moderated by `SRFast`
+(≈ +0.00). The residual `BZ_YX[2]` direct path (+0.18) reflects
+the joint contribution of the seven other mediators not shown
+here. The Y node renders red because the total predicted Y at
+`Speed = 1` is negative — speeding produces a net-negative
+expected likelihood when only `Appropriate` mediates.
+
+**Full multi-mediator fan view** — pass no `mediator` argument and
+all available mediators are arranged in a fan between X and Y:
+
+```{r plot-fan, fig.width = 10, fig.height = 7}
+plotPathXMY(dec,
+            X_label = "Speed", Y_label = "Likelihood",
+            Z_label = "SRFast",
+            title = "Full X-M-Y field for speeding decisions")
+```
+
+The fan diagram shows the whole expectancy-value structure at a
+glance. The mediator column reveals which expectations move with
+Speed: `Ticket` (+0.55) and `Appropriate` (-0.45) are the strongest
+in opposite directions; `FunDrive` and `IntQuality` are essentially
+unaffected by Speed (near-white). The right column of edges shows
+the valuation weights (`B1_YM`). Edge thickness in the fan
+diagnoses where the indirect-effect mass concentrates.
 
 ### When does Term 2 carry the moderation?
 
@@ -370,7 +403,6 @@ be invisible in the standard `BZ_MX` table.
 plotPathXMY(dec_sk, mediator = "Crash",
             X_label = "Speed", Y_label = "Likelihood",
             Z_label = "Skill",
-            highlight = "BZ_YM",
             title = "Speed -> Crash -> Likelihood (Z = DrivingSkill)")
 ```
 

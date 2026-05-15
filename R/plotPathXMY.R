@@ -1,127 +1,208 @@
-#' Triangle path diagram for one mediator in a moderated X-M-Y model
+#' Field-style path diagram for an X-M-Y model
 #'
 #' @description
-#' Renders the classic X-M-Y mediation triangle with path labels carrying
-#' both the baseline coefficient and the Z-moderation slope:
-#' \code{b1 + bZ(Z)}. Designed for a single mediator at a time; when the
-#' input has multiple mediators, pick one via the \code{mediator} argument.
+#' Renders the X to M to Y structure using the funfield visualization
+#' conventions:
 #'
 #' \itemize{
-#'   \item \eqn{X \to M}: \eqn{b^1_{MX} + b^Z_{MX}(Z)} — expectation arm
-#'   \item \eqn{M \to Y}: \eqn{b^1_{YM} + b^Z_{YM}(Z)} — valuation arm
-#'   \item \eqn{X \to Y}: \eqn{b^1_{YX} + b^Z_{YX}(Z)} — direct arm
+#'   \item \strong{Nodes} are colored by their expected score when X is
+#'     held at 1: positive scores in blue, negative scores in red, with
+#'     gradient intensity proportional to magnitude. The X node is by
+#'     definition 1 (full blue); each mediator's score is its path
+#'     coefficient \eqn{b^1_{MX}}; Y's score is the sum of the direct and
+#'     indirect contributions, \eqn{b^1_{YX} + \sum_j b^1_{YM_j} \cdot
+#'     b^1_{MX_j}}.
+#'   \item \strong{Shape} is rectangle for X and each mediator (continuous
+#'     variables) and a left-facing triangle for Y (the focal action
+#'     likelihood).
+#'   \item \strong{Edges} are solid for positive paths and dashed for
+#'     negative paths (\code{negDashed = TRUE}); edge thickness scales
+#'     with path magnitude. Edge labels carry the \code{b1 + bZ(Z)}
+#'     decomposition.
 #' }
 #'
-#' @param x Either a \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}}
-#'   object.
-#' @param mediator Character (length 1). Required when \code{x} has more
-#'   than one mediator; ignored when only one mediator is present.
-#' @param X_label,Y_label,Z_label Display labels for the three constructs.
-#'   Default \code{"X"}, \code{"Y"}, \code{"Z"}.
-#' @param M_label Display label for the mediator. If \code{NULL} (default),
-#'   uses the mediator variable name from the fit.
-#' @param digits Integer; decimal places for path coefficients (default 2).
+#' Two view modes:
+#' \itemize{
+#'   \item \strong{Triangle} (single mediator) — X at bottom-left, M at
+#'     top, Y at bottom-right. Shows the direct X to Y arrow and both
+#'     mediated paths.
+#'   \item \strong{Fan} (multiple mediators) — X at left, mediators
+#'     stacked in the middle, Y at right. The direct X to Y arrow is
+#'     omitted because each single-mediator fit gives a different residual
+#'     direct effect.
+#' }
+#'
+#' @param x A \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}} return.
+#' @param mediator Character vector. If \code{NULL} (default) and \code{x}
+#'   has multiple mediators, a fan diagram of all of them is drawn. Pass
+#'   a single name for the triangle view. Pass a subset for a smaller fan.
+#' @param X_label,Y_label,Z_label Display labels for the X, Y, and Z nodes.
+#' @param M_labels Optional character vector of labels for the mediators,
+#'   parallel to \code{mediator} (or to the natural order in the fit).
+#'   If \code{NULL}, the mediator variable names are used.
+#' @param digits Decimal places for edge labels (default 2).
 #' @param show_pvalues Logical; append p-values to edge labels.
-#' @param highlight Optional. One of \code{"BZ_MX"}, \code{"BZ_YM"},
-#'   \code{"BZ_YX"}, or \code{NULL}. If set, draws the corresponding
-#'   Z-moderation term in red to emphasize where the moderation routes.
+#' @param scale_max qgraph \code{maximum} argument controlling edge
+#'   thickness scaling. Default 0.8 (paths approaching this magnitude get
+#'   maximum thickness).
+#' @param score_intensity_max Numeric. The expected-score absolute value
+#'   that maps to maximum color intensity. Default 1 (i.e. expected scores
+#'   range over [-1, 1]).
 #' @param title Optional plot title.
-#' @return Invisibly returns the \code{qgraph} object.
-#' @seealso \code{\link{pathXMY}}, \code{\link{pathXMY_decompose}}
+#' @param filename,filetype Optional; if \code{filename} is supplied,
+#'   qgraph writes the plot to a file (e.g., \code{filetype = "png"}).
+#' @param ... Additional arguments passed to \code{qgraph::qgraph()}.
+#' @return Invisibly returns the qgraph object.
+#' @seealso \code{\link{pathXMY}}, \code{\link{pathXMY_decompose}},
+#'   \code{\link{vshapes}}, \code{\link{fieldPolygons}}, \code{\link{pnLevels}}
 #' @export
-plotPathXMY <- function(x, mediator = NULL,
+plotPathXMY <- function(x,
+                        mediator = NULL,
                         X_label = "X", Y_label = "Y", Z_label = "Z",
-                        M_label = NULL,
+                        M_labels = NULL,
                         digits = 2,
                         show_pvalues = FALSE,
-                        highlight = NULL,
-                        title = NULL) {
+                        scale_max = 0.8,
+                        score_intensity_max = 1,
+                        title = NULL,
+                        filename = NULL,
+                        filetype = "png",
+                        ...) {
   if (!requireNamespace("qgraph", quietly = TRUE))
     stop("plotPathXMY() requires the 'qgraph' package.")
 
   ## Accept either pathXMY or pathXMY_decompose
-  if (!is.null(x$fits) && !is.null(x$fits$full)) {
-    tidy <- x$fits$full$tidy
-  } else if (!is.null(x$tidy)) {
-    tidy <- x$tidy
-  } else {
-    stop("`x` must be a pathXMY() or pathXMY_decompose() return value.")
+  tidy <- if (!is.null(x$fits) && !is.null(x$fits$full)) x$fits$full$tidy
+          else if (!is.null(x$tidy))                      x$tidy
+          else stop("`x` must be a pathXMY() or pathXMY_decompose() return.")
+
+  all_meds <- unique(tidy$mediator)
+  all_meds <- all_meds[!is.na(all_meds)]
+  if (length(all_meds) == 0L) stop("No mediator found in the fit.")
+  if (is.null(mediator)) mediator <- all_meds
+  if (!all(mediator %in% all_meds))
+    stop("Mediators not found in fit: ",
+         paste(setdiff(mediator, all_meds), collapse = ", "))
+
+  n_m       <- length(mediator)
+  fan_view  <- n_m > 1L
+  if (is.null(M_labels)) M_labels <- mediator
+
+  ## Coefficient pulls
+  pull <- function(med, param) {
+    r <- tidy[tidy$mediator == med & tidy$param == param, , drop = FALSE]
+    if (nrow(r) == 0L) list(est = NA_real_, pvalue = NA_real_)
+    else list(est = r$est[1], pvalue = r$pvalue[1])
   }
+  pull_est <- function(med, param) pull(med, param)$est
 
-  meds <- unique(tidy$mediator)
-  meds <- meds[!is.na(meds)]
-  if (length(meds) == 0L) stop("No mediator found in the fit.")
-  if (length(meds) > 1L && is.null(mediator))
-    stop("Multiple mediators in fit; specify `mediator =` to pick one.\n",
-         "Available: ", paste(meds, collapse = ", "))
-  if (is.null(mediator)) mediator <- meds[1]
-  if (!mediator %in% meds)
-    stop("Mediator '", mediator, "' not in fit. Available: ",
-         paste(meds, collapse = ", "))
+  B1_MX <- vapply(mediator, pull_est, numeric(1), param = "B1_MX")
+  BZ_MX <- vapply(mediator, pull_est, numeric(1), param = "BZ_MX")
+  B1_YM <- vapply(mediator, pull_est, numeric(1), param = "B1_YM")
+  BZ_YM <- vapply(mediator, pull_est, numeric(1), param = "BZ_YM")
 
-  s <- tidy[tidy$mediator == mediator, , drop = FALSE]
-  if (is.null(M_label)) M_label <- mediator
+  ## Direct paths only meaningful in single-mediator fit
+  has_direct <- !fan_view
+  B1_YX <- if (has_direct) pull_est(mediator[1], "B1_YX") else NA_real_
+  BZ_YX <- if (has_direct) pull_est(mediator[1], "BZ_YX") else NA_real_
 
-  pick <- function(p) {
-    r <- s[s$param == p, , drop = FALSE]
-    if (nrow(r) == 0L) return(list(est = NA_real_, pvalue = NA_real_))
-    list(est = r$est[1], pvalue = r$pvalue[1])
+  ## Expected scores at X = 1
+  X_score   <- 1
+  M_scores  <- B1_MX
+  Y_score   <- sum(B1_YM * B1_MX, na.rm = TRUE) +
+               (if (has_direct && !is.na(B1_YX)) B1_YX else 0)
+
+  ## Node assembly
+  node_names  <- c("X", mediator, "Y")
+  node_labels <- c(X_label, M_labels, Y_label)
+  n_nodes     <- length(node_names)
+  scores_vec  <- c(X_score, M_scores, Y_score)
+
+  ## Adjacency matrix of path weights
+  adj <- matrix(0, n_nodes, n_nodes,
+                dimnames = list(node_names, node_names))
+  for (i in seq_along(mediator)) {
+    adj["X", mediator[i]] <- B1_MX[i]
+    adj[mediator[i], "Y"] <- B1_YM[i]
   }
+  if (has_direct && !is.na(B1_YX)) adj["X", "Y"] <- B1_YX
 
-  b1_MX <- pick("B1_MX"); bZ_MX <- pick("BZ_MX")
-  b1_YM <- pick("B1_YM"); bZ_YM <- pick("BZ_YM")
-  b1_YX <- pick("B1_YX"); bZ_YX <- pick("BZ_YX")
-
-  fmt_term <- function(b1, bZ, which_BZ) {
-    base <- if (!is.na(b1$est)) sprintf(paste0("%.", digits, "f"), b1$est) else "?"
-    out <- base
-    if (!is.na(bZ$est))
-      out <- paste0(base, " ",
-                    sprintf(paste0("%+.", digits, "f(%s)"), bZ$est, Z_label))
-    if (show_pvalues && !is.na(b1$pvalue))
-      out <- paste0(out, "\np=", sprintf("%.3f", b1$pvalue))
+  ## Edge-label matrix in b1 + bZ(Z) format
+  fmt_path <- function(b1, bZ, pv = NA_real_) {
+    if (is.na(b1)) return("")
+    out <- sprintf(paste0("%+.", digits, "f"), b1)
+    if (!is.na(bZ) && abs(bZ) > 0)
+      out <- paste0(out, " ",
+                    sprintf(paste0("%+.", digits, "f(%s)"), bZ, Z_label))
+    if (show_pvalues && !is.na(pv))
+      out <- paste0(out, "\np=", sprintf("%.3f", pv))
     out
   }
 
-  lab_MX <- fmt_term(b1_MX, bZ_MX, "BZ_MX")
-  lab_YM <- fmt_term(b1_YM, bZ_YM, "BZ_YM")
-  lab_YX <- fmt_term(b1_YX, bZ_YX, "BZ_YX")
-
-  ## Three-node layout: X bottom-left, M top-center, Y bottom-right
-  node_names  <- c("X", "M", "Y")
-  node_labels <- c(X_label, M_label, Y_label)
-  layout_mat <- rbind(c(-1.0, -0.6),
-                      c( 0.0,  0.8),
-                      c( 1.0, -0.6))
-
-  edges <- rbind(c(1, 2),   # X -> M
-                 c(2, 3),   # M -> Y
-                 c(1, 3))   # X -> Y
-  elabels <- c(lab_MX, lab_YM, lab_YX)
-
-  ## Color edges: highlighted Z-term in red, others gray
-  edge_cols <- c("grey25","grey25","grey25")
-  if (!is.null(highlight)) {
-    if (highlight == "BZ_MX") edge_cols[1] <- "red3"
-    if (highlight == "BZ_YM") edge_cols[2] <- "red3"
-    if (highlight == "BZ_YX") edge_cols[3] <- "red3"
+  elab <- matrix("", n_nodes, n_nodes,
+                 dimnames = list(node_names, node_names))
+  for (i in seq_along(mediator)) {
+    p_MX <- pull(mediator[i], "B1_MX")$pvalue
+    p_YM <- pull(mediator[i], "B1_YM")$pvalue
+    elab["X", mediator[i]] <- fmt_path(B1_MX[i], BZ_MX[i], p_MX)
+    elab[mediator[i], "Y"] <- fmt_path(B1_YM[i], BZ_YM[i], p_YM)
+  }
+  if (has_direct && !is.na(B1_YX)) {
+    p_YX <- pull(mediator[1], "B1_YX")$pvalue
+    elab["X", "Y"] <- fmt_path(B1_YX, BZ_YX, p_YX)
   }
 
-  q <- qgraph::qgraph(
-    input          = edges,
-    directed       = TRUE,
+  ## Layout
+  layout_mat <- matrix(0, n_nodes, 2,
+                       dimnames = list(node_names, NULL))
+  if (fan_view) {
+    layout_mat["X", ] <- c(-1.5, 0)
+    layout_mat["Y", ] <- c( 1.5, 0)
+    y_pos <- if (n_m == 1L) 0 else seq(1, -1, length.out = n_m)
+    for (i in seq_along(mediator))
+      layout_mat[mediator[i], ] <- c(0, y_pos[i])
+  } else {
+    layout_mat["X", ] <- c(-1.0, -0.6)
+    layout_mat[mediator, ] <- c( 0.0,  0.8)
+    layout_mat["Y", ] <- c( 1.0, -0.6)
+  }
+
+  ## Shapes: rectangles for X and Ms, left-facing triangle for Y
+  shape_codes <- c("x", rep("x", n_m), "a")  # 'a' = appraisal -> lfTriangle
+  shapes      <- vshapes(shape_codes)
+
+  ## Color groupings and intensity scores
+  groups     <- pnLevels(scores_vec)
+  scores_int <- as.integer(round(pmin(abs(scores_vec) / score_intensity_max, 1) * 20))
+
+  ## qgraph call
+  qargs <- list(
+    input          = adj,
+    shape          = shapes,
+    polygonList    = fieldPolygons(),
+    groups         = groups,
+    color          = c("dodgerblue", "red"),
+    scores         = scores_int,
+    scores.range   = c(0, 20),
+    edge.color     = "black",
+    edge.labels    = elab,
+    edge.label.cex = 0.95,
+    negDashed      = TRUE,
+    maximum        = scale_max,
     layout         = layout_mat,
     labels         = node_labels,
-    shape          = "rectangle",
-    edge.labels    = elabels,
-    edge.label.cex = 0.95,
-    edge.color     = edge_cols,
-    node.width     = 1.6,
-    node.height    = 0.7,
-    mar            = c(6, 6, 6, 6),
-    title          = title,
-    DoNotPlot      = FALSE
+    legend         = FALSE,
+    fade           = FALSE,
+    label.scale    = FALSE,
+    label.cex      = 0.85,
+    title          = title
   )
+  if (!is.null(filename)) {
+    qargs$filename <- filename
+    qargs$filetype <- filetype
+  }
+  qargs <- c(qargs, list(...))
 
+  q <- do.call(qgraph::qgraph, qargs)
   invisible(q)
 }

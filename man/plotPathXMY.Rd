@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotPathXMY.R
 \name{plotPathXMY}
 \alias{plotPathXMY}
-\title{Triangle path diagram for one mediator in a moderated X-M-Y model}
+\title{Field-style path diagram for an X-M-Y model}
 \usage{
 plotPathXMY(
   x,
@@ -10,51 +10,85 @@ plotPathXMY(
   X_label = "X",
   Y_label = "Y",
   Z_label = "Z",
-  M_label = NULL,
+  M_labels = NULL,
   digits = 2,
   show_pvalues = FALSE,
-  highlight = NULL,
-  title = NULL
+  scale_max = 0.8,
+  score_intensity_max = 1,
+  title = NULL,
+  filename = NULL,
+  filetype = "png",
+  ...
 )
 }
 \arguments{
-\item{x}{Either a \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}}
-object.}
+\item{x}{A \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}} return.}
 
-\item{mediator}{Character (length 1). Required when \code{x} has more
-than one mediator; ignored when only one mediator is present.}
+\item{mediator}{Character vector. If \code{NULL} (default) and \code{x}
+has multiple mediators, a fan diagram of all of them is drawn. Pass
+a single name for the triangle view. Pass a subset for a smaller fan.}
 
-\item{X_label, Y_label, Z_label}{Display labels for the three constructs.
-Default \code{"X"}, \code{"Y"}, \code{"Z"}.}
+\item{X_label, Y_label, Z_label}{Display labels for the X, Y, and Z nodes.}
 
-\item{M_label}{Display label for the mediator. If \code{NULL} (default),
-uses the mediator variable name from the fit.}
+\item{M_labels}{Optional character vector of labels for the mediators,
+parallel to \code{mediator} (or to the natural order in the fit).
+If \code{NULL}, the mediator variable names are used.}
 
-\item{digits}{Integer; decimal places for path coefficients (default 2).}
+\item{digits}{Decimal places for edge labels (default 2).}
 
 \item{show_pvalues}{Logical; append p-values to edge labels.}
 
-\item{highlight}{Optional. One of \code{"BZ_MX"}, \code{"BZ_YM"},
-\code{"BZ_YX"}, or \code{NULL}. If set, draws the corresponding
-Z-moderation term in red to emphasize where the moderation routes.}
+\item{scale_max}{qgraph \code{maximum} argument controlling edge
+thickness scaling. Default 0.8 (paths approaching this magnitude get
+maximum thickness).}
+
+\item{score_intensity_max}{Numeric. The expected-score absolute value
+that maps to maximum color intensity. Default 1 (i.e. expected scores
+range over [-1, 1]).}
 
 \item{title}{Optional plot title.}
+
+\item{filename, filetype}{Optional; if \code{filename} is supplied,
+qgraph writes the plot to a file (e.g., \code{filetype = "png"}).}
+
+\item{...}{Additional arguments passed to \code{qgraph::qgraph()}.}
 }
 \value{
-Invisibly returns the \code{qgraph} object.
+Invisibly returns the qgraph object.
 }
 \description{
-Renders the classic X-M-Y mediation triangle with path labels carrying
-both the baseline coefficient and the Z-moderation slope:
-\code{b1 + bZ(Z)}. Designed for a single mediator at a time; when the
-input has multiple mediators, pick one via the \code{mediator} argument.
+Renders the X to M to Y structure using the funfield visualization
+conventions:
 
 \itemize{
-  \item \eqn{X \to M}: \eqn{b^1_{MX} + b^Z_{MX}(Z)} — expectation arm
-  \item \eqn{M \to Y}: \eqn{b^1_{YM} + b^Z_{YM}(Z)} — valuation arm
-  \item \eqn{X \to Y}: \eqn{b^1_{YX} + b^Z_{YX}(Z)} — direct arm
+  \item \strong{Nodes} are colored by their expected score when X is
+    held at 1: positive scores in blue, negative scores in red, with
+    gradient intensity proportional to magnitude. The X node is by
+    definition 1 (full blue); each mediator's score is its path
+    coefficient \eqn{b^1_{MX}}; Y's score is the sum of the direct and
+    indirect contributions, \eqn{b^1_{YX} + \sum_j b^1_{YM_j} \cdot
+    b^1_{MX_j}}.
+  \item \strong{Shape} is rectangle for X and each mediator (continuous
+    variables) and a left-facing triangle for Y (the focal action
+    likelihood).
+  \item \strong{Edges} are solid for positive paths and dashed for
+    negative paths (\code{negDashed = TRUE}); edge thickness scales
+    with path magnitude. Edge labels carry the \code{b1 + bZ(Z)}
+    decomposition.
+}
+
+Two view modes:
+\itemize{
+  \item \strong{Triangle} (single mediator) — X at bottom-left, M at
+    top, Y at bottom-right. Shows the direct X to Y arrow and both
+    mediated paths.
+  \item \strong{Fan} (multiple mediators) — X at left, mediators
+    stacked in the middle, Y at right. The direct X to Y arrow is
+    omitted because each single-mediator fit gives a different residual
+    direct effect.
 }
 }
 \seealso{
-\code{\link{pathXMY}}, \code{\link{pathXMY_decompose}}
+\code{\link{pathXMY}}, \code{\link{pathXMY_decompose}},
+  \code{\link{vshapes}}, \code{\link{fieldPolygons}}, \code{\link{pnLevels}}
 }
