@@ -397,6 +397,27 @@ fades — the predicted decrease is much smaller. Self-reported fast
 drivers expect speeding to be less costly across the board, and
 the field-level summary captures all of those shifts at once.
 
+### Toggleable Z-scrubbing widget
+
+The side-by-side panels make the contrast easy to compare, but
+overlaying them in place and toggling makes the moderation feel
+even sharper — you can watch the edge thicknesses and node colors
+swap as you click forward / back. `plotPathXMY_widget()` renders
+one frame per Z value and embeds them in a self-contained HTML
+widget with Back / Forward buttons.
+
+```{r plot-widget, eval = knitr::is_html_output()}
+plotPathXMY_widget(dec,
+                   Z_levels = c(-2, -1, 0, 1, 2),
+                   X_label = "Speed", Y_label = "Likelihood",
+                   Z_label = "SRFast")
+```
+
+This view only renders in HTML output. In PDF it is skipped.
+With `Z_levels = seq(-2, 2, by = 0.5)` you get a finer scrub;
+with just `c(-1, 1)` it behaves like the two-panel view but
+overlaid in place.
+
 ### When does Term 2 carry the moderation?
 
 A counter-example shows valuation routing in isolation. Consider
@@ -452,4 +473,4 @@ tr$Open  <- rowMeans(cbind(tr$SR_27, 1 - tr$SR_28, tr$SR_29), na.rm = TRUE)
 ## Function reference
 
 See `?pathXMY`, `?pathXMY_decompose`, `?plotPathXMY`,
-`?plotPathXMY_ZLH`, and `?speedingESJT`.
+`?plotPathXMY_ZLH`, `?plotPathXMY_widget`, and `?speedingESJT`.
