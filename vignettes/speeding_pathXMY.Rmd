@@ -247,6 +247,133 @@ time-pressure result is informative: time pressure shifts the *upside*
 expected costs of speeding feel smaller, and the action feels more
 appropriate).
 
+## Total moderation and its decomposition
+
+The `BZ_MX × B1_YM` table above isolates one of three routes through
+which a moderator `Z` shifts the `X → Y` link. The full identity is
+
+$$\beta^Z_{YX}[1] \;=\; \beta^Z_{MX} \cdot \beta^1_{YM}
+\;+\; \beta^1_{MX} \cdot \beta^Z_{YM}
+\;+\; \beta^Z_{YX}[2]$$
+
+where:
+
+- **Term 1** (`BZ_MX × B1_YM`): `Z` shifts *what the action is expected
+  to produce* — the **expectation** route highlighted above.
+- **Term 2** (`B1_MX × BZ_YM`): `Z` shifts *how much the expected
+  outcome matters* — the **valuation** route. Often overlooked.
+- **Term 3** (`BZ_YX[2]`): residual direct `X × Z` moderation not
+  routed through this mediator.
+
+A moderator can produce a large total effect (`BZ_YX[1]`) through
+*any* of these routes — and the standard `BZ_MX` table is silent
+about Terms 2 and 3. `pathXMY_decompose()` fits both the no-mediator
+model (giving `BZ_YX[1]`) and the full mediated model (giving the
+three components) and tabulates them per mediator.
+
+```{r decompose-srfast}
+dec <- pathXMY_decompose(dat2, X = "Speed", Y = "Likelihood",
+                         M = mediators, Z = "SRFastDriver",
+                         Z.within = FALSE)
+```
+
+### The total moderation
+
+```{r decompose-total}
+knitr::kable(dec$total, digits = 3,
+             caption = "Total moderation BZ_YX[1] (no mediator)")
+```
+
+Self-reported fast-driver tendency moderates the `Speed → Likelihood`
+link by **+0.25** — a substantial effect: respondents one SD higher
+on `SRFastDriver` increase their action-likelihood by an extra 0.25
+units (on the [0, 1] outcome) when shifting from at-limit to
++10+ mph speeds.
+
+### Decomposition per mediator
+
+```{r decompose-table}
+knitr::kable(dec$components, digits = 3,
+             caption = "Decomposition of BZ_YX[1] through each single mediator")
+```
+
+Each mediator's three components plus residual sum to ~0.25 — that's
+the algebraic identity at work. The `sum (1+2+3)` row should equal
+`BZ_YX[1]` exactly in the linear case (small deviations come from
+numerical precision).
+
+**Where does the moderation route?** The largest single-mediator
+expectation-route is through `Appropriate`: `BZ_MX × B1_YM = 0.073`.
+Term 2 (valuation route) is negligible for every mediator here —
+fast drivers don't differentially *weight* outcomes, they have
+different *expectations*. And **most of `BZ_YX[1]` sits in the
+residual `BZ_YX[2]` column** (≈ 0.18–0.24 for every mediator). That
+isn't a failure of the decomposition — it's the signature of
+moderation routed through *multiple mediators jointly*. With a
+single mediator in the model, every other mediator's contribution
+gets absorbed into the residual.
+
+### Triangle diagram for the dominant route
+
+`plotPathXMY()` renders the single-mediator triangle with all three
+path coefficients in the `b1 + bZ(Z)` notation. Highlighting the
+moderation arm helps locate the route at a glance.
+
+```{r plot-appropriate, fig.width = 7, fig.height = 5}
+plotPathXMY(dec, mediator = "Appropriate",
+            X_label = "Speed", Y_label = "Likelihood",
+            Z_label = "SRFast",
+            highlight = "BZ_MX",
+            title = "Speed -> Appropriate -> Likelihood (Z = SRFastDriver)")
+```
+
+Reading the diagram: a one-unit increase in `Speed` lowers
+`Appropriate` by 0.45 *on average*, but among fast drivers (high
+`SRFast`) that drop is **dampened** by +0.14 — they perceive faster
+driving as less of an appropriateness violation. `Appropriate`
+strongly drives `Likelihood` (+0.53) and that valuation is *not*
+moderated by `SRFast` (≈ +0.00). The residual `BZ_YX[2]` (+0.18)
+reflects the joint contribution of the seven other mediators not
+shown.
+
+### When does Term 2 carry the moderation?
+
+A counter-example shows valuation routing in isolation. Consider
+`DrivingSkill` (SR_07: *"I would say that I am a skilled driver"*)
+as the moderator, with `Crash` as the focal mediator:
+
+```{r decompose-skill}
+tr <- speedingESJT$traits[, c("p","SR_07")]
+names(tr)[2] <- "DrivingSkill"
+tr <- tr[!is.na(tr$DrivingSkill), ]
+dat_sk <- merge(dat, tr, by = "p")
+
+dec_sk <- pathXMY_decompose(dat_sk, X = "Speed", Y = "Likelihood",
+                            M = mediators, Z = "DrivingSkill",
+                            Z.within = FALSE)
+knitr::kable(
+  subset(dec_sk$components, mediator == "Crash"),
+  digits = 3,
+  caption = "Crash decomposition under Z = DrivingSkill"
+)
+```
+
+Here Term 1 (`BZ_MX × B1_YM = -0.002`) is essentially zero —
+self-rated skilled drivers don't expect a *different* crash
+likelihood from speeding. But Term 2 (`B1_MX × BZ_YM = -0.061`) is
+significantly non-zero: skilled-driver respondents weight `Crash`
+*more* heavily as a deterrent than unskilled-driver respondents
+do. Without `pathXMY_decompose()`, this valuation moderation would
+be invisible in the standard `BZ_MX` table.
+
+```{r plot-skill, fig.width = 7, fig.height = 5}
+plotPathXMY(dec_sk, mediator = "Crash",
+            X_label = "Speed", Y_label = "Likelihood",
+            Z_label = "Skill",
+            highlight = "BZ_YM",
+            title = "Speed -> Crash -> Likelihood (Z = DrivingSkill)")
+```
+
 ## Scoring named trait composites
 
 If you want the Big Five and other named scales from
@@ -264,4 +391,5 @@ tr$Open  <- rowMeans(cbind(tr$SR_27, 1 - tr$SR_28, tr$SR_29), na.rm = TRUE)
 
 ## Function reference
 
-See `?pathXMY` and `?speedingESJT`.
+See `?pathXMY`, `?pathXMY_decompose`, `?plotPathXMY`, and
+`?speedingESJT`.
