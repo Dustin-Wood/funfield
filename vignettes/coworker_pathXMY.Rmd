@@ -1,0 +1,326 @@
+---
+title: "Moderated mediation with `pathXMY()`: the coworker assertiveness ESJT"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Moderated mediation with pathXMY(): the coworker assertiveness ESJT}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This vignette demonstrates moderated mediation with `pathXMY()` using the
+`coworkerESJT` dataset — a workplace assertiveness ESJT in which participants
+rated two possible responses across 12 scenarios involving a coworker making an
+inappropriate request. Three moderators are examined: the **rank** of the
+coworker in the scenario (situation-level; experimentally assigned), the
+**perceived unethicality** of the coworker's request (situation-level;
+participant-rated), and **boldness** as a self-reported personality trait
+(person-level).
+
+## The data
+
+```{r data}
+library(funfield)
+data(coworkerESJT)
+lapply(coworkerESJT, dim)
+```
+
+The dataset is a named list with five components:
+
+- **`$PSI`** — 5,846 rows: 249 persons × 12 situations × 2 actions, with 8
+  rated outcome features and `Likelihood`
+- **`$cond`** — situational condition per (person, scenario): `subordinate`,
+  `coworker`, or `manager` (randomly assigned, ~4 per condition per person)
+- **`$sit`** — situation-level perceptions (action-independent; ~82.5%
+  coverage)
+- **`$IIDL`** — 40 IIDL personality items for 206 of the 249 participants
+- **`$codebook`** — full survey wording, scale anchors, and scenario texts
+
+## Variables and survey wording
+
+The predictor, mediators, and outcome are the expected-outcome ratings from
+`$PSI`. Participants rated each action on the stem:
+
+> *"If you do this... [action] ...how likely is this outcome to result?"*
+
+The table below shows the variable name and the complete survey wording for
+each item (−1 = Very Unlikely, 1 = Very Likely):
+
+```{r wording-table}
+knitr::kable(
+  coworkerESJT$codebook$outcomes[, c("var", "label")],
+  col.names = c("Variable", "Survey wording"),
+  caption = "Outcome items (PSI)"
+)
+```
+
+The focal **predictor** is `ExpDisapproval` — *"Having directly/forcefully
+expressed disapproval with your [coworker]'s behavior."* Note that this is
+itself an expected outcome: respondents rate how likely it is that taking this
+action will result in them having expressed disapproval. It is coded such that
+higher values mean the action is *more* likely to constitute such an
+expression.
+
+The focal **outcome** is `Likelihood` — *"How likely are you to do the
+following actions in response to this situation?"*
+
+The seven **mediators** are the remaining expected-outcome features.
+
+## Data preparation
+
+Merge the condition variable into the PSI data, code a `manager` dummy
+(1 = coworker is a manager, 0 = coworker or subordinate), then within-person
+deviate all Level-1 columns.
+
+```{r prep}
+L1cols <- c("Appropriate","ExpDisapproval","MajorArg","GoodRelationP",
+            "Punished","CompleteJob","P_Punished","CompanySuccess","Likelihood")
+mediators <- c("Appropriate","MajorArg","GoodRelationP",
+               "Punished","CompleteJob","P_Punished","CompanySuccess")
+
+dat <- merge(coworkerESJT$PSI, coworkerESJT$cond, by = c("p","s"))
+dat$manager <- as.numeric(dat$condition == "manager")
+
+for (v in L1cols) {
+  dat[[v]] <- ave(dat[[v]], dat$p, FUN = function(x) x - mean(x))
+}
+```
+
+## Normative model (no moderator)
+
+How does `ExpDisapproval` — the expectation of having directly expressed
+disapproval — mediate the link between an action and how likely the respondent
+is to take it, averaging across people and conditions?
+
+```{r normative}
+norm <- pathXMY(dat, X = "ExpDisapproval", Y = "Likelihood", M = mediators)
+norm$tidy
+```
+
+### Expectation paths (B1_MX): what co-occurs with expressing disapproval?
+
+Actions that score higher on `ExpDisapproval` (i.e., actions that would
+constitute more direct expression of disapproval) are also seen as more likely
+to produce a major argument/confrontation (`MajorArg`, B1_MX ≈ 0.70) and less
+likely to maintain a good working relationship in the long run (`GoodRelationP`,
+B1_MX ≈ −0.52). They are also seen as more appropriate within the role
+(`Appropriate`, B1_MX > 0) and more likely to result in the coworker being
+formally punished (`P_Punished`, B1_MX > 0).
+
+### Valuation paths (B1_YM): which outcomes drive action likelihood?
+
+Acting appropriately (`Appropriate`, B1_YM ≈ 0.73) and benefiting company
+success (`CompanySuccess`, B1_YM ≈ 0.74) are the strongest positive drivers of
+whether a respondent says they would take an action. Being formally punished
+(`Punished`, B1_YM ≈ −0.56) and having a major argument (`MajorArg`,
+B1_YM ≈ −0.34) are the strongest suppressors.
+
+### Indirect effects (B1_MX × B1_YM)
+
+Indirect effects are significant for all mediators where both component paths
+are non-zero. The indirect path through `Appropriate` is particularly large:
+actions that more strongly constitute an expression of disapproval are also
+seen as more role-appropriate, and perceived appropriateness strongly drives
+action likelihood.
+
+## Situation-level moderation: coworker rank
+
+Does the rank of the coworker in the scenario change how expressing disapproval
+co-occurs with other outcome expectations? The `manager` dummy varies *within*
+persons across scenarios (randomly assigned), so we use `Z.within = TRUE`.
+`pathXMY()` then within-person deviates the moderator before fitting.
+
+```{r mod-situation}
+mod_s <- pathXMY(dat, X = "ExpDisapproval", Y = "Likelihood",
+                 M = mediators, Z = "manager", Z.within = TRUE)
+```
+
+### Does manager rank moderate the expectation arm (ExpDisapproval → M)?
+
+```{r bz-mx}
+knitr::kable(
+  subset(mod_s$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of expectation paths by manager rank (BZ_MX)"
+)
+```
+
+Six of the seven mediators show significant moderation. When the coworker holds
+a higher rank (manager condition), expressing disapproval is expected to be
+substantially *more* likely to result in formal punishment of oneself
+(`Punished`, BZ_MX > 0): the power asymmetry increases the perceived personal
+cost. At the same time, expressing disapproval in a manager scenario is
+perceived as *less* likely to be seen as role-appropriate (`Appropriate`), less
+likely to help complete the job (`CompleteJob`), less likely to maintain a good
+working relationship (`GoodRelationP`), and less likely to benefit company
+success (`CompanySuccess`) — the perceived benefits of asserting shrink when
+facing a higher-power colleague.
+
+### Does that moderation carry through to the indirect effect?
+
+```{r bz-indirect}
+knitr::kable(
+  subset(mod_s$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of indirect effects by manager rank (BZ_MX × B1_YM)"
+)
+```
+
+All significant expectation moderation translates into significant moderation
+of the indirect effect. The indirect path through `Punished` is the largest in
+magnitude: in manager scenarios, the combination of expecting more formal
+punishment *and* punishment's strong negative valuation substantially suppresses
+the indirect pull toward expressing disapproval through that path.
+
+## Situation-level moderation: perceived unethicality (WasUnethical)
+
+A second situation-level moderator comes from `$sit`: `WasUnethical`, rated
+on the stem *"At this point in the situation, to what extent has your
+[coworker] done something that… Should be regarded as unethical, morally
+inappropriate, or 'wrong'?"* (−1 = Greatly Decreased, 0 = Negligible, 1 =
+Greatly Increased). Unlike `manager`, which was experimentally assigned,
+`WasUnethical` is a continuous participant perception that varies across
+situations and persons.
+
+### Data preparation note
+
+Because `$sit` has complete data for only 206 of the 249 participants (43
+participants skipped the situation-perceptions block entirely), and because
+`WasUnethical` must be merged before within-person deviation so that means
+are computed on the actually-available observations, we start from the raw
+`$PSI` rather than the pre-deviated `dat`:
+
+```{r prep-unethical}
+sit_sub <- coworkerESJT$sit[, c("p","s","WasUnethical")]
+dat3 <- merge(coworkerESJT$PSI, sit_sub, by = c("p","s"))
+dat3 <- dat3[!is.na(dat3$WasUnethical), ]
+cat("Rows:", nrow(dat3), " | Persons:", length(unique(dat3$p)), "\n")
+
+for (v in L1cols) {
+  dat3[[v]] <- ave(dat3[[v]], dat3$p, FUN = function(x) x - mean(x))
+}
+```
+
+Note that within the 206 retained participants, coverage is ~98% (only a
+handful of individual situations are missing). The reduction from 5,846 to
+4,840 rows is almost entirely due to the 43 persons with no sit data, not
+random within-person missingness.
+
+**A caution on standard errors.** `WasUnethical` is a situation-level
+perception: both action rows for a given person-situation carry the *same*
+value. The cluster-robust SEs produced by `pathXMY()` cluster at the person
+level (`p`), which correctly handles person-level non-independence, but do
+not additionally account for the extra within-situation correlation introduced
+by a shared Z. SEs for paths involving `WasUnethical` may therefore be
+modestly optimistic. Two-way clustering (by person and by person × situation)
+would address this fully but is not yet implemented.
+
+```{r mod-unethical}
+mod_ue <- pathXMY(dat3, X = "ExpDisapproval", Y = "Likelihood",
+                  M = mediators, Z = "WasUnethical", Z.within = TRUE)
+```
+
+### Does perceived unethicality moderate the expectation arm (ExpDisapproval → M)?
+
+```{r bz-mx-ue}
+knitr::kable(
+  subset(mod_ue$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of expectation paths by perceived unethicality (BZ_MX)"
+)
+```
+
+All seven mediators are significantly moderated, and the effects are
+substantially larger than those for coworker rank. The dominant pattern is
+through `Appropriate` (BZ_MX = 0.599, z = 23.9): in situations perceived as
+more unethical than the respondent's personal average, expressing disapproval
+is expected to be dramatically *more* role-appropriate. The complementary
+picture holds for `Punished` (BZ_MX = −0.307): when the coworker's behavior
+is perceived as unethical, the respondent expects *less* personal punishment
+for pushing back — the moral justification removes the sense of personal risk.
+`CompleteJob` (0.263) and `CompanySuccess` (0.326) also show large positive
+moderation: in unethical situations, expressing disapproval is expected to
+serve both task-completion and organizational interests far better.
+
+The profile is a near-complete reversal of the manager-rank effect: where a
+higher-power coworker suppresses the perceived benefits of asserting,
+perceived unethicality amplifies them.
+
+### Does that moderation carry through to the indirect effect?
+
+```{r bz-indirect-ue}
+knitr::kable(
+  subset(mod_ue$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of indirect effects by perceived unethicality (BZ_MX × B1_YM)"
+)
+```
+
+The moderated indirect effect through `Appropriate` (0.413) is the largest
+such coefficient in this entire vignette — larger than any effect of coworker
+rank. In situations perceived as more unethical, the combination of expecting
+the action to be appropriate *and* perceived appropriateness strongly driving
+likelihood produces a powerful amplification of the indirect path toward
+action. `CompanySuccess` (0.218), `Punished` (0.160), and `CompleteJob`
+(0.138) also show substantial moderated indirect effects, all reinforcing
+the same direction: perceived unethicality makes the full pathway from
+expressing-disapproval expectation to action likelihood substantially
+stronger.
+
+## Person-level moderation: boldness (IIDL_bold)
+
+Does trait boldness moderate these paths? The IIDL item for boldness asks
+respondents to rate *"bold, assertive"* on the stem *"How much does each term
+describe the way you typically act, feel, or see yourself at work?"*
+(−1 = Very Uncharacteristic, 1 = Very Characteristic).
+
+Boldness is a between-person variable, so we use the default `Z.within = FALSE`.
+Merging `$IIDL` reduces the sample to the 206 participants who completed the
+IIDL measure.
+
+```{r mod-person}
+dat2 <- merge(dat, coworkerESJT$IIDL[, c("p","IIDL_bold")], by = "p")
+cat("Persons with IIDL_bold:", length(unique(dat2$p)), "\n")
+
+mod_p <- pathXMY(dat2, X = "ExpDisapproval", Y = "Likelihood",
+                 M = mediators, Z = "IIDL_bold", Z.within = FALSE)
+```
+
+### Does boldness moderate the expectation arm?
+
+```{r bz-mx-bold}
+knitr::kable(
+  subset(mod_p$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of expectation paths by boldness (BZ_MX)"
+)
+```
+
+### Does that carry through to the indirect effect?
+
+```{r bz-indirect-bold}
+knitr::kable(
+  subset(mod_p$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of indirect effects by boldness (BZ_MX × B1_YM)"
+)
+```
+
+Person-level boldness shows modest moderation overall. The only significant
+effect is through `Appropriate` (BZ_MX > 0, p < .05): bolder individuals
+expect that directly expressing disapproval will be *more* role-appropriate
+than less bold individuals do. This translates into a small but significant
+indirect effect: among bolder respondents, expressing disapproval is somewhat
+more likely to be taken partly because it is expected to be appropriate.
+
+The contrast with the situation-level results is informative: *where* you are
+in the power hierarchy (as captured by the randomly assigned coworker rank)
+shapes expected outcomes far more pervasively than *who* you are in terms of
+self-reported boldness.
+
+## Function reference
+
+See `?pathXMY`, `?esjtCov`, and `?coworkerESJT`.

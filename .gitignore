@@ -4,3 +4,7 @@
 .httr-oauth
 .DS_Store
 inst/doc
+.positai
+
+# Local session transcripts (Claude Code JSONL snapshots)
+_session_logs/

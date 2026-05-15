@@ -26,10 +26,12 @@ Suggests:
     rmarkdown,
     visNetwork,
     shiny
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
 VignetteBuilder: knitr
-Imports: 
+Imports:
     reshape2,
     dplyr,
     lavaan,
-    stats
+    stats,
+    base64enc,
+    htmltools

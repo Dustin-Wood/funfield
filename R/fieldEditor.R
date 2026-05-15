@@ -39,7 +39,7 @@ fieldEditor <- function(fprops, fieldMatrix = NULL) {
       idx <- suppressWarnings(as.integer(nums[r, co]))
       if (!is.na(idx) && idx > 0) {
         pos$x[idx] <- (co - 1) * 150
-        pos$y[idx] <- (nr - r) * 150
+        pos$y[idx] <- (r - 1) * 150
       }
     }
   }

@@ -60,7 +60,7 @@ norm$tidy
 
 Each mediator gets six rows: `B1_MX` (expectation: does Speed predict M?),
 `B1_YX` (direct effect of Speed on L not through this M), `B1_YM`
-(valuation: does M predict L?), and `ind` (the indirect product).
+(valuation: does M predict L?), and `B1_MX * B1_YM` (the indirect product).
 
 ## Moderated model: high vs. low SRFastDriver
 
@@ -74,7 +74,7 @@ mod <- pathXMY(dev, X = "Speed", Y = "L", M = mediators,
 subset(mod$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")]
 
 ## The Z-moderation of the indirect effect (via expectation):
-subset(mod$tidy, param == "indZ_X")[, c("mediator","est","se","z","pvalue")]
+subset(mod$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")]
 
 ## The Z-moderation of the valuation arm (M -> L):
 subset(mod$tidy, param == "BZ_YM")[, c("mediator","est","se","z","pvalue")]
@@ -82,7 +82,7 @@ subset(mod$tidy, param == "BZ_YM")[, c("mediator","est","se","z","pvalue")]
 
 `BZ_MX` captures how the Speed -> M expectation differs across trait levels
 (self-reported fast drivers expect speeding to be less catastrophic and more
-enjoyable). `indZ_X = BZ_MX * B1_YM` is the corresponding Z-moderation of the
+enjoyable). `BZ_MX * B1_YM` is the corresponding Z-moderation of the
 indirect effect.
 
 ## Bootstrap option for small samples

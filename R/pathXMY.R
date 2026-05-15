@@ -24,8 +24,19 @@
 #'   vector). When \code{NULL}, the direct \eqn{X \to Y} model is fit (no
 #'   mediator). When length > 1, the X-M-Y model is fit once per mediator.
 #' @param Z Optional. Name of the moderator variable (length-1 character).
-#'   When \code{NULL}, the unmoderated model is fit. Will be z-standardized
-#'   inside the function.
+#'   When \code{NULL}, the unmoderated model is fit. By default
+#'   (\code{Z.within = FALSE}), \code{Z} is treated as a between-person trait
+#'   and z-standardized globally. Set \code{Z.within = TRUE} for a
+#'   situation-level moderator that varies within persons (e.g., an
+#'   experimentally varied condition); in that case \code{Z} is
+#'   within-cluster deviated instead.
+#' @param Z.within Logical (default \code{FALSE}). When \code{TRUE}, \code{Z}
+#'   is treated as a within-cluster (situation-level) variable and is
+#'   within-person deviated before fitting, exactly like the Level-1 predictors.
+#'   Use this when the moderator varies across situations within a person
+#'   (e.g., a randomly assigned scenario condition). When \code{FALSE}
+#'   (default), \code{Z} is z-standardized globally (between-person trait
+#'   interpretation).
 #' @param cluster Name of the clustering variable (default \code{"p"}).
 #'   Set to \code{NULL} to fit without cluster-robust SEs (not recommended
 #'   for ESJT data).
@@ -48,9 +59,9 @@
 #'       \code{z}, \code{pvalue}, \code{ci.lower}, \code{ci.upper}. Parameter
 #'       labels follow the XMY convention: \code{B1_MX}, \code{BZ_MX},
 #'       \code{B1_YX}, \code{BZ_YX}, \code{B1_YM}, \code{BZ_YM}, plus the
-#'       indirect effects \code{ind} (unmoderated only), \code{indZ_X}
-#'       (\eqn{= \beta^Z_{MX} \cdot \beta^1_{YM}}), and \code{indZ_Y}
-#'       (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).}
+#'       indirect effects \code{B1_MX * B1_YM} (unmoderated only),
+#'       \code{BZ_MX * B1_YM} (\eqn{= \beta^Z_{MX} \cdot \beta^1_{YM}}),
+#'       and \code{B1_MX * BZ_YM} (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).}
 #'     \item{fits}{A named list of the lavaan fit objects (one per mediator,
 #'       named by the mediator variable name; \code{"_direct"} when
 #'       \code{M = NULL}).}
@@ -94,11 +105,11 @@
 #'                "IntQuality","FunDrive","Appropriate")
 #' res2 <- pathXMY(dev, X = "Speed", Y = "L", M = mediators,
 #'                 Z = "SRFastDriver")
-#' subset(res2$tidy, param %in% c("BZ_MX","indZ_X"))
+#' subset(res2$tidy, param %in% c("BZ_MX","BZ_MX * B1_YM"))
 #' }
 #'
 #' @export
-pathXMY <- function(data, X, Y, M = NULL, Z = NULL,
+pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
                     cluster = "p", controls = NULL,
                     se = c("cluster", "boot"),
                     nboot = 500, conf.level = 0.95,
@@ -130,14 +141,25 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL,
     }
   }
 
+  ## deviation check: X, M, Y always; Z only when between-person (not Z.within),
+  ## because Z.within = TRUE means pathXMY deviates Z internally.
   if (check.deviation) {
     .check_deviation(data, c(X, M, Y), cluster)
   }
 
-  ## prep Z (between-person trait): standardize once, attach as "_Z"
+  ## prep Z: within-deviate (situation-level) or z-standardize (between-person trait)
   dat <- data
   if (!is.null(Z)) {
-    dat$.Z <- as.numeric(scale(dat[[Z]]))
+    if (Z.within) {
+      if (!is.null(cluster)) {
+        dat$.Z <- ave(dat[[Z]], dat[[cluster]],
+                      FUN = function(x) x - mean(x, na.rm = TRUE))
+      } else {
+        dat$.Z <- dat[[Z]] - mean(dat[[Z]], na.rm = TRUE)
+      }
+    } else {
+      dat$.Z <- as.numeric(scale(dat[[Z]]))
+    }
   }
   ## controls: standardize numerics so coefs are interpretable & comparable
   ctrl_terms <- character(0)
@@ -283,14 +305,23 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL,
   if (suppress.warnings) {
     withCallingHandlers(fn(),
       warning = function(w) {
-        if (grepl("does not appear to be positive definite", w$message,
-                  fixed = TRUE)) {
+        if (grepl("positive definite", w$message, fixed = TRUE)) {
           invokeRestart("muffleWarning")
         }
       })
   } else {
     fn()
   }
+}
+
+## Rename internal lavaan defined-parameter labels to display labels.
+## (Lavaan cannot use "*" or spaces in defined-parameter names, so we keep
+## the simple identifiers inside the model string and rename on the way out.)
+.relabel_ind <- function(x) {
+  m <- c(ind    = "B1_MX * B1_YM",
+         indZ_X = "BZ_MX * B1_YM",
+         indZ_Y = "B1_MX * BZ_YM")
+  ifelse(x %in% names(m), m[x], x)
 }
 
 ## Build the tidy table from a lavaan fit. Suppresses the cosmetic noise
@@ -301,11 +332,11 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL,
   keep_lab <- c("B1_MX","BZ_MX","B1_YX","BZ_YX","B1_YM","BZ_YM",
                 "ind","indZ_X","indZ_Y")
   pe <- pe[pe$label %in% keep_lab, , drop = FALSE]
-  ## Order parameters consistently
+  ## Order parameters consistently, then apply display labels
   pe$param <- factor(pe$label, levels = keep_lab)
   pe <- pe[order(pe$param), , drop = FALSE]
   out <- data.frame(
-    param    = as.character(pe$param),
+    param    = .relabel_ind(as.character(pe$param)),
     est      = pe$est,
     se       = pe$se,
     z        = pe$z,
@@ -349,7 +380,7 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL,
   }
   alpha <- (1 - conf.level) / 2
   data.frame(
-    param    = colnames(par_mat),
+    param    = .relabel_ind(colnames(par_mat)),
     se_boot  = apply(par_mat, 2, sd,        na.rm = TRUE),
     ci_lo_boot = apply(par_mat, 2, quantile, alpha,         na.rm = TRUE),
     ci_hi_boot = apply(par_mat, 2, quantile, 1 - alpha,     na.rm = TRUE),

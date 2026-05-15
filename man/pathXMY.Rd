@@ -10,6 +10,7 @@ pathXMY(
   Y,
   M = NULL,
   Z = NULL,
+  Z.within = FALSE,
   cluster = "p",
   controls = NULL,
   se = c("cluster", "boot"),
@@ -36,8 +37,20 @@ vector). When \code{NULL}, the direct \eqn{X \to Y} model is fit (no
 mediator). When length > 1, the X-M-Y model is fit once per mediator.}
 
 \item{Z}{Optional. Name of the moderator variable (length-1 character).
-When \code{NULL}, the unmoderated model is fit. Will be z-standardized
-inside the function.}
+When \code{NULL}, the unmoderated model is fit. By default
+(\code{Z.within = FALSE}), \code{Z} is treated as a between-person trait
+and z-standardized globally. Set \code{Z.within = TRUE} for a
+situation-level moderator that varies within persons (e.g., an
+experimentally varied condition); in that case \code{Z} is
+within-cluster deviated instead.}
+
+\item{Z.within}{Logical (default \code{FALSE}). When \code{TRUE}, \code{Z}
+is treated as a within-cluster (situation-level) variable and is
+within-person deviated before fitting, exactly like the Level-1 predictors.
+Use this when the moderator varies across situations within a person
+(e.g., a randomly assigned scenario condition). When \code{FALSE}
+(default), \code{Z} is z-standardized globally (between-person trait
+interpretation).}
 
 \item{cluster}{Name of the clustering variable (default \code{"p"}).
 Set to \code{NULL} to fit without cluster-robust SEs (not recommended
@@ -68,9 +81,9 @@ A list with two elements:
       \code{z}, \code{pvalue}, \code{ci.lower}, \code{ci.upper}. Parameter
       labels follow the XMY convention: \code{B1_MX}, \code{BZ_MX},
       \code{B1_YX}, \code{BZ_YX}, \code{B1_YM}, \code{BZ_YM}, plus the
-      indirect effects \code{ind} (unmoderated only), \code{indZ_X}
-      (\eqn{= \beta^Z_{MX} \cdot \beta^1_{YM}}), and \code{indZ_Y}
-      (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).}
+      indirect effects \code{B1_MX * B1_YM} (unmoderated only),
+      \code{BZ_MX * B1_YM} (\eqn{= \beta^Z_{MX} \cdot \beta^1_{YM}}),
+      and \code{B1_MX * BZ_YM} (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).}
     \item{fits}{A named list of the lavaan fit objects (one per mediator,
       named by the mediator variable name; \code{"_direct"} when
       \code{M = NULL}).}
@@ -126,7 +139,7 @@ mediators <- c("Crash","Injured","Ticket","MoneyCost","OnTime",
                "IntQuality","FunDrive","Appropriate")
 res2 <- pathXMY(dev, X = "Speed", Y = "L", M = mediators,
                 Z = "SRFastDriver")
-subset(res2$tidy, param \%in\% c("BZ_MX","indZ_X"))
+subset(res2$tidy, param \%in\% c("BZ_MX","BZ_MX * B1_YM"))
 }
 
 }

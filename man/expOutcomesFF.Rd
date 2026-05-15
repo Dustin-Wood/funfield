@@ -4,25 +4,63 @@
 \alias{expOutcomesFF}
 \title{Expected Outcomes from Situation Interacting with Functional Field}
 \usage{
-expOutcomesFF(s, i = 0, ffield = ff, plan = DoNothing)
+expOutcomesFF(
+  s,
+  i = NULL,
+  ffield = ff,
+  plan = function(ft) ft * 0,
+  appraise = NULL,
+  tol = 1e-08,
+  max_steps = NULL,
+  clamp = TRUE
+)
 }
 \arguments{
-\item{s}{situation vector: 'situation states at a given time'}
+\item{s}{Named numeric vector: situation states at a given time.}
 
-\item{i}{action definition - specify the FEATURES you wish to set to value of 1 ("TRUE" or "present")}
+\item{i}{Node name(s) or index(es) to set to 1 in \code{s} before the loop
+(the initial action / disturbance). \code{NULL} means no initial action.}
 
-\item{ffield}{functional - contains the 'belief system' or 'model' of how force levels are produced}
+\item{ffield}{The functional field function: \code{function(s, plan)} that
+returns \code{list(s = s, ft = ft)}.  Defaults to \code{ff} in the
+calling environment.}
 
-\item{plan}{specify forces to be added to the functional field}
+\item{plan}{Function that injects plan-driven forces into \code{ft}.
+Defaults to the identity (no plan).}
 
-\item{xS}{extra situational features that are NOT graphed that can add forces to the field}
+\item{appraise}{Optional \code{function(s) -> s} that recomputes derived or
+summary nodes from the raw situation before each force-propagation step.
+This is where OR-sets, goal-completion nodes, and arbitrary inference
+functions live.  \code{NULL} (default) means no elaboration.}
+
+\item{tol}{Convergence tolerance: stop when \code{max(|s_new - s|) < tol}.
+Default \code{1e-8}.}
+
+\item{max_steps}{Maximum number of propagation steps (safety cap).
+Defaults to \code{2 * length(s)}.}
+
+\item{clamp}{Logical.  If \code{TRUE} (default), clamp all situational
+levels to \code{[-1, 1]} after each step.}
 }
 \value{
-'Situation log' - detailing \code{sit} level of situational forces,
- \code{dit} new disturbances, and \code{fit} structure of the field at time \code{t}
+A named list (\code{sitlog}) with:
+  \describe{
+    \item{\code{sit}}{Matrix of situation states, one row per time step.}
+    \item{\code{fit}}{List of field snapshots.  Each element is
+      \code{list(s = s_eff, ft = ft)} for that step.}
+    \item{\code{graphColor}}{Edge-color matrix for \code{qgraph}, encoding
+      afforded (black) vs. plan-driven (limegreen) forces.}
+  }
 }
 \description{
-Estimate expected outcomes of current situation
-given a particular functional field (which details how
-situational factors determine the levels of forces in the environment)
+Propagates a situation vector \code{s} forward through a
+  functional field until equilibrium is reached. At each time step, an
+  optional \code{appraise} function elaborates the raw situation into
+  derived/summary nodes, then \code{ffield} computes the force matrix
+  \code{ft} from that elaborated situation.  The situation updates as
+  \code{s_new = s_eff + delta \%*\% ft}, where \code{delta = s_eff - s_eff_prev}
+  is only the \emph{change} in the elaborated situation since the last step.
+  This ensures each activation fires exactly once: already-active nodes do
+  not keep generating downstream force.  Iteration stops when
+  \code{max(|s_new - s|) < tol} (equilibrium).
 }
