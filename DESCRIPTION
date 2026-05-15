@@ -34,4 +34,5 @@ Imports:
     lavaan,
     stats,
     base64enc,
-    htmltools
+    htmltools,
+    fancyr

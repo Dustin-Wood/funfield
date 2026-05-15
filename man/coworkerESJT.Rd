@@ -115,7 +115,7 @@ scenarios within each participant.
 \strong{Data cleaning.} The raw dataset contained 296 participants. Three
 sequential screens were applied:
 \enumerate{
-  \item \strong{Straightlining} (\code{strLine()}): 42 participants
+  \item \strong{Straightlining} (\code{fancyr::strLine()}): 42 participants
     removed for zero-variance expected-outcome ratings on more than 10\%
     of their action ratings.
   \item \strong{Low variability} (\code{sdESJT()}): 2 additional

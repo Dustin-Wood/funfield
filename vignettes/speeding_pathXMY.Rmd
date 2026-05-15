@@ -1,8 +1,8 @@
 ---
-title: "Moderated mediation with `pathXMY()`: the speeding ESJT example"
+title: "Moderated mediation with `pathXMY()`: the speeding EXSJT"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Moderated mediation with pathXMY(): the speeding ESJT example}
+  %\VignetteIndexEntry{Moderated mediation with pathXMY(): the speeding EXSJT}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,88 +11,255 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-This vignette walks through fitting an expectancy-value (EV) moderated
-mediation model to ESJT data using `pathXMY()`. We use the embedded
-`speedingESJT` dataset (Wood, Harms, & Cho, 2023).
+This vignette demonstrates moderated mediation with `pathXMY()` using the
+`speedingESJT` dataset — an **EXSJT** (Elaborated & eXperimental Situational
+Judgment Test) in which a single driving scenario was randomly varied across
+six factors, and each participant rated three speed-choice actions on eight
+expected outcomes. Two moderators are examined: **time pressure** (a
+situation-level factor randomly assigned to each respondent) and
+**self-reported fast-driver tendency** (a person-level trait).
+
+This contrasts with the design of `coworkerESJT`, in which each participant
+rated 12 distinct scenarios. There, situational factors vary *within* person
+across scenarios. In the speeding EXSJT each participant sees exactly one
+fully crossed scenario, so the six situational factors vary *between*
+persons. All moderators in this vignette therefore use `Z.within = FALSE`.
 
 ## The data
 
 ```{r data}
 library(funfield)
 data(speedingESJT)
-str(speedingESJT[, 1:13])
+lapply(speedingESJT, function(x) if (is.data.frame(x)) dim(x) else length(x))
 ```
 
-302 participants each rated three speeds (at the limit, +5 mph, +10 mph) on
-their expected outcomes (`Crash`, `Injured`, `Ticket`, `MoneyCost`, `OnTime`,
-`IntQuality`, `FunDrive`, `Appropriate`) and on the likelihood `L` that they
-would take that action.
+The dataset is a named list with five components:
 
-## Within-person deviation
+- **`$PSI`** — 999 rows: 333 persons × 3 actions, with 8 expected-outcome
+  ratings, the action's `Speed` coding, and the response `Likelihood`.
+- **`$cond`** — the six randomly assigned situation factors per person,
+  plus the assembled scenario text as displayed.
+- **`$sit`** — situation perceptions (`Realistic`, `Relatable`) per person.
+- **`$traits`** — 30 raw self-report items (`SR_01` … `SR_30`) plus
+  demographics, per person.
+- **`$codebook`** — survey wording, scale anchors, factor levels, and
+  composite-scoring recipes.
 
-`pathXMY()` fits a single-level path model with cluster-robust standard
-errors. To get correct within-person coefficients, deviate the Level 1
-variables before fitting:
+All Likert ratings are stored on a [0, 1] proportion-of-maximum-possible
+scale, so that within-person differences between two actions fall on
+[-1, 1] — the natural metric for expectancy-value reasoning.
 
-```{r deviate}
-L1 <- c("Speed","Crash","Injured","Ticket","MoneyCost","OnTime",
-        "IntQuality","FunDrive","Appropriate","L")
-dev <- speedingESJT
-for (v in L1) {
-  dev[[v]] <- ave(dev[[v]], dev$p, FUN = function(x) x - mean(x))
+## Variables and survey wording
+
+```{r wording-table}
+knitr::kable(
+  speedingESJT$codebook$outcomes[, c("var", "label")],
+  col.names = c("Variable", "Survey wording"),
+  caption = "Outcome items (PSI), rated on [0, 1]"
+)
+```
+
+The focal **predictor** is `Speed` — the action's encoded speed level
+(0 = at the limit, 0.5 = +5 mph, 1 = +10+ mph). The focal **outcome** is
+`Likelihood` — how likely the respondent says they would take the action.
+The eight **mediators** are the expected-outcome ratings.
+
+## Data preparation
+
+Within-person deviate all Level-1 columns. This is the only required
+preprocessing — situation factors (in `$cond`) and traits (in `$traits`) are
+already at the appropriate level and need no deviation.
+
+```{r prep}
+L1cols <- c("Speed","MoneyCost","FunDrive","IntQuality","Appropriate",
+            "OnTime","Crash","Injured","Ticket","Likelihood")
+mediators <- c("MoneyCost","FunDrive","IntQuality","Appropriate",
+               "OnTime","Crash","Injured","Ticket")
+
+dat <- speedingESJT$PSI
+for (v in L1cols) {
+  dat[[v]] <- ave(dat[[v]], dat$p, FUN = function(x) x - mean(x))
 }
 ```
 
-`Z` (the trait moderator) is left as-is — `pathXMY()` will z-standardize it
-internally.
-
 ## Normative model (no moderator)
 
-How does each potential outcome mediate the Speed -> Likelihood relationship,
-averaging across people?
+How does each expected outcome mediate the link between an action's speed
+and how likely the respondent is to take it, averaging across people and
+conditions?
 
 ```{r normative}
-mediators <- c("Crash","Injured","Ticket","MoneyCost","OnTime",
-               "IntQuality","FunDrive","Appropriate")
-norm <- pathXMY(dev, X = "Speed", Y = "L", M = mediators)
+norm <- pathXMY(dat, X = "Speed", Y = "Likelihood", M = mediators)
 norm$tidy
 ```
 
-Each mediator gets six rows: `B1_MX` (expectation: does Speed predict M?),
-`B1_YX` (direct effect of Speed on L not through this M), `B1_YM`
-(valuation: does M predict L?), and `B1_MX * B1_YM` (the indirect product).
+### Expectation paths (B1_MX): what is speeding expected to produce?
 
-## Moderated model: high vs. low SRFastDriver
-
-Does self-reported fast-driver trait moderate any of those paths?
-
-```{r moderated}
-mod <- pathXMY(dev, X = "Speed", Y = "L", M = mediators,
-               Z = "SRFastDriver")
-
-## The Z-moderation of the expectation arm (Speed -> M):
-subset(mod$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")]
-
-## The Z-moderation of the indirect effect (via expectation):
-subset(mod$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")]
-
-## The Z-moderation of the valuation arm (M -> L):
-subset(mod$tidy, param == "BZ_YM")[, c("mediator","est","se","z","pvalue")]
+```{r bmx}
+knitr::kable(
+  subset(norm$tidy, param == "B1_MX")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Expectation paths (Speed -> M)"
+)
 ```
 
-`BZ_MX` captures how the Speed -> M expectation differs across trait levels
-(self-reported fast drivers expect speeding to be less catastrophic and more
-enjoyable). `BZ_MX * B1_YM` is the corresponding Z-moderation of the
-indirect effect.
+Faster speeds are expected to substantially increase `Ticket`, `Crash`,
+`Injured`, `OnTime`, and (more modestly) `MoneyCost`, and to substantially
+reduce perceived appropriateness (`Appropriate`). `FunDrive` and
+`IntQuality` are essentially uncorrelated with `Speed` at the within-person
+level — perceived enjoyment of the drive and quality of the next meeting do
+not move much with the action's speed.
 
-## Bootstrap option for small samples
+### Valuation paths (B1_YM): which expected outcomes drive action likelihood?
 
-With many clusters (here 302), delta-method CIs and cluster bootstrap CIs
-agree closely. For studies with fewer than 50 clusters, use `se = "boot"`:
+```{r bym}
+knitr::kable(
+  subset(norm$tidy, param == "B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Valuation paths (M -> Likelihood)"
+)
+```
 
-```{r boot, eval = FALSE}
-pathXMY(dev, X = "Speed", Y = "L", M = "Crash",
-        Z = "SRFastDriver", se = "boot", nboot = 1000)
+`FunDrive` and `Appropriate` are the strongest positive drivers of whether
+the respondent says they'd take the action, followed by `IntQuality` and
+`OnTime`. `Crash`, `Injured`, `Ticket`, and `MoneyCost` all suppress
+likelihood. The signs are intuitive throughout.
+
+### Indirect effects (B1_MX × B1_YM)
+
+```{r bind}
+knitr::kable(
+  subset(norm$tidy, param == "B1_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Indirect effects through each mediator"
+)
+```
+
+The pathways through `Ticket`, `Appropriate`, `Crash`, and `Injured` are
+all large and negative: faster speeds are expected to produce tickets and
+accidents (each of which strongly suppresses action likelihood) and to be
+less appropriate (which also strongly suppresses likelihood). The `OnTime`
+pathway is the lone strong positive: faster speeds are expected to get the
+respondent to the meeting on time, which increases likelihood. `FunDrive`
+and `IntQuality` contribute essentially nothing here — because faster
+speeds don't shift those expectations, the pathways are near zero despite
+their strong valuation paths.
+
+## Situation-level moderation: time pressure
+
+`timePressure` was randomly assigned at the person level — each respondent
+saw exactly one of three levels (`comfortably ahead of schedule`,
+`a bit late`, `quite late`). Code it as a continuous "lateness" variable
+(0/0.5/1) and merge:
+
+```{r prep-timepressure}
+late_code <- c(`comfortably ahead of schedule` = 0,
+               `a bit late`                    = 0.5,
+               `quite late`                    = 1)
+dat$late <- late_code[speedingESJT$cond$timePressure[match(dat$p,
+                                                           speedingESJT$cond$p)]]
+
+mod_s <- pathXMY(dat, X = "Speed", Y = "Likelihood",
+                 M = mediators, Z = "late", Z.within = FALSE)
+```
+
+### Does time pressure moderate the expectation arm (Speed -> M)?
+
+```{r bzmx-late}
+knitr::kable(
+  subset(mod_s$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of expectation paths by time pressure (BZ_MX)"
+)
+```
+
+### Does it carry through to the indirect effect?
+
+```{r bz-indirect-late}
+knitr::kable(
+  subset(mod_s$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of indirect effects by time pressure (BZ_MX x B1_YM)"
+)
+```
+
+The largest BZ_MX is for `OnTime`: under time pressure, the expected
+on-time gain from speeding is sharply amplified. The expected
+meeting-quality gain (`IntQuality`) also strengthens. Other expectations
+— including crash and ticket expectations — are not significantly
+moderated by time pressure. People under time pressure don't expect
+*different consequences* from speeding; they expect a *larger payoff* from
+getting there on time.
+
+The indirect-effect table propagates these shifts into the pull toward
+speeding: under time pressure, the indirect path from Speed to Likelihood
+strengthens through `OnTime` (the dominant route) and `IntQuality`. The
+overall pull toward speeding rises with time pressure, not because the
+costs feel smaller but because the on-time benefit feels bigger.
+
+## Person-level moderation: self-reported fast-driver tendency
+
+`SRFastDriver` is the [0, 1] rescaled response to *"I regularly drive far
+over the speed limit when driving"* — item `SR_30` in `$traits`. As a
+between-person trait, it uses `Z.within = FALSE`. Some respondents are
+missing this item:
+
+```{r prep-srfast}
+sr <- speedingESJT$traits[, c("p","SR_30")]
+sr <- sr[!is.na(sr$SR_30), ]
+names(sr)[2] <- "SRFastDriver"
+dat2 <- merge(dat, sr, by = "p")
+cat("Persons with SRFastDriver:", length(unique(dat2$p)), "\n")
+
+mod_p <- pathXMY(dat2, X = "Speed", Y = "Likelihood",
+                 M = mediators, Z = "SRFastDriver", Z.within = FALSE)
+```
+
+### Does fast-driver tendency moderate the expectation arm?
+
+```{r bz-mx-srfast}
+knitr::kable(
+  subset(mod_p$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of expectation paths by SRFastDriver (BZ_MX)"
+)
+```
+
+### Does it carry through to the indirect effect?
+
+```{r bz-indirect-srfast}
+knitr::kable(
+  subset(mod_p$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  digits = 3,
+  caption = "Moderation of indirect effects by SRFastDriver (BZ_MX x B1_YM)"
+)
+```
+
+Self-described fast drivers expect speeding to be less catastrophic
+(smaller `Crash`, `Injured`, `Ticket`, and `MoneyCost` shifts), more
+enjoyable (`FunDrive`), and substantially more role-appropriate
+(`Appropriate` — by far the largest effect). These expectation differences
+propagate into significantly stronger indirect pulls toward taking the
+faster action through every meaningful pathway: `Appropriate` (the largest),
+`FunDrive`, `Crash`, `Injured`, and `Ticket`. The contrast with the
+time-pressure result is informative: time pressure shifts the *upside*
+(OnTime, IntQuality); fast-driver tendency shifts the *downside* (the
+expected costs of speeding feel smaller, and the action feels more
+appropriate).
+
+## Scoring named trait composites
+
+If you want the Big Five and other named scales from
+Wood, Harms, & Cho (2023), use the recipes in
+`speedingESJT$codebook$trait_scales`:
+
+```{r scoring, eval = FALSE}
+tr <- speedingESJT$traits
+tr$Extra <- rowMeans(cbind(1 - tr$SR_15, tr$SR_16, tr$SR_17), na.rm = TRUE)
+tr$Agree <- rowMeans(cbind(tr$SR_18, 1 - tr$SR_19, tr$SR_20), na.rm = TRUE)
+tr$Consc <- rowMeans(cbind(1 - tr$SR_21, 1 - tr$SR_22, tr$SR_23), na.rm = TRUE)
+tr$Neuro <- rowMeans(cbind(tr$SR_24, tr$SR_25, 1 - tr$SR_26), na.rm = TRUE)
+tr$Open  <- rowMeans(cbind(tr$SR_27, 1 - tr$SR_28, tr$SR_29), na.rm = TRUE)
 ```
 
 ## Function reference

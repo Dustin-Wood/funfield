@@ -44,7 +44,7 @@ All core functions assume input data has `p`, `s`, `i` as the **first three colu
 
 ```
 Raw ESJT Data (p, s, i, ..., Likelihood)
-    ↓ strLine(), sdESJT()          # data quality screening
+    ↓ fancyr::strLine(), sdESJT()  # data quality screening
     ↓ sweighteddata(), zPSI()      # weighting and standardization
     ↓ ecov_long() → ecov()         # covariance matrix estimation
     ↓ prepField() + fieldResults() # field fitting via lavaan (SEM)
@@ -78,7 +78,7 @@ Raw ESJT Data (p, s, i, ..., Likelihood)
 | Field construction | `prepField()`, `fieldResults()`, `impliedCov()`, `expOutcomesFF()` |
 | Covariance estimation | `ecov()`, `ecov_long()`, `ecov_big()`, `ecov.lmh()` |
 | Mediation/moderation | `pathXMY()` (umbrella: X→M→Y, optional moderator), `devPSI()`, `diffPSI()` |
-| Data quality | `strLine()`, `sdESJT()`, `effectiveN()` |
+| Data quality | `sdESJT()`, `effectiveN()` (plus `fancyr::strLine()`, `fancyr::prMaxSD()`, `fancyr::spi()`) |
 | Visualization | `fieldOverlays()`, `fieldPolygons()`, `vshapes()`, `vsizes()` |
 | Utilities | `parView()`, `surgery()`, `lmhgroups()`, `zPSI()` |
 
