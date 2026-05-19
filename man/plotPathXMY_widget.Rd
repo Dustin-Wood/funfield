@@ -13,6 +13,7 @@ plotPathXMY_widget(
   width = 9,
   height = NULL,
   res = 192,
+  format = c("png", "svg"),
   ...
 )
 }
@@ -37,7 +38,14 @@ defaults to \code{3.5} for the single-mediator triangle view and to
 \code{3 + 0.5 * n_mediators} for the fan view.}
 
 \item{res}{PNG resolution in pixels per inch. Default \code{192}
-(2x retina factor for sharpness on high-DPI displays).}
+(2x retina factor for sharpness on high-DPI displays). Ignored when
+\code{format = "svg"}.}
+
+\item{format}{One of \code{"png"} (default) or \code{"svg"}. SVG
+frames are vector and scale crisply at any zoom — recommended for
+HTML vignette output. PNG frames are embedded as
+\code{image/png;base64} data URIs at the requested \code{res};
+SVG frames are embedded as \code{image/svg+xml;base64} data URIs.}
 }
 \value{
 An \code{htmltools::tagList} object that auto-renders as an

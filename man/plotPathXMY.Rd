@@ -92,11 +92,17 @@ Two view modes:
 \itemize{
   \item \strong{Triangle} (single mediator) — X at bottom-left, M at
     top, Y at bottom-right. Shows the direct X to Y arrow and both
-    mediated paths.
+    mediated paths from the single-mediator loop fit.
   \item \strong{Fan} (multiple mediators) — X at left, mediators
-    stacked in the middle, Y at right. The direct X to Y arrow is
-    omitted because each single-mediator fit gives a different residual
-    direct effect.
+    stacked in the middle, Y at right. The mediator arms are an overlay
+    of the per-mediator loop fits (one X-M-Y model per mediator). When
+    the input carries joint multi-mediator results
+    (\code{pathXMY(joint = TRUE)}, the default), the residual X to Y
+    direct arrow is drawn from the joint fit — that is, the
+    \eqn{X \to Y} path controlling for the \emph{full} mediator set,
+    not for any one mediator. With an odd number of mediators the
+    stack is laid out asymmetrically so the straight X to Y arrow has
+    a clean gap at the y = 0 axis.
 }
 }
 \seealso{

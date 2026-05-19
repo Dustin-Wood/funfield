@@ -17,7 +17,8 @@ pathXMY(
   nboot = 500,
   conf.level = 0.95,
   check.deviation = TRUE,
-  suppress.warnings = TRUE
+  suppress.warnings = TRUE,
+  joint = TRUE
 )
 }
 \arguments{
@@ -72,6 +73,13 @@ has not been within-person deviated.}
 
 \item{suppress.warnings}{Logical. When \code{TRUE} (default), suppress
 the cosmetic non-PD vcov warning that lavaan emits at machine precision.}
+
+\item{joint}{Logical (default \code{TRUE}). When \code{length(M) > 1},
+additionally fit a single \emph{joint} multi-mediator model in which
+all mediators appear simultaneously in the Y equation. The joint fit
+contributes a residual \eqn{X \to Y} path (after controlling for the
+full mediator set), and parallel per-mediator coefficients with the
+suffix \code{_joint}. See \emph{Details}.}
 }
 \value{
 A list with two elements:
@@ -83,10 +91,16 @@ A list with two elements:
       \code{B1_YX}, \code{BZ_YX}, \code{B1_YM}, \code{BZ_YM}, plus the
       indirect effects \code{B1_MX * B1_YM} (unmoderated only),
       \code{BZ_MX * B1_YM} (\eqn{= \beta^Z_{MX} \cdot \beta^1_{YM}}),
-      and \code{B1_MX * BZ_YM} (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).}
+      and \code{B1_MX * BZ_YM} (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).
+      When \code{joint = TRUE} and \code{length(M) > 1}, the table also
+      carries \code{*_joint} rows from the simultaneous fit:
+      per-mediator \code{B1_MX_joint}, \code{BZ_MX_joint},
+      \code{B1_YM_joint}, \code{BZ_YM_joint}, and global
+      \code{B1_YX_joint}, \code{BZ_YX_joint} (\code{mediator = NA}).}
     \item{fits}{A named list of the lavaan fit objects (one per mediator,
       named by the mediator variable name; \code{"_direct"} when
-      \code{M = NULL}).}
+      \code{M = NULL}; \code{"_joint"} for the joint multi-mediator fit
+      when present).}
   }
 }
 \description{
@@ -119,6 +133,24 @@ from Wood, Harms, & Cho (2023): \code{B1_*} are main-effect coefficients,
 \code{BZ_*} are Z-moderated coefficients; \code{B*_MX} parameters
 regress M on X, \code{B*_YM} regress Y on M, \code{B*_YX} are the
 (direct) Y on X coefficients.
+
+\strong{Loop vs joint fits.} With multiple mediators, \code{pathXMY()}
+fits one X-M-Y model per mediator (the "loop" pass) and reports
+single-mediator paths \code{B1_*}, \code{BZ_*}. The loop pass is the
+inferential workhorse and supports the stable expectation-route summary
+\code{BZ_MX * B1_YM}. With \code{joint = TRUE} (default), an additional
+simultaneous multi-mediator fit is run; its parameters carry the
+\code{_joint} suffix in the tidy table. \code{B1_YX_joint} and
+\code{BZ_YX_joint} are the most useful joint outputs: they index the
+residual direct \eqn{X \to Y} (and its Z-moderation) after controlling
+for the \emph{entire} mediator set, and serve as a diagnostic of
+whether the measured mediators absorb the total \code{BZ_YX[1]}
+moderation. \emph{Per-mediator} joint coefficients (especially
+\code{BZ_YM_joint}) are typically less stable than their loop
+counterparts when mediators are numerous or correlated, because the
+M-by-Z product terms are highly collinear (Wood, Adanu, & Harms, 2025).
+For inference about a single mediator's role, prefer the loop
+coefficient; treat the joint coefficients as a system-level diagnostic.
 }
 \examples{
 \dontrun{
