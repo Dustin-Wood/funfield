@@ -28,7 +28,13 @@
 #'   defaults to \code{3.5} for the single-mediator triangle view and to
 #'   \code{3 + 0.5 * n_mediators} for the fan view.
 #' @param res PNG resolution in pixels per inch. Default \code{192}
-#'   (2x retina factor for sharpness on high-DPI displays).
+#'   (2x retina factor for sharpness on high-DPI displays). Ignored when
+#'   \code{format = "svg"}.
+#' @param format One of \code{"png"} (default) or \code{"svg"}. SVG
+#'   frames are vector and scale crisply at any zoom — recommended for
+#'   HTML vignette output. PNG frames are embedded as
+#'   \code{image/png;base64} data URIs at the requested \code{res};
+#'   SVG frames are embedded as \code{image/svg+xml;base64} data URIs.
 #'
 #' @return An \code{htmltools::tagList} object that auto-renders as an
 #'   interactive HTML widget in knitr / R Markdown. Call
@@ -45,7 +51,9 @@ plotPathXMY_widget <- function(x,
                                width = 9,
                                height = NULL,
                                res = 192,
+                               format = c("png", "svg"),
                                ...) {
+  format <- match.arg(format)
   if (!requireNamespace("base64enc", quietly = TRUE))
     stop("Package 'base64enc' is needed for plotPathXMY_widget(). Please install it.")
   if (!requireNamespace("htmltools", quietly = TRUE))
@@ -71,13 +79,18 @@ plotPathXMY_widget <- function(x,
     stop("`panel_titles` must have length equal to `Z_levels` when supplied.")
   }
 
-  ## Render one PNG per Z value at pixel-identical size
+  ## Render one frame per Z value at the requested size and format.
   uris <- character(n_frames)
   for (k in seq_along(Z_levels)) {
-    tmp <- tempfile(fileext = ".png")
+    if (format == "svg") {
+      tmp <- tempfile(fileext = ".svg")
+      grDevices::svg(tmp, width = width, height = height, bg = "white")
+    } else {
+      tmp <- tempfile(fileext = ".png")
+      grDevices::png(tmp, width = width, height = height,
+                     units = "in", res = res, bg = "white")
+    }
     on.exit(unlink(tmp), add = TRUE)
-    grDevices::png(tmp, width = width, height = height,
-                   units = "in", res = res, bg = "white")
     tryCatch({
       plotPathXMY(x,
                   mediator = mediator,
@@ -86,11 +99,14 @@ plotPathXMY_widget <- function(x,
                   title    = panel_titles[k],
                   ...)
     }, finally = grDevices::dev.off())
-    uris[k] <- base64enc::dataURI(file = tmp, mime = "image/png")
+    mime <- if (format == "svg") "image/svg+xml" else "image/png"
+    uris[k] <- base64enc::dataURI(file = tmp, mime = mime)
   }
 
-  ## CSS display width is half the rendered pixel width (2x retina factor).
-  display_px <- round(width * res / 2L)
+  ## CSS display width: for PNG, half the rendered pixel width (2x retina);
+  ## for SVG, the requested width in CSS px (96 dpi reference).
+  display_px <- if (format == "svg") round(width * 96)
+                else                  round(width * res / 2L)
 
   ## Unique widget id (safe as JS identifier and CSS class)
   wid <- paste0("pxw", paste(sample(c(letters, 0:9), 12L, replace = TRUE),

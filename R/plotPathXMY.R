@@ -25,11 +25,17 @@
 #' \itemize{
 #'   \item \strong{Triangle} (single mediator) — X at bottom-left, M at
 #'     top, Y at bottom-right. Shows the direct X to Y arrow and both
-#'     mediated paths.
+#'     mediated paths from the single-mediator loop fit.
 #'   \item \strong{Fan} (multiple mediators) — X at left, mediators
-#'     stacked in the middle, Y at right. The direct X to Y arrow is
-#'     omitted because each single-mediator fit gives a different residual
-#'     direct effect.
+#'     stacked in the middle, Y at right. The mediator arms are an overlay
+#'     of the per-mediator loop fits (one X-M-Y model per mediator). When
+#'     the input carries joint multi-mediator results
+#'     (\code{pathXMY(joint = TRUE)}, the default), the residual X to Y
+#'     direct arrow is drawn from the joint fit — that is, the
+#'     \eqn{X \to Y} path controlling for the \emph{full} mediator set,
+#'     not for any one mediator. With an odd number of mediators the
+#'     stack is laid out asymmetrically so the straight X to Y arrow has
+#'     a clean gap at the y = 0 axis.
 #' }
 #'
 #' @param x A \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}} return.
@@ -111,10 +117,34 @@ plotPathXMY <- function(x,
   B1_YM <- vapply(mediator, pull_est, numeric(1), param = "B1_YM")
   BZ_YM <- vapply(mediator, pull_est, numeric(1), param = "BZ_YM")
 
-  ## Direct paths only meaningful in single-mediator fit
-  has_direct <- !fan_view
-  B1_YX <- if (has_direct) pull_est(mediator[1], "B1_YX") else NA_real_
-  BZ_YX <- if (has_direct) pull_est(mediator[1], "BZ_YX") else NA_real_
+  ## Joint multi-mediator results (if present): used to draw the
+  ## residual X -> Y direct arrow in the fan view. Recognized by
+  ## the special row mediator = NA, param = "B1_YX_joint".
+  pull_joint <- function(param) {
+    r <- tidy[is.na(tidy$mediator) & tidy$param == param, , drop = FALSE]
+    if (nrow(r) == 0L) list(est = NA_real_, pvalue = NA_real_)
+    else list(est = r$est[1], pvalue = r$pvalue[1])
+  }
+  has_joint_direct <- any(is.na(tidy$mediator) &
+                          tidy$param == "B1_YX_joint")
+
+  ## Direct paths: single-mediator loop fit (triangle view) or, in fan
+  ## view, the joint multi-mediator fit when available.
+  if (fan_view) {
+    if (has_joint_direct) {
+      has_direct <- TRUE
+      B1_YX <- pull_joint("B1_YX_joint")$est
+      BZ_YX <- pull_joint("BZ_YX_joint")$est
+    } else {
+      has_direct <- FALSE
+      B1_YX <- NA_real_
+      BZ_YX <- NA_real_
+    }
+  } else {
+    has_direct <- TRUE
+    B1_YX <- pull_est(mediator[1], "B1_YX")
+    BZ_YX <- pull_est(mediator[1], "BZ_YX")
+  }
 
   ## If Z_value is supplied, collapse to effective coefficients at that Z.
   ## NAs in the BZ paths (e.g. no Z in the fit) are treated as zero.
@@ -176,7 +206,8 @@ plotPathXMY <- function(x,
     elab[mediator[i], "Y"] <- fmt_path(YM_eff[i], BZ_YM[i], p_YM)
   }
   if (has_direct && !is.na(YX_eff)) {
-    p_YX <- pull(mediator[1], "B1_YX")$pvalue
+    p_YX <- if (fan_view) pull_joint("B1_YX_joint")$pvalue
+            else          pull(mediator[1], "B1_YX")$pvalue
     elab["X", "Y"] <- fmt_path(YX_eff, BZ_YX, p_YX)
   }
 
@@ -186,7 +217,20 @@ plotPathXMY <- function(x,
   if (fan_view) {
     layout_mat["X", ] <- c(-1.5, 0)
     layout_mat["Y", ] <- c( 1.5, 0)
-    y_pos <- if (n_m == 1L) 0 else seq(1, -1, length.out = n_m)
+    ## Even n_m: evenly spaced positions don't include y = 0, so the
+    ## X -> Y line crosses cleanly between mediators.
+    ## Odd n_m: take n_m + 1 evenly spaced slots and drop the slot just
+    ## below center, leaving an asymmetric gap that straddles y = 0 so
+    ## the straight X -> Y line never crosses a mediator node.
+    if (n_m == 1L) {
+      y_pos <- 0
+    } else if (n_m %% 2L == 0L) {
+      y_pos <- seq(1, -1, length.out = n_m)
+    } else {
+      y_all   <- seq(1, -1, length.out = n_m + 1L)
+      drop_ix <- (n_m + 1L) %/% 2L + 1L
+      y_pos   <- y_all[-drop_ix]
+    }
     for (i in seq_along(mediator))
       layout_mat[mediator[i], ] <- c(0, y_pos[i])
   } else {
@@ -204,6 +248,19 @@ plotPathXMY <- function(x,
   ## Color groupings and intensity scores
   groups     <- pnLevels(scores_vec)
   scores_int <- as.integer(round(pmin(abs(scores_vec) / score_intensity_max, 1) * 20))
+
+  ## In fan view, append a caption noting that the mediator arms are an
+  ## overlay of per-mediator loop fits, and (if shown) that the X -> Y
+  ## arrow is from the joint multi-mediator fit.
+  if (fan_view) {
+    fan_caption <- if (has_joint_direct) {
+      "Summary of per-mediator X to M to Y fits; X to Y from joint fit of all M"
+    } else {
+      "Summary of per-mediator X to M to Y fits across M"
+    }
+    title <- if (is.null(title)) fan_caption
+             else                paste(title, fan_caption, sep = "\n")
+  }
 
   ## qgraph call
   qargs <- list(

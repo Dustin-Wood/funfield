@@ -51,6 +51,12 @@
 #'   has not been within-person deviated.
 #' @param suppress.warnings Logical. When \code{TRUE} (default), suppress
 #'   the cosmetic non-PD vcov warning that lavaan emits at machine precision.
+#' @param joint Logical (default \code{TRUE}). When \code{length(M) > 1},
+#'   additionally fit a single \emph{joint} multi-mediator model in which
+#'   all mediators appear simultaneously in the Y equation. The joint fit
+#'   contributes a residual \eqn{X \to Y} path (after controlling for the
+#'   full mediator set), and parallel per-mediator coefficients with the
+#'   suffix \code{_joint}. See \emph{Details}.
 #'
 #' @return A list with two elements:
 #'   \describe{
@@ -61,10 +67,16 @@
 #'       \code{B1_YX}, \code{BZ_YX}, \code{B1_YM}, \code{BZ_YM}, plus the
 #'       indirect effects \code{B1_MX * B1_YM} (unmoderated only),
 #'       \code{BZ_MX * B1_YM} (\eqn{= \beta^Z_{MX} \cdot \beta^1_{YM}}),
-#'       and \code{B1_MX * BZ_YM} (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).}
+#'       and \code{B1_MX * BZ_YM} (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).
+#'       When \code{joint = TRUE} and \code{length(M) > 1}, the table also
+#'       carries \code{*_joint} rows from the simultaneous fit:
+#'       per-mediator \code{B1_MX_joint}, \code{BZ_MX_joint},
+#'       \code{B1_YM_joint}, \code{BZ_YM_joint}, and global
+#'       \code{B1_YX_joint}, \code{BZ_YX_joint} (\code{mediator = NA}).}
 #'     \item{fits}{A named list of the lavaan fit objects (one per mediator,
 #'       named by the mediator variable name; \code{"_direct"} when
-#'       \code{M = NULL}).}
+#'       \code{M = NULL}; \code{"_joint"} for the joint multi-mediator fit
+#'       when present).}
 #'   }
 #'
 #' @details
@@ -85,6 +97,24 @@
 #' \code{BZ_*} are Z-moderated coefficients; \code{B*_MX} parameters
 #' regress M on X, \code{B*_YM} regress Y on M, \code{B*_YX} are the
 #' (direct) Y on X coefficients.
+#'
+#' \strong{Loop vs joint fits.} With multiple mediators, \code{pathXMY()}
+#' fits one X-M-Y model per mediator (the "loop" pass) and reports
+#' single-mediator paths \code{B1_*}, \code{BZ_*}. The loop pass is the
+#' inferential workhorse and supports the stable expectation-route summary
+#' \code{BZ_MX * B1_YM}. With \code{joint = TRUE} (default), an additional
+#' simultaneous multi-mediator fit is run; its parameters carry the
+#' \code{_joint} suffix in the tidy table. \code{B1_YX_joint} and
+#' \code{BZ_YX_joint} are the most useful joint outputs: they index the
+#' residual direct \eqn{X \to Y} (and its Z-moderation) after controlling
+#' for the \emph{entire} mediator set, and serve as a diagnostic of
+#' whether the measured mediators absorb the total \code{BZ_YX[1]}
+#' moderation. \emph{Per-mediator} joint coefficients (especially
+#' \code{BZ_YM_joint}) are typically less stable than their loop
+#' counterparts when mediators are numerous or correlated, because the
+#' M-by-Z product terms are highly collinear (Wood, Adanu, & Harms, 2025).
+#' For inference about a single mediator's role, prefer the loop
+#' coefficient; treat the joint coefficients as a system-level diagnostic.
 #'
 #' @examples
 #' \dontrun{
@@ -114,7 +144,8 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
                     se = c("cluster", "boot"),
                     nboot = 500, conf.level = 0.95,
                     check.deviation = TRUE,
-                    suppress.warnings = TRUE) {
+                    suppress.warnings = TRUE,
+                    joint = TRUE) {
 
   se <- match.arg(se)
   stopifnot(is.data.frame(data),
@@ -214,6 +245,24 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
   }
   tidy <- do.call(rbind, tidy_list)
   rownames(tidy) <- NULL
+
+  ## Optional joint multi-mediator fit (length(M) > 1)
+  if (isTRUE(joint) && length(M) > 1L) {
+    if (se == "boot") {
+      warning("Bootstrap SEs are not yet implemented for the joint multi-mediator fit; ",
+              "cluster-robust SEs are used for joint parameters.",
+              call. = FALSE)
+    }
+    jfit <- .pathXMY_fit_joint(dat, X = X, Y = Y, M = M,
+                                Z = Z, has_Z = has_Z,
+                                ctrl_terms = ctrl_terms,
+                                cluster = cluster,
+                                conf.level = conf.level,
+                                suppress.warnings = suppress.warnings)
+    fits[["_joint"]] <- jfit$fit
+    tidy <- rbind(tidy, jfit$tidy[, colnames(tidy)])
+    rownames(tidy) <- NULL
+  }
 
   structure(list(tidy = tidy, fits = fits),
             class = c("pathXMY", "list"))
@@ -397,6 +446,130 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
   m$pvalue   <- 2 * stats::pnorm(-abs(m$z))
   m$se_boot <- m$ci_lo_boot <- m$ci_hi_boot <- NULL
   m
+}
+
+## ---------- joint multi-mediator fit ----------
+
+## Build the lavaan model string for the joint multi-mediator case.
+## Interactions are passed as explicit product columns (X_Z, M_1_Z, ...)
+## rather than the `X:.Z` syntax so the rhs in parameterestimates() is
+## predictable across lavaan versions and across long equations.
+.pathXMY_model_joint <- function(K, has_Z, ctrl_terms) {
+  ctrl_M <- if (length(ctrl_terms) > 0)
+    paste0(" + ", paste(ctrl_terms, collapse = " + ")) else ""
+  ctrl_Y <- ctrl_M
+
+  m_eqs <- vapply(seq_len(K), function(k) {
+    if (has_Z) {
+      sprintf("M_%d ~ 1 + B1_MX_J_%d*X + .Z + BZ_MX_J_%d*X_Z%s",
+              k, k, k, ctrl_M)
+    } else {
+      sprintf("M_%d ~ 1 + B1_MX_J_%d*X%s", k, k, ctrl_M)
+    }
+  }, character(1))
+
+  ym_terms <- if (has_Z) {
+    paste(vapply(seq_len(K), function(k)
+      sprintf("B1_YM_J_%d*M_%d + BZ_YM_J_%d*M_%d_Z", k, k, k, k),
+      character(1)), collapse = " + ")
+  } else {
+    paste(vapply(seq_len(K), function(k)
+      sprintf("B1_YM_J_%d*M_%d", k, k), character(1)),
+      collapse = " + ")
+  }
+
+  y_eq <- if (has_Z) {
+    sprintf("Y ~ 1 + B1_YX_J*X + .Z + BZ_YX_J*X_Z + %s%s",
+            ym_terms, ctrl_Y)
+  } else {
+    sprintf("Y ~ 1 + B1_YX_J*X + %s%s", ym_terms, ctrl_Y)
+  }
+
+  paste(c(m_eqs, y_eq), collapse = "\n")
+}
+
+.pathXMY_fit_joint <- function(dat, X, Y, M, Z, has_Z, ctrl_terms,
+                                cluster, conf.level, suppress.warnings) {
+  d <- dat
+  d$X <- d[[X]]
+  d$Y <- d[[Y]]
+  K <- length(M)
+  Mn <- paste0("M_", seq_len(K))
+  for (k in seq_len(K)) d[[Mn[k]]] <- d[[M[k]]]
+
+  ## Explicit product columns for the interactions. d$.Z was set in the
+  ## main pathXMY() preflight (within-deviated or z-standardized).
+  if (has_Z) {
+    d$X_Z <- d$X * d$.Z
+    for (k in seq_len(K)) d[[paste0(Mn[k], "_Z")]] <- d[[Mn[k]]] * d$.Z
+  }
+
+  mod <- .pathXMY_model_joint(K, has_Z, ctrl_terms)
+  fit <- .pathXMY_lavaan(d, mod, cluster = cluster,
+                         suppress.warnings = suppress.warnings)
+  tidy <- .pathXMY_tidy_joint(fit, M, has_Z = has_Z,
+                              conf.level = conf.level)
+  list(fit = fit, tidy = tidy)
+}
+
+## Tidy the joint-fit lavaan output by pulling parameters structurally
+## from (lhs, op, rhs) triples in parameterestimates(). Product columns
+## are explicit (X_Z, M_k_Z) so the rhs matches are exact strings —
+## no reliance on lavaan's handling of `:` syntax for interactions.
+.pathXMY_tidy_joint <- function(fit, M, has_Z, conf.level) {
+  pe <- lavaan::parameterestimates(fit, level = conf.level)
+  K  <- length(M)
+  Mn <- paste0("M_", seq_len(K))
+
+  one_row <- function(mediator, param, lhs, op, rhs) {
+    r <- pe[pe$lhs == lhs & pe$op == op & pe$rhs == rhs, , drop = FALSE]
+    if (nrow(r) == 0L) return(NULL)
+    data.frame(
+      mediator = mediator,
+      param    = param,
+      est      = r$est[1],
+      se       = r$se[1],
+      z        = r$z[1],
+      pvalue   = r$pvalue[1],
+      ci.lower = r$ci.lower[1],
+      ci.upper = r$ci.upper[1],
+      row.names = NULL, stringsAsFactors = FALSE
+    )
+  }
+
+  rows <- list()
+  for (k in seq_len(K)) {
+    rows[[length(rows) + 1L]] <- one_row(M[k], "B1_MX_joint",
+                                         Mn[k], "~", "X")
+    if (has_Z)
+      rows[[length(rows) + 1L]] <- one_row(M[k], "BZ_MX_joint",
+                                           Mn[k], "~", "X_Z")
+    rows[[length(rows) + 1L]] <- one_row(M[k], "B1_YM_joint",
+                                         "Y", "~", Mn[k])
+    if (has_Z)
+      rows[[length(rows) + 1L]] <- one_row(M[k], "BZ_YM_joint",
+                                           "Y", "~", paste0(Mn[k], "_Z"))
+  }
+  rows[[length(rows) + 1L]] <- one_row(NA_character_, "B1_YX_joint",
+                                       "Y", "~", "X")
+  if (has_Z)
+    rows[[length(rows) + 1L]] <- one_row(NA_character_, "BZ_YX_joint",
+                                         "Y", "~", "X_Z")
+
+  rows <- rows[!vapply(rows, is.null, logical(1))]
+  if (length(rows) == 0L) {
+    warning("Joint multi-mediator fit produced no recognizable parameters; ",
+            "skipping joint output. Inspect ",
+            "lavaan::parameterestimates(<fit>$fits[['_joint']]) to debug.",
+            call. = FALSE)
+    return(data.frame(
+      mediator = character(0), param = character(0),
+      est = numeric(0), se = numeric(0), z = numeric(0),
+      pvalue = numeric(0), ci.lower = numeric(0), ci.upper = numeric(0),
+      stringsAsFactors = FALSE
+    ))
+  }
+  do.call(rbind, rows)
 }
 
 ## Warn if Level-1 variables don't look within-person deviated.

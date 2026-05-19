@@ -8,7 +8,12 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  dev = if (requireNamespace("ragg", quietly = TRUE)) "ragg_png" else "png",
+  dpi = 192,
+  out.width = "70%"
+)
 ```
 
 This vignette demonstrates moderated mediation with `pathXMY()` using the
@@ -198,11 +203,24 @@ plotPathXMY(dec_m,
             title = "ExpDisapproval -> M -> Likelihood (Z = manager)")
 ```
 
+The fan diagram's mediator arms are the per-mediator *loop* fits
+(one X to M to Y model per mediator, overlaid). The straight
+**X to Likelihood arrow** is the residual direct path from the
+*joint* multi-mediator fit (added automatically by
+`pathXMY(joint = TRUE)`, the default) — i.e. the
+`ExpDisapproval -> Likelihood` effect after controlling for the
+*full* set of seven mediators simultaneously. See the speeding
+vignette for an extended discussion of why the loop coefficients
+(not the per-mediator joint ones) are the right tool for inference
+about a single mediator's role, and why `BZ_YX_joint` is best
+treated as a system-level diagnostic (Wood, Adanu, & Harms, 2025).
+
 ```{r plot-manager-widget, eval = knitr::is_html_output()}
 plotPathXMY_widget(dec_m,
                    X_label = "ExpDisapp", Y_label = "Likelihood",
                    Z_label = "manager",
-                   Z_levels = c(-0.5, 0, 0.5))
+                   Z_levels = c(-0.5, 0, 0.5),
+                   format   = "svg")
 ```
 
 Because `manager` is binary and within-person deviated, the
@@ -326,7 +344,8 @@ plotPathXMY(dec_ue,
 plotPathXMY_widget(dec_ue,
                    X_label = "ExpDisapp", Y_label = "Likelihood",
                    Z_label = "Unethical",
-                   Z_levels = c(-0.5, 0, 0.5))
+                   Z_levels = c(-0.5, 0, 0.5),
+                   format   = "svg")
 ```
 
 Scrub through to watch the field reshape: at low `Unethical` the
@@ -407,7 +426,8 @@ plotPathXMY(dec_b, mediator = "Appropriate",
 ```{r plot-bold-widget, eval = knitr::is_html_output()}
 plotPathXMY_widget(dec_b, mediator = "Appropriate",
                    X_label = "ExpDisapp", Y_label = "Likelihood",
-                   Z_label = "bold")
+                   Z_label = "bold",
+                   format  = "svg")
 ```
 
 The widget toggles `bold = -1, 0, +1` (one SD below the mean,

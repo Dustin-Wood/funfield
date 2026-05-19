@@ -8,7 +8,12 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  dev = if (requireNamespace("ragg", quietly = TRUE)) "ragg_png" else "png",
+  dpi = 192,
+  out.width = "70%"
+)
 ```
 
 This vignette demonstrates moderated mediation with `pathXMY()` using the
@@ -361,13 +366,88 @@ plotPathXMY(dec,
             title = "Full X-M-Y field for speeding decisions")
 ```
 
-The fan diagram shows the whole expectancy-value structure at a
-glance. The mediator column reveals which expectations move with
-Speed: `Ticket` (+0.55) and `Appropriate` (-0.45) are the strongest
-in opposite directions; `FunDrive` and `IntQuality` are essentially
+The fan diagram is a **summary overlay**, not a single fit. The
+mediator arms are read off the per-mediator *loop* fits — one
+X to M to Y model per mediator — so each `Speed -> M_k` and
+`M_k -> Likelihood` arm is interpretable on its own without
+worrying about how the other mediators are competing for variance.
+The straight **X to Likelihood arrow** is different: it is drawn
+from the *joint* multi-mediator fit (added automatically by
+`pathXMY(joint = TRUE)`, the default), and shows the residual
+direct effect of `Speed` after controlling for the *full*
+mediator set.
+
+The mediator column reveals which expectations move with Speed:
+`Ticket` (+0.55) and `Appropriate` (-0.45) are the strongest in
+opposite directions; `FunDrive` and `IntQuality` are essentially
 unaffected by Speed (near-white). The right column of edges shows
 the valuation weights (`B1_YM`). Edge thickness in the fan
 diagnoses where the indirect-effect mass concentrates.
+
+### Joint multi-mediator fit: residual direct path and stability
+
+The same `pathXMY()` call that produced the loop coefficients also
+returns simultaneous-fit parameters under the `_joint` suffix. The
+most useful of these are the residual direct path and its
+Z-moderation:
+
+```{r joint-direct}
+joint_yx <- subset(mod_p$tidy, param %in% c("B1_YX_joint","BZ_YX_joint"))
+joint_yx$mediator <- NULL
+knitr::kable(joint_yx, digits = 3,
+  caption = "Residual direct path X -> Y from the joint fit of all 8 mediators (Z = SRFastDriver)")
+```
+
+`B1_YX_joint` is the residual `Speed -> Likelihood` path
+controlling for all eight expected outcomes simultaneously. If the
+measured mediator set has captured the within-person mechanisms,
+it should be near zero. `BZ_YX_joint` is the analogous diagnostic
+for moderation: an `SRFastDriver` effect on `Speed -> Likelihood`
+that does *not* run through any of the eight outcomes shows up
+here. The decomposition table earlier in this section flagged
+`BZ_YX[2]` as substantial (≈ 0.18-0.24) for every single-mediator
+fit; the joint result tells us whether the mediator set
+collectively absorbs that moderation.
+
+**Why prefer loop coefficients for per-mediator inference.** The
+joint fit also returns `B1_YM_joint` and `BZ_YM_joint` rows. When
+mediators are numerous and correlated — as the eight expected
+outcomes here certainly are — the M-by-Z product terms used to
+estimate `BZ_YM_joint` are highly collinear with each other,
+which inflates the standard errors substantially compared to the
+single-mediator loop fit (Wood, Adanu, & Harms, 2025). The loop
+estimates are not contaminated by this multicollinearity because
+each loop fit estimates only one mediator's `BZ_YM` at a time.
+The asymmetry can be made explicit:
+
+```{r joint-stability}
+loop <- subset(mod_p$tidy,
+               param == "BZ_YM" & !is.na(mediator))[, c("mediator","est","se")]
+join <- subset(mod_p$tidy,
+               param == "BZ_YM_joint")[, c("mediator","est","se")]
+names(loop)[2:3] <- c("loop_est","loop_se")
+names(join)[2:3] <- c("joint_est","joint_se")
+cmp <- merge(loop, join, by = "mediator")
+cmp$se_inflation <- cmp$joint_se / cmp$loop_se
+knitr::kable(cmp, digits = 3,
+  caption = "BZ_YM (valuation moderation) per mediator: loop vs joint, with SE inflation factor")
+```
+
+Joint SEs are inflated compared to the loop SEs (see the
+`se_inflation` column), and the joint point estimates jitter
+substantially across mediators when the mediator set is large
+and correlated. For inference about *which* mediators carry the
+valuation-route moderation, the loop coefficient is the right
+tool. The joint fit is best treated as a system-level diagnostic
+— most useful for `B1_YX_joint` / `BZ_YX_joint` (which are stable,
+because they estimate a single residual path), less useful for
+the per-mediator joint coefficients.
+
+> Wood, D., Adanu, E. K., & Harms, P. D. (2025). Expectancy x
+> value models of the relations between demographic,
+> psychological, and situational factors and speeding behavior.
+> *Journal of Safety Research*, **93**, 135-147.
+> doi:10.1016/j.jsr.2025.02.012
 
 ### Two-panel low-Z vs high-Z view
 
@@ -409,7 +489,8 @@ widget with Back / Forward buttons.
 ```{r plot-widget, eval = knitr::is_html_output()}
 plotPathXMY_widget(dec,
                    X_label = "Speed", Y_label = "Likelihood",
-                   Z_label = "SRFast")
+                   Z_label = "SRFast",
+                   format  = "svg")
 ```
 
 The default `Z_levels = c(-1, 0, 1)` toggles between one SD below
@@ -467,7 +548,8 @@ single arm.
 ```{r plot-skill-widget, eval = knitr::is_html_output()}
 plotPathXMY_widget(dec_sk, mediator = "Crash",
                    X_label = "Speed", Y_label = "Likelihood",
-                   Z_label = "Skill")
+                   Z_label = "Skill",
+                   format  = "svg")
 ```
 
 ## Scoring named trait composites
