@@ -8,3 +8,11 @@ inst/doc
 
 # Local session transcripts (Claude Code JSONL snapshots)
 _session_logs/
+
+# Local working-tree clutter (scratch scripts, scratch output, worktrees)
+Rplots.pdf
+.tmp_*
+/test_*.R
+/example/
+/.claude_session_setup.R
+.claude/worktrees/
