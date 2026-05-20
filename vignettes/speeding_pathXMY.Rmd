@@ -61,11 +61,12 @@ scale, so that within-person differences between two actions fall on
 
 Each participant saw exactly one scenario, randomly assembled from six
 situational factors. The Qualtrics scenario template lives at
-`speedingESJT$codebook$scenario$template`; the `${...}` placeholders
-are filled in per respondent from the six factors that follow:
+`speedingESJT$codebook$scenario$template`; what that returns is shown
+below in a readable format. The `${...}` placeholders are filled in
+per respondent from the six factors that follow:
 
-```{r scenario-template}
-speedingESJT$codebook$scenario$template
+```{r scenario-template, echo = FALSE, results = "asis"}
+cat("> ", speedingESJT$codebook$scenario$template, "\n")
 ```
 
 ```{r scenario-factors}
@@ -77,10 +78,27 @@ knitr::kable(
 ```
 
 Each respondent's fully assembled scenario is in
-`speedingESJT$cond$scenario`. Three examples (rows 1-3):
+`speedingESJT$cond$scenario`. Below are the first three (i.e., what
+`speedingESJT$cond$scenario[1:3]` returns, again formatted for
+readability):
 
-```{r scenario-assembled}
-speedingESJT$cond$scenario[1:3]
+```{r scenario-assembled, echo = FALSE, results = "asis"}
+ss <- speedingESJT$cond$scenario[1:3]
+for (i in seq_along(ss)) {
+  cat("> **Respondent ", i, ".** ", ss[i], "\n\n", sep = "")
+}
+```
+
+Notice how the same template produces materially different scenarios
+through random factor assignment. The factor levels that were combined
+to produce each of the three scenarios above:
+
+```{r scenario-cond}
+knitr::kable(
+  speedingESJT$cond[1:3, c("vehicle","weather","traffic",
+                           "timePressure","context","policeFreq")],
+  caption = "Factor levels for respondents 1-3"
+)
 ```
 
 ### Expected outcomes
