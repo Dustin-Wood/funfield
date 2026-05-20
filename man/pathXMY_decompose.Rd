@@ -8,8 +8,9 @@ direct-moderation components}
 pathXMY_decompose(data, X, Y, M, Z, Z.within = FALSE, cluster = "p", ...)
 }
 \arguments{
-\item{data}{A data frame in PSI long format with Level-1 columns already
-within-person deviated. See \code{\link{pathXMY}}.}
+\item{data}{A data frame in PSI long format. Level-1 columns are
+within-(person, situation) deviated automatically by
+\code{\link{pathXMY}} (see its \code{deviate} argument).}
 
 \item{X, Y, M, Z, Z.within, cluster, ...}{Passed to \code{\link{pathXMY}}.
 \code{M} must be supplied (one or more mediator names); \code{Z} is

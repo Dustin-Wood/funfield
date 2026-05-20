@@ -75,7 +75,7 @@ The predictor, mediators, and outcome are the expected-outcome ratings from
 > *"If you do this... [action] ...how likely is this outcome to result?"*
 
 The table below shows the variable name and the complete survey wording for
-each item (−1 = Very Unlikely, 1 = Very Likely):
+each item (0 = Very Unlikely, 1 = Very Likely):
 
 ```{r wording-table}
 knitr::kable(
@@ -99,22 +99,19 @@ The seven **mediators** are the remaining expected-outcome features.
 
 ## Data preparation
 
-Merge the condition variable into the PSI data, code a `manager` dummy
-(1 = coworker is a manager, 0 = coworker or subordinate), then within-person
-deviate all Level-1 columns.
+Deviate the Level-1 columns within `(person, situation)` with `devPSI()`,
+then merge the condition variable and code a `manager` dummy
+(1 = coworker is a manager, 0 = coworker or subordinate).
 
 ```{r prep}
-L1cols <- c("Appropriate","ExpDisapproval","MajorArg","GoodRelationP",
-            "Punished","CompleteJob","P_Punished","CompanySuccess","Likelihood")
 mediators <- c("Appropriate","MajorArg","GoodRelationP",
                "Punished","CompleteJob","P_Punished","CompanySuccess")
 
-dat <- merge(coworkerESJT$PSI, coworkerESJT$cond, by = c("p","s"))
+## devPSI() deviates each action's outcome ratings within (person, situation):
+## each rating is centered on the person's mean across the actions they rated
+## in that same situation, isolating the within-situation action contrast.
+dat <- merge(devPSI(coworkerESJT$PSI), coworkerESJT$cond, by = c("p","s"))
 dat$manager <- as.numeric(dat$condition == "manager")
-
-for (v in L1cols) {
-  dat[[v]] <- ave(dat[[v]], dat$p, FUN = function(x) x - mean(x))
-}
 ```
 
 ## Normative model (no moderator)
@@ -141,27 +138,29 @@ norm$tidy_joint
 
 Actions that score higher on `ExpDisapproval` (i.e., actions that would
 constitute more direct expression of disapproval) are also seen as more likely
-to produce a major argument/confrontation (`MajorArg`, B1_MX ≈ 0.70) and less
+to produce a major argument/confrontation (`MajorArg`, B1_MX ≈ 0.79) and less
 likely to maintain a good working relationship in the long run (`GoodRelationP`,
-B1_MX ≈ −0.52). They are also seen as more appropriate within the role
+B1_MX ≈ −0.64). They are also seen as more appropriate within the role
 (`Appropriate`, B1_MX > 0) and more likely to result in the coworker being
 formally punished (`P_Punished`, B1_MX > 0).
 
 ### Valuation paths (B1_YM): which outcomes drive action likelihood?
 
-Acting appropriately (`Appropriate`, B1_YM ≈ 0.73) and benefiting company
-success (`CompanySuccess`, B1_YM ≈ 0.74) are the strongest positive drivers of
+Acting appropriately (`Appropriate`, B1_YM ≈ 0.82) and benefiting company
+success (`CompanySuccess`, B1_YM ≈ 0.95) are the strongest positive drivers of
 whether a respondent says they would take an action. Being formally punished
-(`Punished`, B1_YM ≈ −0.56) and having a major argument (`MajorArg`,
-B1_YM ≈ −0.34) are the strongest suppressors.
+(`Punished`, B1_YM ≈ −0.78) and having a major argument (`MajorArg`,
+B1_YM ≈ −0.60) are the strongest suppressors.
 
 ### Indirect effects (B1_MX × B1_YM)
 
-Indirect effects are significant for all mediators where both component paths
-are non-zero. The indirect path through `Appropriate` is particularly large:
-actions that more strongly constitute an expression of disapproval are also
-seen as more role-appropriate, and perceived appropriateness strongly drives
-action likelihood.
+Indirect effects are significant for every mediator whose two component paths
+are both non-zero — the lone exception is `Punished`, whose expectation path
+(`B1_MX` ≈ 0.01) is essentially zero. The largest indirect paths are both
+negative: through `MajorArg` (B1_MX × B1_YM ≈ −0.47) and `GoodRelationP`
+(≈ −0.39). Within a situation, the action that more strongly expresses
+disapproval is expected to provoke a major argument and to erode the working
+relationship, and both expectations pull strongly against taking it.
 
 ## Situation-level moderation: coworker rank
 
@@ -265,7 +264,7 @@ exposure rather than the SD-based default.
 A second situation-level moderator comes from `$sit`: `WasUnethical`, rated
 on the stem *"At this point in the situation, to what extent has your
 [coworker] done something that… Should be regarded as unethical, morally
-inappropriate, or 'wrong'?"* (−1 = Greatly Decreased, 0 = Negligible, 1 =
+inappropriate, or 'wrong'?"* (0 = Greatly Decreased, 0.5 = Negligible, 1 =
 Greatly Increased). Unlike `manager`, which was experimentally assigned,
 `WasUnethical` is a continuous participant perception that varies across
 situations and persons.
@@ -273,26 +272,23 @@ situations and persons.
 ### Data preparation note
 
 Because `$sit` has complete data for only 206 of the 249 participants (43
-participants skipped the situation-perceptions block entirely), and because
-`WasUnethical` must be merged before within-person deviation so that means
-are computed on the actually-available observations, we start from the raw
-`$PSI` rather than the pre-deviated `dat`:
+participants skipped the situation-perceptions block entirely), merging
+`WasUnethical` restricts this analysis to a subsample. `devPSI()` deviates
+each rating within its `(p, s)` cell, so — unlike person-level centering —
+the deviation scores do not depend on which other situations a person has;
+we `devPSI()` the full `$PSI`, merge the moderator, and drop person-situations
+with no `WasUnethical` rating:
 
 ```{r prep-unethical}
 sit_sub <- coworkerESJT$sit[, c("p","s","WasUnethical")]
-dat3 <- merge(coworkerESJT$PSI, sit_sub, by = c("p","s"))
+dat3 <- merge(devPSI(coworkerESJT$PSI), sit_sub, by = c("p","s"))
 dat3 <- dat3[!is.na(dat3$WasUnethical), ]
 cat("Rows:", nrow(dat3), " | Persons:", length(unique(dat3$p)), "\n")
-
-for (v in L1cols) {
-  dat3[[v]] <- ave(dat3[[v]], dat3$p, FUN = function(x) x - mean(x))
-}
 ```
 
-Note that within the 206 retained participants, coverage is ~98% (only a
-handful of individual situations are missing). The reduction from 5,846 to
-4,840 rows is almost entirely due to the 43 persons with no sit data, not
-random within-person missingness.
+Note that within the 206 retained participants, coverage is ~96% of
+person-situations. The reduction from 5,734 to 4,760 rows is almost entirely
+due to the 43 persons with no sit data, not random within-person missingness.
 
 **A caution on standard errors.** `WasUnethical` is a situation-level
 perception: both action rows for a given person-situation carry the *same*
@@ -318,17 +314,18 @@ knitr::kable(
 )
 ```
 
-All seven mediators are significantly moderated, and the effects are
-substantially larger than those for coworker rank. The dominant pattern is
-through `Appropriate` (BZ_MX = 0.599, z = 23.9): in situations perceived as
-more unethical than the respondent's personal average, expressing disapproval
-is expected to be dramatically *more* role-appropriate. The complementary
-picture holds for `Punished` (BZ_MX = −0.307): when the coworker's behavior
-is perceived as unethical, the respondent expects *less* personal punishment
-for pushing back — the moral justification removes the sense of personal risk.
-`CompleteJob` (0.263) and `CompanySuccess` (0.326) also show large positive
-moderation: in unethical situations, expressing disapproval is expected to
-serve both task-completion and organizational interests far better.
+Six of the seven mediators are significantly moderated (`P_Punished` is the
+exception), and the effects are substantially larger than those for coworker
+rank. The dominant pattern is through `Appropriate` (BZ_MX = 1.45, z = 23.4):
+in situations perceived as more unethical than the respondent's personal
+average, expressing disapproval is expected to be dramatically *more*
+role-appropriate. The complementary picture holds for `Punished`
+(BZ_MX = −0.71): when the coworker's behavior is perceived as unethical, the
+respondent expects *less* personal punishment for pushing back — the moral
+justification removes the sense of personal risk. `CompleteJob` (0.60) and
+`CompanySuccess` (0.80) also show large positive moderation: in unethical
+situations, expressing disapproval is expected to serve both task-completion
+and organizational interests far better.
 
 The profile is a near-complete reversal of the manager-rank effect: where a
 higher-power coworker suppresses the perceived benefits of asserting,
@@ -344,13 +341,13 @@ knitr::kable(
 )
 ```
 
-The moderated indirect effect through `Appropriate` (0.413) is the largest
+The moderated indirect effect through `Appropriate` (1.12) is the largest
 such coefficient in this entire vignette — larger than any effect of coworker
 rank. In situations perceived as more unethical, the combination of expecting
 the action to be appropriate *and* perceived appropriateness strongly driving
 likelihood produces a powerful amplification of the indirect path toward
-action. `CompanySuccess` (0.218), `Punished` (0.160), and `CompleteJob`
-(0.138) also show substantial moderated indirect effects, all reinforcing
+action. `CompanySuccess` (0.64), `Punished` (0.49), and `CompleteJob`
+(0.39) also show substantial moderated indirect effects, all reinforcing
 the same direction: perceived unethicality makes the full pathway from
 expressing-disapproval expectation to action likelihood substantially
 stronger.
@@ -392,7 +389,7 @@ perceived moral justification.
 Does trait boldness moderate these paths? The IIDL item for boldness asks
 respondents to rate *"bold, assertive"* on the stem *"How much does each term
 describe the way you typically act, feel, or see yourself at work?"*
-(−1 = Very Uncharacteristic, 1 = Very Characteristic).
+(0 = Very Uncharacteristic, 1 = Very Characteristic).
 
 Boldness is a between-person variable, so we use the default `Z.within = FALSE`.
 Merging `$IIDL` reduces the sample to the 206 participants who completed the

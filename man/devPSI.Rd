@@ -24,11 +24,16 @@ deviated from their average rating of outcomes of different actions in that situ
 \details{
 This essentially forces 'deviation' scoring.
 
-Note that when nI = 2, the deviation scores will be reflections of one another.
-In which case, keeping only the maximum i (which should be i=1)  can be useful
-to help avoid artificial inflation of sample size
-(although other strategies, like multilevel modeling in lavaan,
-may be preferable to address this issue).
+Note that when nI = 2, the two deviation scores within a person-situation
+are exact reflections of one another. With \emph{naive} (non-clustered)
+standard errors this doubles the apparent sample size and makes
+significance tests anti-conservative, so keeping only one action per
+situation (e.g. i = 1) would be advisable. With \strong{cluster-robust
+standard errors clustered at the person level} -- as used by
+\code{\link{pathXMY}} -- this is not a concern: the sandwich estimator
+counts clusters, not rows, and the perfectly mirrored rows sit within the
+same person cluster, so duplicating them leaves every standard error
+unchanged. Both action rows can be kept.
 
 If we want the difference of the two actions (rather than deviation scoring),
 we can pair the devPSI function with diffPSI.

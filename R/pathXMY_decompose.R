@@ -38,8 +38,9 @@
 #' (\code{BZ_YM} large) — invisible in the \code{BZ_MX} table but central
 #' to understanding why the trait moderates action.
 #'
-#' @param data A data frame in PSI long format with Level-1 columns already
-#'   within-person deviated. See \code{\link{pathXMY}}.
+#' @param data A data frame in PSI long format. Level-1 columns are
+#'   within-(person, situation) deviated automatically by
+#'   \code{\link{pathXMY}} (see its \code{deviate} argument).
 #' @param X,Y,M,Z,Z.within,cluster,... Passed to \code{\link{pathXMY}}.
 #'   \code{M} must be supplied (one or more mediator names); \code{Z} is
 #'   required.

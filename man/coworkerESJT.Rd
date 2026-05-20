@@ -10,29 +10,29 @@ A named list with five elements:
 \strong{\code{$PSI}} — person × situation × action ratings (5,846 rows).
 Outcome columns use the stem
 \emph{"If you do this... [action] ...how likely is this outcome to result?"}
-on a −1 to 1 scale:
+on a 0 to 1 scale:
 \describe{
   \item{p}{Person ID (Qualtrics response ID string).}
   \item{s}{Situation ID (integer 1–12).}
   \item{i}{Action ID, coded as \code{"s.a"} (e.g., \code{"1.1"} = scenario 1
     action 1, \code{"1.2"} = scenario 1 action 2).}
   \item{Appropriate}{\emph{Having acted appropriately within your role in the
-    company.} (−1 to 1)}
+    company.} (0 to 1)}
   \item{ExpDisapproval}{\emph{Having directly/forcefully expressed disapproval
-    with your [coworker]'s behavior.} (−1 to 1)}
+    with your [coworker]'s behavior.} (0 to 1)}
   \item{MajorArg}{\emph{Having a major argument/confrontation with your
-    [coworker].} (−1 to 1)}
+    [coworker].} (0 to 1)}
   \item{GoodRelationP}{\emph{Having a good working relationship with your
-    [coworker] in the long run.} (−1 to 1)}
+    [coworker] in the long run.} (0 to 1)}
   \item{Punished}{\emph{You being formally punished in some way (example:
-    reprimanded or fired).} (−1 to 1)}
+    reprimanded or fired).} (0 to 1)}
   \item{CompleteJob}{\emph{You completing your job responsibilities/work
-    effectively in the long run.} (−1 to 1)}
+    effectively in the long run.} (0 to 1)}
   \item{P_Punished}{\emph{Your [coworker] being formally punished in some
-    way (example: reprimanded or fired).} (−1 to 1)}
-  \item{CompanySuccess}{\emph{The overall success of the company.} (−1 to 1)}
+    way (example: reprimanded or fired).} (0 to 1)}
+  \item{CompanySuccess}{\emph{The overall success of the company.} (0 to 1)}
   \item{Likelihood}{\emph{How likely are you to do the following actions in
-    response to this situation?} (−1 to 1)}
+    response to this situation?} (0 to 1)}
 }
 
 \strong{\code{$cond}} — situational condition per person-scenario (2,988 rows):
@@ -47,8 +47,8 @@ on a −1 to 1 scale:
 \strong{\code{$sit}} — situation-level perceptions, action-independent
 (2,465 rows; ~82.5\% coverage of person × situation combinations).
 Items use the stem \emph{"At this point in the situation, to what extent has
-your [coworker] done something that…"} on a −1 to 1 scale
-(−1 = Greatly Decreased, 0 = Negligible Effect, 1 = Greatly Increased):
+your [coworker] done something that…"} on a 0 to 1 scale
+(0 = Greatly Decreased, 0.5 = Negligible Effect, 1 = Greatly Increased):
 \describe{
   \item{p}{Person ID.}
   \item{s}{Situation ID.}
@@ -64,8 +64,8 @@ your [coworker] done something that…"} on a −1 to 1 scale
 \strong{\code{$IIDL}} — person-level IIDL trait ratings (206 persons;
 not all participants in \code{$PSI} completed this measure).
 Items use the stem \emph{"How much does each term describe the way you
-typically act, feel, or see yourself at work?"} on a −1 to 1 scale
-(−1 = Very Uncharacteristic, 1 = Very Characteristic):
+typically act, feel, or see yourself at work?"} on a 0 to 1 scale
+(0 = Very Uncharacteristic, 1 = Very Characteristic):
 \describe{
   \item{p}{Person ID.}
   \item{IIDL_outgoing, IIDL_bold, \ldots}{40 IIDL (Interpersonal Identity
@@ -127,30 +127,26 @@ sequential screens were applied:
 }
 Final analytic sample: \strong{N = 249} participants.
 
-\strong{Typical workflow.} Within-person deviate the Level-1 columns
-before fitting path models:
+\strong{Typical workflow.} Deviate the Level-1 columns within person
+\emph{and} situation with \code{devPSI()} before fitting path models —
+this centers each action's rating on the person's mean across the actions
+rated in that same situation, isolating the within-situation action
+contrast:
 
 \preformatted{
 data(coworkerESJT)
-L1cols <- c("Appropriate","ExpDisapproval","MajorArg","GoodRelationP",
-            "Punished","CompleteJob","P_Punished","CompanySuccess","Likelihood")
-PSI <- coworkerESJT$PSI
-for (v in L1cols) PSI[[v]] <- ave(PSI[[v]], PSI$p,
-                                  FUN = function(x) x - mean(x))
+dev <- devPSI(coworkerESJT$PSI)
 }
 
-\strong{Using the condition moderator.} Merge \code{$cond} first, then
-deviate, so that within-person means stay at zero. The \code{pathXMY}
-call uses \code{Z.within = TRUE} to within-person deviate the moderator
-before fitting:
+\strong{Using the condition moderator.} \code{devPSI()} deviates the
+Level-1 columns within \code{(p, s)}; the \code{pathXMY} call uses
+\code{Z.within = TRUE} so the situation-level moderator is within-person
+deviated instead (it is constant within \code{(p, s)}, so it must be
+deviated at the person level):
 
 \preformatted{
-L1cols <- c("Appropriate","ExpDisapproval","MajorArg","GoodRelationP",
-            "Punished","CompleteJob","P_Punished","CompanySuccess","Likelihood")
-dat <- merge(coworkerESJT$PSI, coworkerESJT$cond, by = c("p","s"))
+dat <- merge(devPSI(coworkerESJT$PSI), coworkerESJT$cond, by = c("p","s"))
 dat$manager <- as.numeric(dat$condition == "manager")
-for (v in L1cols) dat[[v]] <- ave(dat[[v]], dat$p, FUN = function(x) x - mean(x))
-## Z = "manager" will be within-deviated automatically by pathXMY
 res <- pathXMY(dat, X = "ExpDisapproval", Y = "Likelihood",
                M = "Appropriate", Z = "manager", Z.within = TRUE)
 }

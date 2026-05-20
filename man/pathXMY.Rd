@@ -12,7 +12,9 @@ pathXMY(
   Z = NULL,
   Z.within = FALSE,
   cluster = "p",
+  situation = "s",
   controls = NULL,
+  deviate = c("auto", "none"),
   se = c("cluster", "boot"),
   nboot = 500,
   conf.level = 0.95,
@@ -22,10 +24,10 @@ pathXMY(
 )
 }
 \arguments{
-\item{data}{A data frame in PSI long format. Level-1 (within-person)
-columns should be within-person deviated; \code{Z} is treated as a
-between-person trait moderator and is z-standardized inside the
-function. See \emph{Details} for the deviation assumption.}
+\item{data}{A data frame in PSI long format (\code{p}, \code{s}, \code{i}
+as the first columns). By default the Level-1 columns \code{X},
+\code{M}, \code{Y} are within-(person, situation) deviated
+automatically (see \code{deviate}); \code{Z} is handled separately.}
 
 \item{X}{Name of the initiating action / predictor variable (length-1
 character).}
@@ -57,8 +59,22 @@ interpretation).}
 Set to \code{NULL} to fit without cluster-robust SEs (not recommended
 for ESJT data).}
 
+\item{situation}{Name of the situation/scenario column (default
+\code{"s"}), paired with \code{cluster} to define the (person,
+situation) cells used by automatic deviation.}
+
 \item{controls}{Optional character vector of control variables added to
 both equations.}
+
+\item{deviate}{One of \code{"auto"} (default) or \code{"none"}. With
+\code{"auto"}, \code{X}, \code{M}, and \code{Y} are within-(person,
+situation) deviated before fitting --- each value centered on the mean
+of the actions rated in the same \code{(cluster, situation)} cell ---
+provided a \code{situation} column is present and every cell holds at
+least two rows. When some cells hold a single action the data is left
+untouched (deviate it yourself first, e.g. with \code{\link{devPSI}}).
+With \code{"none"}, no deviation is applied and pre-deviated data is
+assumed.}
 
 \item{se}{One of \code{"cluster"} (default; sandwich SEs from lavaan) or
 \code{"boot"} (cluster bootstrap of \code{nboot} replicates).}
@@ -67,9 +83,10 @@ both equations.}
 
 \item{conf.level}{Confidence level for CI columns (default 0.95).}
 
-\item{check.deviation}{Logical. When \code{TRUE} (default), warn if the
-within-cluster mean of \code{X}, \code{M}, or \code{Y} suggests data
-has not been within-person deviated.}
+\item{check.deviation}{Logical. When \code{TRUE} (default), warn if
+\code{X}, \code{M}, or \code{Y} still do not look within-person
+deviated after the \code{deviate} step --- relevant mainly when
+\code{deviate = "none"} and the data was not pre-deviated.}
 
 \item{suppress.warnings}{Logical. When \code{TRUE} (default), suppress
 the cosmetic non-PD vcov warning that lavaan emits at machine precision.}
@@ -129,13 +146,19 @@ Supplying multiple variable names in \code{M} loops the model over each
 mediator one at a time and returns a single stacked tidy table.
 }
 \details{
-\strong{Deviation assumption.} \code{cluster = "p"} in lavaan provides
+\strong{Deviation.} \code{cluster = "p"} in lavaan provides
 cluster-robust sandwich standard errors on a single-level SEM; it is
-\emph{not} a multilevel model. To get correct within-person path
-coefficients, Level-1 variables (\code{X}, \code{M}, \code{Y}) should
-be within-person deviated before being passed in. \code{Z} is treated
-as a between-person trait (no within-person variance expected) and is
-z-standardized inside the function.
+\emph{not} a multilevel model. Correct within-person path coefficients
+therefore require the Level-1 variables (\code{X}, \code{M}, \code{Y})
+to be deviated within each \code{(cluster, situation)} cell. By default
+(\code{deviate = "auto"}) \code{pathXMY()} does this internally; pass
+\code{deviate = "none"} for data that is already deviated. When more than
+one action is rated per (person, situation), within-cell deviation
+isolates the within-situation action contrast the field model is about;
+with a single situation per person it reduces to ordinary within-person
+deviation. \code{Z} is handled separately: a between-person trait
+moderator (\code{Z.within = FALSE}) is z-standardized, a situation-level
+moderator (\code{Z.within = TRUE}) is within-person deviated.
 
 \strong{Small cluster counts.} The cluster-robust z-tests assume the
 number of clusters \eqn{G} is large. With \eqn{G < 50}, results may be
@@ -182,24 +205,19 @@ coefficient in \code{$tidy_loop}; treat the joint coefficients in
 \examples{
 \dontrun{
 data(speedingESJT)
-## Within-person deviate the Level 1 columns
-L1 <- c("Speed","Crash","Injured","Ticket","MoneyCost","OnTime",
-        "IntQuality","FunDrive","Appropriate","L")
-dev <- speedingESJT
-for (v in L1) dev[[v]] <- ave(dev[[v]], dev$p,
-                              FUN = function(x) x - mean(x))
+## X, M, Y are within-(person, situation) deviated automatically.
+PSI <- speedingESJT$PSI
 
 ## Unmoderated mediation, one mediator
-res1 <- pathXMY(dev, X = "Speed", Y = "L", M = "Crash")
+res1 <- pathXMY(PSI, X = "Speed", Y = "Likelihood", M = "Crash")
 res1$tidy_loop
 
-## Moderated mediation across all eight outcome features
+## Mediation across all eight outcome features
 mediators <- c("Crash","Injured","Ticket","MoneyCost","OnTime",
                "IntQuality","FunDrive","Appropriate")
-res2 <- pathXMY(dev, X = "Speed", Y = "L", M = mediators,
-                Z = "SRFastDriver")
+res2 <- pathXMY(PSI, X = "Speed", Y = "Likelihood", M = mediators)
 ## Loop pass: per-mediator single-mediator regressions
-subset(res2$tidy_loop, param \%in\% c("BZ_MX","BZ_MX * B1_YM"))
+res2$tidy_loop
 ## Joint pass: simultaneous multi-mediator regression
 res2$tidy_joint
 }
