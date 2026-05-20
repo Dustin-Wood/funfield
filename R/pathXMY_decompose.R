@@ -75,8 +75,8 @@ pathXMY_decompose <- function(data, X, Y, M, Z, Z.within = FALSE,
   fit2 <- pathXMY(data, X = X, Y = Y, M = M, Z = Z,
                   Z.within = Z.within, cluster = cluster, ...)
 
-  t1 <- fit1$tidy
-  t2 <- fit2$tidy
+  t1 <- fit1$tidy_loop
+  t2 <- fit2$tidy_loop
 
   total <- t1[t1$param == "BZ_YX",
               c("est","se","z","pvalue","ci.lower","ci.upper"), drop = FALSE]

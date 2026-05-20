@@ -17,11 +17,11 @@ for (v in L1) dev[[v]] <- ave(dev[[v]], dev$p, FUN = function(x) x - mean(x))
 
 cat("\n==== TEST 1: Direct model, no moderator (M = NULL, Z = NULL) ====\n")
 res <- pathXMY(dev, X = "Speed", Y = "L")
-print(res$tidy)
+print(res$tidy_loop)
 
 cat("\n==== TEST 2: Direct model, moderated (M = NULL, Z given) ====\n")
 res <- pathXMY(dev, X = "Speed", Y = "L", Z = "SRFastDriver")
-print(res$tidy)
+print(res$tidy_loop)
 ## This is the TOTAL effect of X on Y (and Z*X on Y) when no mediator is in
 ## the model. It should equal direct + indirect effects from the mediation
 ## model. Sanity check: total Z-moderation ~ BZ_YX + indZ_X + indZ_Y from
@@ -31,7 +31,7 @@ cat("  from TEST 4: 0.228 + 0.036 - 0.023 = 0.241 (compare to BZ_YX above)\n")
 
 cat("\n==== TEST 3: Unmoderated mediation (M = 'Crash', Z = NULL) ====\n")
 res <- pathXMY(dev, X = "Speed", Y = "L", M = "Crash")
-print(res$tidy)
+print(res$tidy_loop)
 ## Expected from speeding script (NoModMedModel with M = Crash):
 ##   B1_MX (B1_1A): 0.314  SE .016  (script reports it under cluster=p)
 ##   B1_YX (B1_LA): -0.075 SE .040
@@ -45,7 +45,7 @@ cat("  ind:   -0.208 (.026)\n")
 
 cat("\n==== TEST 4: Moderated mediation, single mediator ====\n")
 res <- pathXMY(dev, X = "Speed", Y = "L", M = "Crash", Z = "SRFastDriver")
-print(res$tidy)
+print(res$tidy_loop)
 ## Expected from stress test / speeding script:
 ##   B1_MX:  0.314 (.015)
 ##   BZ_MX: -0.065 (.015)
@@ -71,19 +71,19 @@ mediators <- c("Crash","Injured","Ticket","MoneyCost","OnTime",
                "IntQuality","FunDrive","Appropriate")
 res <- pathXMY(dev, X = "Speed", Y = "L", M = mediators, Z = "SRFastDriver")
 cat("\n-- BZ_MX across mediators --\n")
-print(subset(res$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+print(subset(res$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
       row.names = FALSE)
 cat("\n-- indZ_X (Z-moderation of indirect via expectation path) --\n")
-print(subset(res$tidy, param == "indZ_X")[, c("mediator","est","se","z","pvalue")],
+print(subset(res$tidy_loop, param == "indZ_X")[, c("mediator","est","se","z","pvalue")],
       row.names = FALSE)
 cat("\n-- indZ_Y (Z-moderation of indirect via valuation path) --\n")
-print(subset(res$tidy, param == "indZ_Y")[, c("mediator","est","se","z","pvalue")],
+print(subset(res$tidy_loop, param == "indZ_Y")[, c("mediator","est","se","z","pvalue")],
       row.names = FALSE)
 
 cat("\n==== TEST 6: Bootstrap SE mode ====\n")
 res <- pathXMY(dev, X = "Speed", Y = "L", M = "Crash", Z = "SRFastDriver",
                se = "boot", nboot = 200)
-print(res$tidy)
+print(res$tidy_loop)
 
 cat("\n==== TEST 7: Low-cluster warning ====\n")
 sub <- dev[dev$p %in% sample(unique(dev$p), 20), ]

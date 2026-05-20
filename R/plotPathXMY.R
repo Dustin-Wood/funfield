@@ -88,8 +88,8 @@ plotPathXMY <- function(x,
     stop("plotPathXMY() requires the 'qgraph' package.")
 
   ## Accept either pathXMY or pathXMY_decompose
-  tidy <- if (!is.null(x$fits) && !is.null(x$fits$full)) x$fits$full$tidy
-          else if (!is.null(x$tidy))                      x$tidy
+  tidy <- if (!is.null(x$fits) && !is.null(x$fits$full)) x$fits$full$tidy_loop
+          else if (!is.null(x$tidy_loop))                 x$tidy_loop
           else stop("`x` must be a pathXMY() or pathXMY_decompose() return.")
 
   all_meds <- unique(tidy$mediator)

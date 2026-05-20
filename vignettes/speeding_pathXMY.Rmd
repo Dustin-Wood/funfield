@@ -95,14 +95,23 @@ conditions?
 
 ```{r normative}
 norm <- pathXMY(dat, X = "Speed", Y = "Likelihood", M = mediators)
-norm$tidy
+
+## Loop pass: one X -> M -> Y regression PER MEDIATOR, fit independently.
+## A B1_YM row here is the slope of Likelihood on that mediator
+## controlling only for Speed (no other mediators in the equation).
+norm$tidy_loop
+
+## Joint pass: a SINGLE simultaneous regression with all eight mediators
+## together in the Y equation. B1_YM_joint slopes are partial slopes net
+## of the other seven mediators -- not comparable to the loop B1_YM above.
+norm$tidy_joint
 ```
 
 ### Expectation paths (B1_MX): what is speeding expected to produce?
 
 ```{r bmx}
 knitr::kable(
-  subset(norm$tidy, param == "B1_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(norm$tidy_loop, param == "B1_MX")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Expectation paths (Speed -> M)"
 )
@@ -119,7 +128,7 @@ not move much with the action's speed.
 
 ```{r bym}
 knitr::kable(
-  subset(norm$tidy, param == "B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(norm$tidy_loop, param == "B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Valuation paths (M -> Likelihood)"
 )
@@ -134,7 +143,7 @@ likelihood. The signs are intuitive throughout.
 
 ```{r bind}
 knitr::kable(
-  subset(norm$tidy, param == "B1_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(norm$tidy_loop, param == "B1_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Indirect effects through each mediator"
 )
@@ -172,7 +181,7 @@ mod_s <- pathXMY(dat, X = "Speed", Y = "Likelihood",
 
 ```{r bzmx-late}
 knitr::kable(
-  subset(mod_s$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of expectation paths by time pressure (BZ_MX)"
 )
@@ -182,7 +191,7 @@ knitr::kable(
 
 ```{r bz-indirect-late}
 knitr::kable(
-  subset(mod_s$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of indirect effects by time pressure (BZ_MX x B1_YM)"
 )
@@ -224,7 +233,7 @@ mod_p <- pathXMY(dat2, X = "Speed", Y = "Likelihood",
 
 ```{r bz-mx-srfast}
 knitr::kable(
-  subset(mod_p$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of expectation paths by SRFastDriver (BZ_MX)"
 )
@@ -234,7 +243,7 @@ knitr::kable(
 
 ```{r bz-indirect-srfast}
 knitr::kable(
-  subset(mod_p$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of indirect effects by SRFastDriver (BZ_MX x B1_YM)"
 )
@@ -392,7 +401,7 @@ most useful of these are the residual direct path and its
 Z-moderation:
 
 ```{r joint-direct}
-joint_yx <- subset(mod_p$tidy, param %in% c("B1_YX_joint","BZ_YX_joint"))
+joint_yx <- subset(mod_p$tidy_joint, param %in% c("B1_YX_joint","BZ_YX_joint"))
 joint_yx$mediator <- NULL
 knitr::kable(joint_yx, digits = 3,
   caption = "Residual direct path X -> Y from the joint fit of all 8 mediators (Z = SRFastDriver)")
@@ -421,9 +430,9 @@ each loop fit estimates only one mediator's `BZ_YM` at a time.
 The asymmetry can be made explicit:
 
 ```{r joint-stability}
-loop <- subset(mod_p$tidy,
+loop <- subset(mod_p$tidy_loop,
                param == "BZ_YM" & !is.na(mediator))[, c("mediator","est","se")]
-join <- subset(mod_p$tidy,
+join <- subset(mod_p$tidy_joint,
                param == "BZ_YM_joint")[, c("mediator","est","se")]
 names(loop)[2:3] <- c("loop_est","loop_se")
 names(join)[2:3] <- c("joint_est","joint_se")

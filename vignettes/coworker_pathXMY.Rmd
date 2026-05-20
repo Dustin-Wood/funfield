@@ -102,7 +102,16 @@ is to take it, averaging across people and conditions?
 
 ```{r normative}
 norm <- pathXMY(dat, X = "ExpDisapproval", Y = "Likelihood", M = mediators)
-norm$tidy
+
+## Loop pass: one X -> M -> Y regression PER MEDIATOR, fit independently.
+## Each B1_YM row is the slope of Likelihood on that mediator controlling
+## only for ExpDisapproval (no other mediators in the equation).
+norm$tidy_loop
+
+## Joint pass: a SINGLE simultaneous regression with all mediators together
+## in the Y equation. B1_YM_joint slopes are partial slopes net of the
+## other mediators -- not comparable to the loop B1_YM above.
+norm$tidy_joint
 ```
 
 ### Expectation paths (B1_MX): what co-occurs with expressing disapproval?
@@ -147,7 +156,7 @@ mod_s <- pathXMY(dat, X = "ExpDisapproval", Y = "Likelihood",
 
 ```{r bz-mx}
 knitr::kable(
-  subset(mod_s$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of expectation paths by manager rank (BZ_MX)"
 )
@@ -168,7 +177,7 @@ facing a higher-power colleague.
 
 ```{r bz-indirect}
 knitr::kable(
-  subset(mod_s$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of indirect effects by manager rank (BZ_MX × B1_YM)"
 )
@@ -280,7 +289,7 @@ mod_ue <- pathXMY(dat3, X = "ExpDisapproval", Y = "Likelihood",
 
 ```{r bz-mx-ue}
 knitr::kable(
-  subset(mod_ue$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_ue$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of expectation paths by perceived unethicality (BZ_MX)"
 )
@@ -306,7 +315,7 @@ perceived unethicality amplifies them.
 
 ```{r bz-indirect-ue}
 knitr::kable(
-  subset(mod_ue$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_ue$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of indirect effects by perceived unethicality (BZ_MX × B1_YM)"
 )
@@ -378,7 +387,7 @@ mod_p <- pathXMY(dat2, X = "ExpDisapproval", Y = "Likelihood",
 
 ```{r bz-mx-bold}
 knitr::kable(
-  subset(mod_p$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of expectation paths by boldness (BZ_MX)"
 )
@@ -388,7 +397,7 @@ knitr::kable(
 
 ```{r bz-indirect-bold}
 knitr::kable(
-  subset(mod_p$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of indirect effects by boldness (BZ_MX × B1_YM)"
 )

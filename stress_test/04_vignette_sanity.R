@@ -16,14 +16,14 @@ cat("\n-- Normative model --\n")
 mediators <- c("Crash","Injured","Ticket","MoneyCost","OnTime",
                "IntQuality","FunDrive","Appropriate")
 norm <- pathXMY(dev, X = "Speed", Y = "L", M = mediators)
-print(head(norm$tidy, 12))
+print(head(norm$tidy_loop, 12))
 
 cat("\n-- Moderated model: BZ_MX --\n")
 mod <- pathXMY(dev, X = "Speed", Y = "L", M = mediators,
                Z = "SRFastDriver")
-print(subset(mod$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")])
+print(subset(mod$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")])
 
 cat("\n-- Moderated model: indZ_X --\n")
-print(subset(mod$tidy, param == "indZ_X")[, c("mediator","est","se","z","pvalue")])
+print(subset(mod$tidy_loop, param == "indZ_X")[, c("mediator","est","se","z","pvalue")])
 
 cat("\nDONE\n")

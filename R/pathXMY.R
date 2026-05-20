@@ -58,21 +58,34 @@
 #'   full mediator set), and parallel per-mediator coefficients with the
 #'   suffix \code{_joint}. See \emph{Details}.
 #'
-#' @return A list with two elements:
+#' @return A list with three elements:
 #'   \describe{
-#'     \item{tidy}{A tidy data frame with one row per (mediator x parameter).
-#'       Columns: \code{mediator}, \code{param}, \code{est}, \code{se},
-#'       \code{z}, \code{pvalue}, \code{ci.lower}, \code{ci.upper}. Parameter
-#'       labels follow the XMY convention: \code{B1_MX}, \code{BZ_MX},
-#'       \code{B1_YX}, \code{BZ_YX}, \code{B1_YM}, \code{BZ_YM}, plus the
-#'       indirect effects \code{B1_MX * B1_YM} (unmoderated only),
+#'     \item{tidy_loop}{A tidy data frame with one row per (mediator x
+#'       parameter), assembled from \strong{separate single-mediator
+#'       regressions} --- one X-M-Y fit per mediator, fit independently.
+#'       The Y equation in each row's source model contains exactly one
+#'       mediator. \emph{These coefficients are not from a simultaneous
+#'       regression and should not be read as partial effects net of the
+#'       other mediators.} Columns: \code{mediator}, \code{param},
+#'       \code{est}, \code{se}, \code{z}, \code{pvalue}, \code{ci.lower},
+#'       \code{ci.upper}. Parameter labels follow the XMY convention:
+#'       \code{B1_MX}, \code{BZ_MX}, \code{B1_YX}, \code{BZ_YX},
+#'       \code{B1_YM}, \code{BZ_YM}, plus the indirect effects
+#'       \code{B1_MX * B1_YM} (unmoderated only),
 #'       \code{BZ_MX * B1_YM} (\eqn{= \beta^Z_{MX} \cdot \beta^1_{YM}}),
 #'       and \code{B1_MX * BZ_YM} (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).
-#'       When \code{joint = TRUE} and \code{length(M) > 1}, the table also
-#'       carries \code{*_joint} rows from the simultaneous fit:
-#'       per-mediator \code{B1_MX_joint}, \code{BZ_MX_joint},
-#'       \code{B1_YM_joint}, \code{BZ_YM_joint}, and global
-#'       \code{B1_YX_joint}, \code{BZ_YX_joint} (\code{mediator = NA}).}
+#'       When \code{M = NULL}, this slot holds the rows from the single
+#'       Y-on-X direct regression (\code{mediator = NA}).}
+#'     \item{tidy_joint}{A tidy data frame from the \strong{single
+#'       simultaneous multi-mediator regression} in which all mediators
+#'       appear together in the Y equation. \code{NULL} when
+#'       \code{joint = FALSE} or \code{length(M) <= 1}. Per-mediator rows
+#'       (\code{B1_MX_joint}, \code{BZ_MX_joint}, \code{B1_YM_joint},
+#'       \code{BZ_YM_joint}) are indexed by \code{mediator}; global rows
+#'       (\code{B1_YX_joint}, \code{BZ_YX_joint}) carry \code{mediator = NA}.
+#'       The \code{B*_YM_joint} coefficients are partial slopes net of the
+#'       other mediators and are \emph{not} comparable to the
+#'       single-mediator \code{B*_YM} values in \code{tidy_loop}.}
 #'     \item{fits}{A named list of the lavaan fit objects (one per mediator,
 #'       named by the mediator variable name; \code{"_direct"} when
 #'       \code{M = NULL}; \code{"_joint"} for the joint multi-mediator fit
@@ -98,23 +111,37 @@
 #' regress M on X, \code{B*_YM} regress Y on M, \code{B*_YX} are the
 #' (direct) Y on X coefficients.
 #'
-#' \strong{Loop vs joint fits.} With multiple mediators, \code{pathXMY()}
-#' fits one X-M-Y model per mediator (the "loop" pass) and reports
-#' single-mediator paths \code{B1_*}, \code{BZ_*}. The loop pass is the
-#' inferential workhorse and supports the stable expectation-route summary
-#' \code{BZ_MX * B1_YM}. With \code{joint = TRUE} (default), an additional
-#' simultaneous multi-mediator fit is run; its parameters carry the
-#' \code{_joint} suffix in the tidy table. \code{B1_YX_joint} and
-#' \code{BZ_YX_joint} are the most useful joint outputs: they index the
-#' residual direct \eqn{X \to Y} (and its Z-moderation) after controlling
-#' for the \emph{entire} mediator set, and serve as a diagnostic of
-#' whether the measured mediators absorb the total \code{BZ_YX[1]}
-#' moderation. \emph{Per-mediator} joint coefficients (especially
-#' \code{BZ_YM_joint}) are typically less stable than their loop
-#' counterparts when mediators are numerous or correlated, because the
-#' M-by-Z product terms are highly collinear (Wood, Adanu, & Harms, 2025).
-#' For inference about a single mediator's role, prefer the loop
-#' coefficient; treat the joint coefficients as a system-level diagnostic.
+#' \strong{Loop vs joint fits --- two different regressions, two different
+#' tables.} With multiple mediators, \code{pathXMY()} produces two separate
+#' tidy tables, deliberately kept apart because they answer different
+#' questions and the coefficients are \emph{not} interchangeable:
+#' \itemize{
+#'   \item \code{$tidy_loop} comes from a "loop" pass: one independent
+#'         X-M-Y model is fit \emph{per mediator}, each with only that
+#'         single mediator in the Y equation. A row labeled \code{B1_YM}
+#'         for mediator \eqn{m_k} is the slope of Y on \eqn{m_k}
+#'         controlling for X --- nothing else. The loop pass is the
+#'         inferential workhorse and supports the stable
+#'         expectation-route summary \code{BZ_MX * B1_YM}.
+#'   \item \code{$tidy_joint} comes from a single simultaneous regression
+#'         where \emph{all} mediators appear together in the Y equation.
+#'         A row labeled \code{B1_YM_joint} for mediator \eqn{m_k} is the
+#'         partial slope of Y on \eqn{m_k} \emph{net of every other
+#'         mediator in M}. These are not comparable to the loop
+#'         \code{B1_YM} values and will routinely differ in magnitude
+#'         (and sometimes sign) when mediators are correlated.
+#' }
+#' \code{B1_YX_joint} and \code{BZ_YX_joint} are the most useful joint
+#' outputs: they index the residual direct \eqn{X \to Y} (and its
+#' Z-moderation) after controlling for the entire mediator set, and serve
+#' as a diagnostic of whether the measured mediators absorb the total
+#' \code{BZ_YX} moderation. \emph{Per-mediator} joint coefficients
+#' (especially \code{BZ_YM_joint}) are typically less stable than their
+#' loop counterparts when mediators are numerous or correlated, because
+#' the M-by-Z product terms are highly collinear (Wood, Adanu, & Harms,
+#' 2025). For inference about a single mediator's role, prefer the loop
+#' coefficient in \code{$tidy_loop}; treat the joint coefficients in
+#' \code{$tidy_joint} as a system-level diagnostic.
 #'
 #' @examples
 #' \dontrun{
@@ -128,14 +155,17 @@
 #'
 #' ## Unmoderated mediation, one mediator
 #' res1 <- pathXMY(dev, X = "Speed", Y = "L", M = "Crash")
-#' res1$tidy
+#' res1$tidy_loop
 #'
 #' ## Moderated mediation across all eight outcome features
 #' mediators <- c("Crash","Injured","Ticket","MoneyCost","OnTime",
 #'                "IntQuality","FunDrive","Appropriate")
 #' res2 <- pathXMY(dev, X = "Speed", Y = "L", M = mediators,
 #'                 Z = "SRFastDriver")
-#' subset(res2$tidy, param %in% c("BZ_MX","BZ_MX * B1_YM"))
+#' ## Loop pass: per-mediator single-mediator regressions
+#' subset(res2$tidy_loop, param %in% c("BZ_MX","BZ_MX * B1_YM"))
+#' ## Joint pass: simultaneous multi-mediator regression
+#' res2$tidy_joint
 #' }
 #'
 #' @export
@@ -216,15 +246,17 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
                                se = se, nboot = nboot,
                                conf.level = conf.level,
                                suppress.warnings = suppress.warnings)
-    tidy <- fit$tidy
-    tidy <- data.frame(mediator = NA_character_, tidy,
-                       row.names = NULL, stringsAsFactors = FALSE)
+    tidy_loop <- fit$tidy
+    tidy_loop <- data.frame(mediator = NA_character_, tidy_loop,
+                            row.names = NULL, stringsAsFactors = FALSE)
     fits <- list(`_direct` = fit$fit)
-    return(structure(list(tidy = tidy, fits = fits),
+    return(structure(list(tidy_loop = tidy_loop,
+                          tidy_joint = NULL,
+                          fits = fits),
                      class = c("pathXMY", "list")))
   }
 
-  ## With mediator(s) — loop over M
+  ## With mediator(s) — loop over M (one X-M-Y fit per mediator, independently)
   tidy_list <- vector("list", length(M))
   fits      <- vector("list", length(M))
   names(fits) <- M
@@ -243,10 +275,13 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
                       row.names = NULL, stringsAsFactors = FALSE)
     tidy_list[[k]] <- t_k
   }
-  tidy <- do.call(rbind, tidy_list)
-  rownames(tidy) <- NULL
+  tidy_loop <- do.call(rbind, tidy_list)
+  rownames(tidy_loop) <- NULL
 
-  ## Optional joint multi-mediator fit (length(M) > 1)
+  ## Optional joint multi-mediator fit (length(M) > 1) — kept in its own
+  ## tidy table so users cannot accidentally read joint partial slopes as
+  ## if they were the single-mediator loop coefficients.
+  tidy_joint <- NULL
   if (isTRUE(joint) && length(M) > 1L) {
     if (se == "boot") {
       warning("Bootstrap SEs are not yet implemented for the joint multi-mediator fit; ",
@@ -260,11 +295,13 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
                                 conf.level = conf.level,
                                 suppress.warnings = suppress.warnings)
     fits[["_joint"]] <- jfit$fit
-    tidy <- rbind(tidy, jfit$tidy[, colnames(tidy)])
-    rownames(tidy) <- NULL
+    tidy_joint <- jfit$tidy[, colnames(tidy_loop), drop = FALSE]
+    rownames(tidy_joint) <- NULL
   }
 
-  structure(list(tidy = tidy, fits = fits),
+  structure(list(tidy_loop = tidy_loop,
+                 tidy_joint = tidy_joint,
+                 fits = fits),
             class = c("pathXMY", "list"))
 }
 

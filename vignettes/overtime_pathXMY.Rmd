@@ -86,7 +86,7 @@ norm <- pathXMY(dat, X = "Overtime", Y = "Likelihood", M = mediators)
 
 ```{r bmx}
 knitr::kable(
-  subset(norm$tidy, param == "B1_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(norm$tidy_loop, param == "B1_MX")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Expectation paths (Overtime -> M)"
 )
@@ -104,7 +104,7 @@ positive expectations attach to `CompanyHealth`, `Finances`, and
 
 ```{r bym}
 knitr::kable(
-  subset(norm$tidy, param == "B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(norm$tidy_loop, param == "B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Valuation paths (M -> Likelihood)"
 )
@@ -122,7 +122,7 @@ the action; expected fatigue and punishment push them away.
 
 ```{r bind}
 knitr::kable(
-  subset(norm$tidy, param == "B1_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(norm$tidy_loop, param == "B1_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Indirect effects through each mediator"
 )
@@ -154,7 +154,7 @@ mod_s <- pathXMY(dat, X = "Overtime", Y = "Likelihood",
 
 ```{r bzmx-paid}
 knitr::kable(
-  subset(mod_s$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of expectation paths by pay status (BZ_MX)"
 )
@@ -173,7 +173,7 @@ Pay status does not change expected `Drained`, `Punished`, or
 
 ```{r bz-indirect-paid}
 knitr::kable(
-  subset(mod_s$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of indirect effects by pay status (BZ_MX x B1_YM)"
 )
@@ -249,7 +249,7 @@ mod_p <- pathXMY(dat2, X = "Overtime", Y = "Likelihood",
 
 ```{r bzmx-vtime}
 knitr::kable(
-  subset(mod_p$tidy, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of expectation paths by vTime (BZ_MX)"
 )
@@ -266,7 +266,7 @@ financially and reputationally.
 
 ```{r bz-indirect-vtime}
 knitr::kable(
-  subset(mod_p$tidy, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Moderation of indirect effects by vTime (BZ_MX x B1_YM)"
 )
