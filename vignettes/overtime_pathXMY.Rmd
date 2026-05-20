@@ -46,12 +46,12 @@ lapply(overtimeESJT, function(x) if (is.data.frame(x)) dim(x) else length(x))
 ### The scenario
 
 Each participant saw exactly one scenario, randomly assembled from eight
-situational factors. The Qualtrics template below shows the stem;
-`${...}` placeholders are filled in per respondent from the eight
-factors shown in the table that follows:
+situational factors. The Qualtrics scenario template lives at
+`overtimeESJT$codebook$scenario$template`; the `${...}` placeholders
+are filled in per respondent from the eight factors that follow:
 
-```{r scenario-template, echo = FALSE, results = "asis"}
-cat("> ", overtimeESJT$codebook$scenario$template, "\n")
+```{r scenario-template}
+overtimeESJT$codebook$scenario$template
 ```
 
 ```{r scenario-factors}
@@ -60,6 +60,13 @@ knitr::kable(
   col.names = c("Factor", "Levels (semicolon-separated)"),
   caption = "The eight factors that varied across respondents"
 )
+```
+
+Each respondent's fully assembled scenario is in
+`overtimeESJT$cond$scenario`. Three examples (rows 1-3):
+
+```{r scenario-assembled}
+overtimeESJT$cond$scenario[1:3]
 ```
 
 ### Expected outcomes
