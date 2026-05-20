@@ -57,6 +57,31 @@ scale, so that within-person differences between two actions fall on
 
 ## Variables and survey wording
 
+### The scenario
+
+Each participant saw exactly one scenario, randomly assembled from six
+situational factors. The Qualtrics template below shows the stem;
+`${...}` placeholders are filled in per respondent from the six factors
+shown in the table that follows:
+
+```{r scenario-template, echo = FALSE, results = "asis"}
+cat("> ", speedingESJT$codebook$scenario$template, "\n")
+```
+
+```{r scenario-factors}
+knitr::kable(
+  speedingESJT$codebook$scenario$factors,
+  col.names = c("Factor", "Levels (semicolon-separated)"),
+  caption = "The six factors that varied across respondents"
+)
+```
+
+### Expected outcomes
+
+After reading the scenario, each respondent rated each of the three
+candidate actions on the eight expected-outcome items below
+(0 = Very Low … 1 = Very High):
+
 ```{r wording-table}
 knitr::kable(
   speedingESJT$codebook$outcomes[, c("var", "label")],

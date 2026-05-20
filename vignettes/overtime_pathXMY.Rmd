@@ -41,11 +41,32 @@ data(overtimeESJT)
 lapply(overtimeESJT, function(x) if (is.data.frame(x)) dim(x) else length(x))
 ```
 
-```{r template, echo = FALSE, results = "asis"}
+## Variables and survey wording
+
+### The scenario
+
+Each participant saw exactly one scenario, randomly assembled from eight
+situational factors. The Qualtrics template below shows the stem;
+`${...}` placeholders are filled in per respondent from the eight
+factors shown in the table that follows:
+
+```{r scenario-template, echo = FALSE, results = "asis"}
 cat("> ", overtimeESJT$codebook$scenario$template, "\n")
 ```
 
-## Variables and survey wording
+```{r scenario-factors}
+knitr::kable(
+  overtimeESJT$codebook$scenario$factors,
+  col.names = c("Factor", "Levels (semicolon-separated)"),
+  caption = "The eight factors that varied across respondents"
+)
+```
+
+### Expected outcomes
+
+After reading the scenario, each respondent rated each of the two
+candidate actions on the nine expected-outcome items below
+(0 = Very Low … 1 = Very High):
 
 ```{r wording-table}
 knitr::kable(
