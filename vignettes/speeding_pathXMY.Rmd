@@ -18,58 +18,6 @@ knitr::opts_chunk$set(
   out.width = "70%"
 )
 options(width = 120)
-
-## group_kable() -- a small vignette-local helper that renders a
-## pathXMY_pairtable() result with spanning headers over each parameter
-## block, so the two blocks are visually separated and titled in place.
-group_kable <- function(df, groups, col_labels, digits = 3,
-                         caption = NULL) {
-  n <- ncol(df)
-  fmt <- function(x) if (is.numeric(x))
-    formatC(x, format = "f", digits = digits) else as.character(x)
-  B <- as.data.frame(lapply(df, fmt), stringsAsFactors = FALSE)
-
-  gspan  <- as.integer(groups)
-  gstart <- cumsum(c(1L, gspan))[seq_along(gspan)]
-  divid  <- gstart[-1]                       # first col of each later group
-  dv <- function(j) if (j %in% divid) ' class="grpdiv"' else ''
-
-  h1 <- paste0(mapply(function(nm, sp, st)
-      sprintf('<th colspan="%d"%s>%s</th>', sp, dv(st), nm),
-      names(groups), gspan, gstart), collapse = "")
-  h2 <- paste0(vapply(seq_len(n), function(j)
-      sprintf('<th%s>%s</th>', dv(j), col_labels[j]), character(1)),
-      collapse = "")
-  body <- paste0(vapply(seq_len(nrow(B)), function(i)
-      paste0('<tr>', paste0(vapply(seq_len(n), function(j)
-        sprintf('<td%s>%s</td>', dv(j), B[i, j]), character(1)),
-        collapse = ''), '</tr>'), character(1)), collapse = "")
-
-  cap <- if (!is.null(caption))
-    sprintf('<caption>%s</caption>', caption) else ''
-  knitr::asis_output(paste0(
-    '<table class="grouptbl">', cap,
-    '<thead><tr>', h1, '</tr><tr>', h2, '</tr></thead><tbody>',
-    body, '</tbody></table>'))
-}
-```
-
-```{r grouptbl-style, echo = FALSE, results = "asis"}
-cat('<style>
-table.grouptbl { border-collapse: collapse; margin: 0 auto 1.2em; }
-table.grouptbl caption { caption-side: top; font-style: italic;
-  padding-bottom: 4px; }
-table.grouptbl th, table.grouptbl td { padding: 3px 10px;
-  text-align: right; }
-table.grouptbl thead th { border-bottom: 1px solid #555; }
-table.grouptbl thead tr:first-child th { text-align: center;
-  font-weight: 600; border-bottom: 1px solid #bbb; }
-table.grouptbl td:first-child, table.grouptbl th:first-child {
-  text-align: left; }
-table.grouptbl tbody tr:nth-child(even) { background: #f6f6f6; }
-table.grouptbl .grpdiv { border-left: 2px solid #bbb;
-  padding-left: 18px; }
-</style>')
 ```
 
 This vignette demonstrates moderated mediation with `pathXMY()` using
@@ -224,9 +172,8 @@ how much an action's speed shifts that expected outcome. `B1_YM` is the
 **valuation** path — how much that expected outcome, in turn, drives
 action likelihood. `pathXMY_pairtable()` reshapes the long `tidy_loop`
 table so the two paths sit next to each other, one row per mediator, and
-the `mediator` column is not repeated. (`group_kable()` below is a small
-vignette-local display helper — see the source `.Rmd` — that prints such
-a table with each parameter block under its own spanning header.)
+the `mediator` column is not repeated. `group_kable()` then prints that
+table with each parameter block set under its own spanning header.
 
 ```{r b1-pair}
 group_kable(
@@ -631,8 +578,12 @@ Here Term 1 (`BZ_MX × B1_YM = -0.002`) is essentially zero — self-rated
 skilled drivers don't expect a *different* crash likelihood from
 speeding. But Term 2 (`B1_MX × BZ_YM = -0.061`) is significantly
 non-zero: skilled-driver respondents weight `Crash` *more* heavily as a
-deterrent than unskilled-driver respondents do. Without
-`pathXMY_decompose()`, this valuation moderation would be invisible in
+deterrent than unskilled-driver respondents do. In the decomposition's
+vocabulary this is a *reason* located in the **valuation route**: to
+whatever degree skilled drivers hold back from speeding, part of the
+account is that a potential crash simply weighs more heavily for them —
+not that they expect crashes any differently. Without
+`pathXMY_decompose()`, this valuation-route reason would be invisible in
 the standard `BZ_MX` table.
 
 ```{r plot-skill, fig.width = 7, fig.height = 3.5}
@@ -658,12 +609,15 @@ plotPathXMY_widget(dec_sk, mediator = "Crash",
 
 ## Situation-level moderation: time pressure
 
-We can also use the same framework to consider situational moderators rather than personal moderators (they are handled statistically in the same manner).
+The decomposition framework applies unchanged to *situational*
+moderators — they are handled statistically exactly as the personal
+moderator above; only the substantive reading differs.
 
 `timePressure` was randomly assigned at the person level — each
 respondent saw exactly one of three levels
 (`comfortably ahead of schedule`, `a bit late`, `quite late`). Code it
-as a continuous "lateness" variable (0/0.5/1) and merge:
+as a continuous "lateness" variable (0/0.5/1), merge it, and fit both
+the moderated model and its decomposition:
 
 ```{r prep-timepressure}
 late_code <- c(`comfortably ahead of schedule` = 0,
@@ -674,15 +628,50 @@ dat$late <- late_code[speedingESJT$cond$timePressure[match(dat$p,
 
 mod_s <- pathXMY(dat, X = "Speed", Y = "Likelihood",
                  M = mediators, Z = "late", Z.within = FALSE)
+dec_s <- pathXMY_decompose(dat, X = "Speed", Y = "Likelihood",
+                           M = mediators, Z = "late", Z.within = FALSE)
 ```
 
-### Does time pressure moderate the two mediation arms?
+### The total moderation
 
-A moderator can reshape the `Speed -> Likelihood` link through either of
-two arms: by shifting *what speeding is expected to produce* (`BZ_MX`,
-the **expectation** arm) or by shifting *how much an expected outcome
-matters* (`BZ_YM`, the **valuation** arm). `pathXMY_pairtable()` puts
-both arms side by side, one row per mediator:
+```{r decompose-total-late}
+knitr::kable(dec_s$total, digits = 3,
+             caption = "Total moderation BZ_YX[1] by time pressure (no mediator)")
+```
+
+Where the fast-driver trait moved the `Speed → Likelihood` link by a
+substantial, significant **+0.25**, time pressure's total moderation is
+only **+0.04**, and is *not* statistically significant (*p* = .18).
+Read on its own, that says time pressure does not reliably change how
+strongly faster speeds pull respondents toward speeding.
+
+A non-significant total is exactly where the decomposition earns its
+keep. It can mean the moderator is genuinely irrelevant — or that real
+route-specific shifts are present but too small, or too offsetting, to
+surface in the aggregate. Only the per-mediator breakdown tells the two
+apart.
+
+### Decomposition per mediator
+
+```{r decompose-table-late}
+knitr::kable(dec_s$components, digits = 3,
+             caption = "Decomposition of the time-pressure moderation through each single mediator")
+```
+
+The decomposition localizes the modest signal. Two **expectation-route**
+entries (Term 1, `BZ_MX × B1_YM`) stand out: time pressure strengthens
+the pull toward speeding through the expected `OnTime` gain (+0.031,
+*p* \< .001) and the expected `IntQuality` gain (+0.026, *p* = .002),
+with `Appropriate` a borderline third. The **valuation route** (Term 2,
+`B1_MX × BZ_YM`) is null for every mediator. The residual
+`BZ_YX (direct)` column — the total minus that mediator's two routes —
+adds nothing the total did not already say: with a near-null total
+there is little for it to carry. So time pressure does produce a couple
+of genuine, significant expectation-route *reasons* to speed — chiefly a
+larger expected on-time payoff — but they are small and never
+accumulate into a reliable aggregate effect.
+
+### Which expectancies and values does time pressure shift?
 
 ```{r bz-pair-late}
 group_kable(
@@ -695,37 +684,31 @@ group_kable(
 )
 ```
 
-The two arms behave very differently. On the **expectation** side
-(`BZ_MX`), time pressure significantly amplifies the expected on-time
-gain from speeding (`OnTime`, *p* \< .001 — the largest effect) and the
-expected meeting-quality gain (`IntQuality`, *p* \< .001), with
-appropriateness a borderline third (`Appropriate`, *p* ≈ .05). Other
-expectations — including crash and ticket expectations — are not
-moderated. People under time pressure don't expect *different
-consequences* from speeding; they expect a *larger payoff* from getting
-there on time.
+The raw arms tell the same story as the decomposition, one step
+upstream. On the **expectation** side (`BZ_MX`), time pressure
+significantly amplifies the expected on-time gain from speeding
+(`OnTime`, *p* \< .001 — the largest effect) and the expected
+meeting-quality gain (`IntQuality`, *p* \< .001), with appropriateness a
+borderline third (`Appropriate`, *p* ≈ .05). Other expectations —
+including crash and ticket expectations — are not moved. People under
+time pressure don't expect *different consequences* from speeding; they
+expect a *larger payoff* from getting there on time.
 
 On the **valuation** side (`BZ_YM`), nothing reaches *p* \< .05: time
 pressure does not detectably change how heavily any expected outcome is
 weighted. The two nearest misses are both cost outcomes — `Ticket` (*b*
 = -0.14, *p* = .06) and `MoneyCost` (*b* = -0.13, *p* = .10) — hinting
 that respondents may weight the financial costs of speeding slightly
-more heavily when rushed, but neither effect is significant and the
-pattern should not be over-read. This previews a theme that recurs with
-the next moderator: **expectation-arm moderation is the common case;
-valuation-arm moderation is comparatively rare.**
+more heavily when rushed, but neither effect is significant. This echoes
+the fast-driver case: **expectation-arm moderation is the common case in
+these data; valuation-arm moderation is comparatively rare.**
 
-### Does it carry through to the indirect effect?
+### Do those shifts become reasons to speed?
 
-A moderator can reshape the overall `Speed → Likelihood` link through
-two **routes**, and the indirect-effect table shows both side by side.
-The **expectation route** (`BZ_MX × B1_YM`) is `Z` changing *what
-speeding is expected to produce*, applied through an expectation that
-already drives likelihood. The **valuation route** (`B1_MX × BZ_YM`) is
-`Z` changing *how heavily an outcome is weighted*, applied to an
-expectation speeding already moves. A significant entry in either column
-is a formal *reason* the moderator strengthens or weakens the pull
-toward speeding.
+The expectation-route (`BZ_MX × B1_YM`) and valuation-route
+(`B1_MX × BZ_YM`) products turn the raw arm shifts above into the
+per-mediator *reasons* of the decomposition — Term 1 and Term 2, with
+their significance tests laid side by side:
 
 ```{r bz-indirect-late}
 group_kable(
@@ -738,14 +721,18 @@ group_kable(
 )
 ```
 
-Only the expectation route carries anything here: under time pressure
-the indirect pull toward speeding strengthens through `OnTime` (*p* \<
-.001, the dominant route) and `IntQuality` (*p* = .002), with
-`Appropriate` borderline (*p* = .06). The valuation route is empty — not
-one entry reaches *p* \< .05 (nearest: `Ticket`, *p* = .06). The overall
-pull toward speeding rises with time pressure not because the costs feel
-smaller but because the on-time benefit feels bigger — and the table
-localizes that to a single route.
+The only reliable *reasons* are expectation-route ones: time pressure
+strengthens the pull toward speeding through the expected `OnTime`
+(*p* \< .001) and `IntQuality` (*p* = .002) gains, with `Appropriate`
+borderline (*p* = .06). The valuation route yields nothing significant
+(nearest: `Ticket`, *p* = .06). But unlike the fast-driver case — where
+six expectation-route reasons summed to a large, significant **+0.25**
+total — here the two genuine reasons are modest and, as the total
+moderation already showed, do not accumulate into a statistically
+reliable change in overall speeding propensity. The decomposition's
+value in this example is exactly that: it pinpoints *which* expectations
+time pressure shifts, and confirms those shifts are real, even though
+the aggregate moderation is not itself significant.
 
 ## Scoring named trait composites
 
@@ -763,6 +750,6 @@ tr$Open  <- rowMeans(cbind(tr$SR_27, 1 - tr$SR_28, tr$SR_29), na.rm = TRUE)
 
 ## Function reference
 
-See `?pathXMY`, `?pathXMY_pairtable`, `?pathXMY_decompose`,
-`?plotPathXMY`, `?plotPathXMY_ZLH`, `?plotPathXMY_widget`, and
-`?speedingESJT`.
+See `?pathXMY`, `?pathXMY_pairtable`, `?group_kable`,
+`?pathXMY_decompose`, `?plotPathXMY`, `?plotPathXMY_ZLH`,
+`?plotPathXMY_widget`, and `?speedingESJT`.
