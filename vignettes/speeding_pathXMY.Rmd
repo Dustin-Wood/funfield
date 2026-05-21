@@ -15,6 +15,58 @@ knitr::opts_chunk$set(
   out.width = "70%"
 )
 options(width = 120)
+
+## group_kable() -- a small vignette-local helper that renders a
+## pathXMY_pairtable() result with spanning headers over each parameter
+## block, so the two blocks are visually separated and titled in place.
+group_kable <- function(df, groups, col_labels, digits = 3,
+                         caption = NULL) {
+  n <- ncol(df)
+  fmt <- function(x) if (is.numeric(x))
+    formatC(x, format = "f", digits = digits) else as.character(x)
+  B <- as.data.frame(lapply(df, fmt), stringsAsFactors = FALSE)
+
+  gspan  <- as.integer(groups)
+  gstart <- cumsum(c(1L, gspan))[seq_along(gspan)]
+  divid  <- gstart[-1]                       # first col of each later group
+  dv <- function(j) if (j %in% divid) ' class="grpdiv"' else ''
+
+  h1 <- paste0(mapply(function(nm, sp, st)
+      sprintf('<th colspan="%d"%s>%s</th>', sp, dv(st), nm),
+      names(groups), gspan, gstart), collapse = "")
+  h2 <- paste0(vapply(seq_len(n), function(j)
+      sprintf('<th%s>%s</th>', dv(j), col_labels[j]), character(1)),
+      collapse = "")
+  body <- paste0(vapply(seq_len(nrow(B)), function(i)
+      paste0('<tr>', paste0(vapply(seq_len(n), function(j)
+        sprintf('<td%s>%s</td>', dv(j), B[i, j]), character(1)),
+        collapse = ''), '</tr>'), character(1)), collapse = "")
+
+  cap <- if (!is.null(caption))
+    sprintf('<caption>%s</caption>', caption) else ''
+  knitr::asis_output(paste0(
+    '<table class="grouptbl">', cap,
+    '<thead><tr>', h1, '</tr><tr>', h2, '</tr></thead><tbody>',
+    body, '</tbody></table>'))
+}
+```
+
+```{r grouptbl-style, echo = FALSE, results = "asis"}
+cat('<style>
+table.grouptbl { border-collapse: collapse; margin: 0 auto 1.2em; }
+table.grouptbl caption { caption-side: top; font-style: italic;
+  padding-bottom: 4px; }
+table.grouptbl th, table.grouptbl td { padding: 3px 10px;
+  text-align: right; }
+table.grouptbl thead th { border-bottom: 1px solid #555; }
+table.grouptbl thead tr:first-child th { text-align: center;
+  font-weight: 600; border-bottom: 1px solid #bbb; }
+table.grouptbl td:first-child, table.grouptbl th:first-child {
+  text-align: left; }
+table.grouptbl tbody tr:nth-child(even) { background: #f6f6f6; }
+table.grouptbl .grpdiv { border-left: 2px solid #bbb;
+  padding-left: 18px; }
+</style>')
 ```
 
 This vignette demonstrates moderated mediation with `pathXMY()` using the
@@ -158,37 +210,39 @@ norm$tidy_loop
 norm$tidy_joint
 ```
 
-### Expectation paths (B1_MX): what is speeding expected to produce?
+### Expectation and valuation paths, side by side
 
-```{r bmx}
-knitr::kable(
-  subset(norm$tidy_loop, param == "B1_MX")[, c("mediator","est","se","z","pvalue")],
-  digits = 3,
-  caption = "Expectation paths (Speed -> M)"
+Each mediator sits on two paths. `B1_MX` is the **expectation** path — how
+much an action's speed shifts that expected outcome. `B1_YM` is the
+**valuation** path — how much that expected outcome, in turn, drives action
+likelihood. `pathXMY_pairtable()` reshapes the long `tidy_loop` table so the
+two paths sit next to each other, one row per mediator, and the `mediator`
+column is not repeated. (`group_kable()` below is a small vignette-local
+display helper — see the source `.Rmd` — that prints such a table with each
+parameter block under its own spanning header.)
+
+```{r b1-pair}
+group_kable(
+  pathXMY_pairtable(norm, c("B1_MX", "B1_YM")),
+  groups = c(" " = 1,
+             "Expectation paths (B1_MX: Speed &rarr; M)"      = 4,
+             "Valuation paths (B1_YM: M &rarr; Likelihood)"   = 4),
+  col_labels = c("Mediator", "est", "se", "z", "p",
+                             "est", "se", "z", "p")
 )
 ```
 
-Faster speeds are expected to substantially increase `Ticket`, `Crash`,
-`Injured`, `OnTime`, and (more modestly) `MoneyCost`, and to substantially
-reduce perceived appropriateness (`Appropriate`). `FunDrive` and
-`IntQuality` are essentially uncorrelated with `Speed` at the within-person
-level — perceived enjoyment of the drive and quality of the next meeting do
-not move much with the action's speed.
+*Expectation paths (`B1_MX`).* Faster speeds are expected to substantially
+increase `Ticket`, `Crash`, `Injured`, `OnTime`, and (more modestly)
+`MoneyCost`, and to substantially reduce perceived appropriateness
+(`Appropriate`). `FunDrive` and `IntQuality` are essentially uncorrelated
+with `Speed` at the within-person level — perceived enjoyment of the drive
+and quality of the next meeting do not move much with the action's speed.
 
-### Valuation paths (B1_YM): which expected outcomes drive action likelihood?
-
-```{r bym}
-knitr::kable(
-  subset(norm$tidy_loop, param == "B1_YM")[, c("mediator","est","se","z","pvalue")],
-  digits = 3,
-  caption = "Valuation paths (M -> Likelihood)"
-)
-```
-
-`FunDrive` and `Appropriate` are the strongest positive drivers of whether
-the respondent says they'd take the action, followed by `IntQuality` and
-`OnTime`. `Crash`, `Injured`, `Ticket`, and `MoneyCost` all suppress
-likelihood. The signs are intuitive throughout.
+*Valuation paths (`B1_YM`).* `FunDrive` and `Appropriate` are the strongest
+positive drivers of whether the respondent says they'd take the action,
+followed by `IntQuality` and `OnTime`. `Crash`, `Injured`, `Ticket`, and
+`MoneyCost` all suppress likelihood. The signs are intuitive throughout.
 
 ### Indirect effects (B1_MX × B1_YM)
 
@@ -228,39 +282,74 @@ mod_s <- pathXMY(dat, X = "Speed", Y = "Likelihood",
                  M = mediators, Z = "late", Z.within = FALSE)
 ```
 
-### Does time pressure moderate the expectation arm (Speed -> M)?
+### Does time pressure moderate the two mediation arms?
 
-```{r bzmx-late}
-knitr::kable(
-  subset(mod_s$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
-  digits = 3,
-  caption = "Moderation of expectation paths by time pressure (BZ_MX)"
+A moderator can reshape the `Speed -> Likelihood` link through either of two
+arms: by shifting *what speeding is expected to produce* (`BZ_MX`, the
+**expectation** arm) or by shifting *how much an expected outcome matters*
+(`BZ_YM`, the **valuation** arm). `pathXMY_pairtable()` puts both arms side
+by side, one row per mediator:
+
+```{r bz-pair-late}
+group_kable(
+  pathXMY_pairtable(mod_s, c("BZ_MX", "BZ_YM")),
+  groups = c(" " = 1,
+             "Time-pressure moderation: expectation arm (BZ_MX)" = 4,
+             "Time-pressure moderation: valuation arm (BZ_YM)"   = 4),
+  col_labels = c("Mediator", "est", "se", "z", "p",
+                             "est", "se", "z", "p")
 )
 ```
+
+The two arms behave very differently. On the **expectation** side
+(`BZ_MX`), time pressure significantly amplifies the expected on-time gain
+from speeding (`OnTime`, *p* < .001 — the largest effect) and the expected
+meeting-quality gain (`IntQuality`, *p* < .001), with appropriateness a
+borderline third (`Appropriate`, *p* ≈ .05). Other expectations — including
+crash and ticket expectations — are not moderated. People under time
+pressure don't expect *different consequences* from speeding; they expect a
+*larger payoff* from getting there on time.
+
+On the **valuation** side (`BZ_YM`), nothing reaches *p* < .05: time
+pressure does not detectably change how heavily any expected outcome is
+weighted. The two nearest misses are both cost outcomes — `Ticket`
+(*b* = -0.14, *p* = .06) and `MoneyCost` (*b* = -0.13, *p* = .10) — hinting
+that respondents may weight the financial costs of speeding slightly more
+heavily when rushed, but neither effect is significant and the pattern
+should not be over-read. This previews a theme that recurs with the next
+moderator: **expectation-arm moderation is the common case; valuation-arm
+moderation is comparatively rare.**
 
 ### Does it carry through to the indirect effect?
 
+A moderator can reshape the overall `Speed → Likelihood` link through two
+**routes**, and the indirect-effect table shows both side by side. The
+**expectation route** (`BZ_MX × B1_YM`) is `Z` changing *what speeding is
+expected to produce*, applied through an expectation that already drives
+likelihood. The **valuation route** (`B1_MX × BZ_YM`) is `Z` changing *how
+heavily an outcome is weighted*, applied to an expectation speeding already
+moves. A significant entry in either column is a formal *reason* the
+moderator strengthens or weakens the pull toward speeding.
+
 ```{r bz-indirect-late}
-knitr::kable(
-  subset(mod_s$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
-  digits = 3,
-  caption = "Moderation of indirect effects by time pressure (BZ_MX x B1_YM)"
+group_kable(
+  pathXMY_pairtable(mod_s, c("BZ_MX * B1_YM", "B1_MX * BZ_YM")),
+  groups = c(" " = 1,
+             "Expectation route (BZ_MX &times; B1_YM)" = 4,
+             "Valuation route (B1_MX &times; BZ_YM)"   = 4),
+  col_labels = c("Mediator", "est", "se", "z", "p",
+                             "est", "se", "z", "p")
 )
 ```
 
-The largest BZ_MX is for `OnTime`: under time pressure, the expected
-on-time gain from speeding is sharply amplified. The expected
-meeting-quality gain (`IntQuality`) also strengthens. Other expectations
-— including crash and ticket expectations — are not significantly
-moderated by time pressure. People under time pressure don't expect
-*different consequences* from speeding; they expect a *larger payoff* from
-getting there on time.
-
-The indirect-effect table propagates these shifts into the pull toward
-speeding: under time pressure, the indirect path from Speed to Likelihood
-strengthens through `OnTime` (the dominant route) and `IntQuality`. The
-overall pull toward speeding rises with time pressure, not because the
-costs feel smaller but because the on-time benefit feels bigger.
+Only the expectation route carries anything here: under time pressure the
+indirect pull toward speeding strengthens through `OnTime` (*p* < .001, the
+dominant route) and `IntQuality` (*p* = .002), with `Appropriate` borderline
+(*p* = .06). The valuation route is empty — not one entry reaches
+*p* < .05 (nearest: `Ticket`, *p* = .06). The overall pull toward speeding
+rises with time pressure not because the costs feel smaller but because the
+on-time benefit feels bigger — and the table localizes that to a single
+route.
 
 ## Person-level moderation: self-reported fast-driver tendency
 
@@ -280,42 +369,84 @@ mod_p <- pathXMY(dat2, X = "Speed", Y = "Likelihood",
                  M = mediators, Z = "SRFastDriver", Z.within = FALSE)
 ```
 
-### Does fast-driver tendency moderate the expectation arm?
+### Does fast-driver tendency moderate the two mediation arms?
 
-```{r bz-mx-srfast}
-knitr::kable(
-  subset(mod_p$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
-  digits = 3,
-  caption = "Moderation of expectation paths by SRFastDriver (BZ_MX)"
+```{r bz-pair-srfast}
+group_kable(
+  pathXMY_pairtable(mod_p, c("BZ_MX", "BZ_YM")),
+  groups = c(" " = 1,
+             "Fast-driver moderation: expectation arm (BZ_MX)" = 4,
+             "Fast-driver moderation: valuation arm (BZ_YM)"   = 4),
+  col_labels = c("Mediator", "est", "se", "z", "p",
+                             "est", "se", "z", "p")
 )
 ```
+
+The same asymmetry as for time pressure, even more starkly. On the
+**expectation** side (`BZ_MX`), self-described fast drivers expect speeding
+to be less catastrophic — smaller `Crash`, `Injured`, `Ticket`, and
+`MoneyCost` shifts (all *p* < .01) — more enjoyable (`FunDrive`,
+*p* < .001), and substantially more role-appropriate (`Appropriate`,
+*p* < .001, by far the largest effect). Six of the eight expectation paths
+are significantly moderated.
+
+On the **valuation** side (`BZ_YM`), *not one* of the eight paths reaches
+*p* < .05; the nearest is `OnTime` (*b* = +0.12, *p* = .11). Fast drivers
+do not differentially *weight* the expected outcomes — they hold different
+*expectations* about what speeding produces. Taken with the time-pressure
+result, the pattern is consistent: across both a situational pressure and a
+person-level trait, every significant moderation effect lives in the
+expectation arm. Both kinds of moderator seem to operate by changing what
+people expect of speeding, not by changing how they value those
+expectations — at least at the resolution these data afford. The one place
+a genuine valuation-arm effect *does* surface — `DrivingSkill` moderating
+the weight placed on `Crash` — is taken up below under
+[When does Term 2 carry the moderation?](#when-does-term-2-carry-the-moderation).
 
 ### Does it carry through to the indirect effect?
 
+As before, the two columns are the model's two **routes** by which the
+moderator reshapes the overall `Speed → Likelihood` link — the
+**expectation route** (`BZ_MX × B1_YM`) and the **valuation route**
+(`B1_MX × BZ_YM`). Significant entries are this model's formal account of
+*why* self-described fast drivers are more likely to speed: the
+[decomposition section](#total-moderation-and-its-decomposition) below shows
+that fast-driver tendency moderates the direct `Speed → Likelihood` path by
+`BZ_YX[1]` **= +0.25**, and these per-mediator route effects are the pieces
+that sum toward it.
+
 ```{r bz-indirect-srfast}
-knitr::kable(
-  subset(mod_p$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
-  digits = 3,
-  caption = "Moderation of indirect effects by SRFastDriver (BZ_MX x B1_YM)"
+group_kable(
+  pathXMY_pairtable(mod_p, c("BZ_MX * B1_YM", "B1_MX * BZ_YM")),
+  groups = c(" " = 1,
+             "Expectation route (BZ_MX &times; B1_YM)" = 4,
+             "Valuation route (B1_MX &times; BZ_YM)"   = 4),
+  col_labels = c("Mediator", "est", "se", "z", "p",
+                             "est", "se", "z", "p")
 )
 ```
 
-Self-described fast drivers expect speeding to be less catastrophic
-(smaller `Crash`, `Injured`, `Ticket`, and `MoneyCost` shifts), more
-enjoyable (`FunDrive`), and substantially more role-appropriate
-(`Appropriate` — by far the largest effect). These expectation differences
-propagate into significantly stronger indirect pulls toward taking the
-faster action through every meaningful pathway: `Appropriate` (the largest),
-`FunDrive`, `Crash`, `Injured`, and `Ticket`. The contrast with the
-time-pressure result is informative: time pressure shifts the *upside*
-(OnTime, IntQuality); fast-driver tendency shifts the *downside* (the
-expected costs of speeding feel smaller, and the action feels more
-appropriate).
+The expectation route does essentially all the work. Fast-driver tendency
+strengthens the indirect pull toward the faster action through `Appropriate`
+(*p* < .001, the largest single route), `FunDrive`, `Crash`, `Injured`, and
+`Ticket` (all *p* < .005) and `MoneyCost` (*p* = .03) — six significant
+expectation-route reasons. The valuation route contributes nothing
+significant (nearest: `OnTime`, *p* = .11). So the *reason* fast drivers
+speed more is, item by item, that they expect speeding to be more
+appropriate and less costly — not that they weight those outcomes
+differently. The contrast with the time-pressure result is informative:
+time pressure shifts the *upside* (OnTime, IntQuality); fast-driver tendency
+shifts the *downside* (the expected costs of speeding feel smaller, and the
+action feels more appropriate). In both cases the moderation routes almost
+entirely through shifted expectations.
 
 ## Total moderation and its decomposition
 
-The `BZ_MX × B1_YM` table above isolates one of three routes through
-which a moderator `Z` shifts the `X → Y` link. The full identity is
+The indirect-effect table above showed two of the three routes through
+which a moderator `Z` shifts the `X → Y` link — the expectation route
+(`BZ_MX × B1_YM`) and the valuation route (`B1_MX × BZ_YM`), per mediator.
+This section completes the picture: it adds the third (residual) route and
+ties all three back to the total moderation `BZ_YX[1]`. The full identity is
 
 $$\beta^Z_{YX}[1] \;=\; \beta^Z_{MX} \cdot \beta^1_{YM}
 \;+\; \beta^1_{MX} \cdot \beta^Z_{YM}
@@ -324,14 +455,16 @@ $$\beta^Z_{YX}[1] \;=\; \beta^Z_{MX} \cdot \beta^1_{YM}
 where:
 
 - **Term 1** (`BZ_MX × B1_YM`): `Z` shifts *what the action is expected
-  to produce* — the **expectation** route highlighted above.
+  to produce* — the **expectation** route, the left block of the table
+  above.
 - **Term 2** (`B1_MX × BZ_YM`): `Z` shifts *how much the expected
-  outcome matters* — the **valuation** route. Often overlooked.
+  outcome matters* — the **valuation** route, the right block of the
+  table above. Often overlooked.
 - **Term 3** (`BZ_YX[2]`): residual direct `X × Z` moderation not
   routed through this mediator.
 
 A moderator can produce a large total effect (`BZ_YX[1]`) through
-*any* of these routes — and the standard `BZ_MX` table is silent
+*any* of these routes — and a `BZ_MX`-only table is silent
 about Terms 2 and 3. `pathXMY_decompose()` fits both the no-mediator
 model (giving `BZ_YX[1]`) and the full mediated model (giving the
 three components) and tabulates them per mediator.
@@ -629,5 +762,6 @@ tr$Open  <- rowMeans(cbind(tr$SR_27, 1 - tr$SR_28, tr$SR_29), na.rm = TRUE)
 
 ## Function reference
 
-See `?pathXMY`, `?pathXMY_decompose`, `?plotPathXMY`,
-`?plotPathXMY_ZLH`, `?plotPathXMY_widget`, and `?speedingESJT`.
+See `?pathXMY`, `?pathXMY_pairtable`, `?pathXMY_decompose`,
+`?plotPathXMY`, `?plotPathXMY_ZLH`, `?plotPathXMY_widget`, and
+`?speedingESJT`.
