@@ -17,7 +17,7 @@ plotPathXMY(
   score_intensity_max = 1,
   Z_value = NULL,
   node_size = 0.07,
-  label_pad = 0.05,
+  label_pad = 0.025,
   title = NULL,
   filename = NULL,
   filetype = "png",
@@ -60,7 +60,7 @@ the single effective coefficient rather than the
 triangle, in data coordinates (default \code{0.07}).}
 
 \item{label_pad}{Padding between a node's perimeter and its text
-label, in data coordinates (default \code{0.05}).}
+label, in data coordinates (default \code{0.025}).}
 
 \item{title}{Optional plot title.}
 

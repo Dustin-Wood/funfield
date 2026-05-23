@@ -65,7 +65,7 @@
 #' @param node_size Half-side of each square / half-bounding-box of the
 #'   triangle, in data coordinates (default \code{0.07}).
 #' @param label_pad Padding between a node's perimeter and its text
-#'   label, in data coordinates (default \code{0.05}).
+#'   label, in data coordinates (default \code{0.025}).
 #' @param title Optional plot title.
 #' @param filename,filetype Optional. If \code{filename} is supplied,
 #'   the plot is also saved via \code{ggplot2::ggsave()} using
@@ -90,7 +90,7 @@ plotPathXMY <- function(x,
                         score_intensity_max = 1,
                         Z_value = NULL,
                         node_size = 0.07,
-                        label_pad = 0.05,
+                        label_pad = 0.025,
                         title = NULL,
                         filename = NULL,
                         filetype = "png",

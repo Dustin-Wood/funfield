@@ -379,18 +379,23 @@ expectations.
 
 ### Field-style diagrams
 
-`plotPathXMY()` renders the X-M-Y structure in the funfield
-visualization style:
+`plotPathXMY()` renders the X-M-Y structure as a **ggplot object** in
+the funfield visualization style:
 
-- Nodes are colored by their **expected score when X is held at 1** —
-  positive in blue, negative in red, gradient by magnitude. X is by
-  definition full blue (score = 1); each mediator is colored by its
-  `B1_MX` coefficient; Y is colored by the implied total effect at X=1.
-- Y (Likelihood) is drawn as a left-facing triangle to signal that it's
-  the focal action node.
+- Nodes are colored by their **expected score when X is held at 1** on
+  a continuous red→white→blue gradient over the `[-1, 1]` range
+  (`scale_fill_gradient2()`). X is by definition full blue (score = 1);
+  each mediator is colored by its `B1_MX` coefficient; Y is colored by
+  the implied total effect at X = 1.
+- X and each mediator are drawn as squares; Y (Likelihood) is a
+  left-facing triangle to signal that it's the focal action node.
+- Node **labels sit outside the shapes**: above for any mediator,
+  below for X and Y. This convention carries to the fan view so labels
+  stay unambiguously attached to their box.
 - Edges are **dashed for negative**, **solid for positive**, with
-  thickness scaled by path magnitude (`negDashed = TRUE`,
-  `maximum = 0.8`). Edge labels show the full `b1 + bZ(Z)` form.
+  thickness scaled by path magnitude (capped at `scale_max = 0.8`).
+  Edge labels show the full `b1 + bZ(Z)` form. Arrowheads are clipped
+  to the node perimeter.
 
 **Single-mediator triangle** for the dominant route through
 `Appropriate`:
@@ -409,9 +414,9 @@ driving as less of an appropriateness violation. `Appropriate` strongly
 drives `Likelihood` (+0.53, solid) and that valuation is *not* moderated
 by `SRFast` (≈ +0.00). The residual `BZ_YX[2]` direct path (+0.18)
 reflects the joint contribution of the seven other mediators not shown
-here. The Y node renders red because the total predicted Y at
-`Speed = 1` is negative — speeding produces a net-negative expected
-likelihood when only `Appropriate` mediates.
+here. The Y node renders in the red half of the gradient because the
+total predicted Y at `Speed = 1` is negative — speeding produces a
+net-negative expected likelihood when only `Appropriate` mediates.
 
 **Full multi-mediator fan view** — pass no `mediator` argument and all
 available mediators are arranged in a fan between X and Y:
@@ -508,7 +513,7 @@ that `Z`. This makes the moderation visually concrete: edge widths thin
 out, node colors fade, and the implied total effect on `Y` shifts
 between panels.
 
-```{r plot-zlh-fan, fig.width = 12, fig.height = 6}
+```{r plot-zlh-fan, fig.width = 12, fig.height = 8}
 plotPathXMY_ZLH(dec,
                 X_label = "Speed", Y_label = "Likelihood",
                 Z_label = "SRFast",
