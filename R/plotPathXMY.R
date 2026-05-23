@@ -96,10 +96,17 @@ plotPathXMY <- function(x,
                         filetype = "png",
                         ...) {
 
-  ## -- Extract tidy table ------------------------------------------
+  ## -- Extract tidy tables -----------------------------------------
+  ## tidy_loop carries per-mediator loop-fit rows; tidy_joint (when
+  ## present) carries the joint multi-mediator fit, including the
+  ## global B1_YX_joint / BZ_YX_joint rows (mediator = NA) that drive
+  ## the residual X to Y direct arrow in the fan view.
   tidy <- if (!is.null(x$fits) && !is.null(x$fits$full)) x$fits$full$tidy_loop
           else if (!is.null(x$tidy_loop))                 x$tidy_loop
           else stop("`x` must be a pathXMY() or pathXMY_decompose() return.")
+  joint_tidy <- if (!is.null(x$fits) && !is.null(x$fits$full)) x$fits$full$tidy_joint
+                else if (!is.null(x$tidy_joint))                x$tidy_joint
+                else NULL
 
   all_meds <- unique(tidy$mediator)
   all_meds <- all_meds[!is.na(all_meds)]
@@ -126,14 +133,19 @@ plotPathXMY <- function(x,
   B1_YM <- vapply(mediator, pull_est, numeric(1), param = "B1_YM")
   BZ_YM <- vapply(mediator, pull_est, numeric(1), param = "BZ_YM")
 
-  ## Joint multi-mediator direct path (special row with mediator = NA)
+  ## Joint multi-mediator direct path (special row with mediator = NA
+  ## in tidy_joint).
   pull_joint <- function(param) {
-    r <- tidy[is.na(tidy$mediator) & tidy$param == param, , drop = FALSE]
+    if (is.null(joint_tidy))
+      return(list(est = NA_real_, pvalue = NA_real_))
+    r <- joint_tidy[is.na(joint_tidy$mediator) &
+                    joint_tidy$param == param, , drop = FALSE]
     if (nrow(r) == 0L) list(est = NA_real_, pvalue = NA_real_)
     else list(est = r$est[1], pvalue = r$pvalue[1])
   }
-  has_joint_direct <- any(is.na(tidy$mediator) &
-                          tidy$param == "B1_YX_joint")
+  has_joint_direct <- !is.null(joint_tidy) &&
+                      any(is.na(joint_tidy$mediator) &
+                          joint_tidy$param == "B1_YX_joint")
 
   if (fan_view) {
     if (has_joint_direct) {
@@ -176,10 +188,21 @@ plotPathXMY <- function(x,
 
   ## -- Layout ------------------------------------------------------
   if (fan_view) {
+    ## Stretch the mediator y-range so adjacent box centers stay at
+    ## least `min_spacing` apart in data coordinates. Required for the
+    ## above-label convention to read unambiguously: at default
+    ## node_size = 0.07 and label_pad = 0.025, a center-to-center
+    ## spacing of about 0.33 keeps each label clearly closer to its
+    ## own box than to the next box up. Even n_m uses n_m - 1 gaps;
+    ## odd n_m drops the centermost slot of n_m + 1 slots, so the
+    ## effective gap is 2 * y_extent / n_m.
+    min_spacing <- (node_size * 2) + (label_pad * 2) + 0.14
+    slots       <- if (n_m %% 2L == 0L) n_m - 1L else n_m
+    y_extent    <- max(1, slots * min_spacing / 2)
     if (n_m %% 2L == 0L) {
-      y_pos <- seq(1, -1, length.out = n_m)
+      y_pos <- seq(y_extent, -y_extent, length.out = n_m)
     } else {
-      y_all   <- seq(1, -1, length.out = n_m + 1L)
+      y_all   <- seq(y_extent, -y_extent, length.out = n_m + 1L)
       drop_ix <- (n_m + 1L) %/% 2L + 1L
       y_pos   <- y_all[-drop_ix]
     }
