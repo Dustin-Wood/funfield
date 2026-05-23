@@ -79,26 +79,25 @@ plotPathXMY_widget <- function(x,
     stop("`panel_titles` must have length equal to `Z_levels` when supplied.")
   }
 
-  ## Render one frame per Z value at the requested size and format.
+  ## Render one frame per Z value via ggsave on the returned ggplot.
   uris <- character(n_frames)
   for (k in seq_along(Z_levels)) {
-    if (format == "svg") {
-      tmp <- tempfile(fileext = ".svg")
-      grDevices::svg(tmp, width = width, height = height, bg = "white")
-    } else {
-      tmp <- tempfile(fileext = ".png")
-      grDevices::png(tmp, width = width, height = height,
-                     units = "in", res = res, bg = "white")
-    }
+    tmp <- tempfile(fileext = if (format == "svg") ".svg" else ".png")
     on.exit(unlink(tmp), add = TRUE)
-    tryCatch({
-      plotPathXMY(x,
-                  mediator = mediator,
-                  Z_value  = Z_levels[k],
-                  Z_label  = Z_label,
-                  title    = panel_titles[k],
-                  ...)
-    }, finally = grDevices::dev.off())
+    p <- plotPathXMY(x,
+                     mediator = mediator,
+                     Z_value  = Z_levels[k],
+                     Z_label  = Z_label,
+                     title    = panel_titles[k],
+                     ...)
+    if (format == "svg") {
+      ggplot2::ggsave(tmp, p, device = "svg",
+                      width = width, height = height, bg = "white")
+    } else {
+      ggplot2::ggsave(tmp, p, device = "png",
+                      width = width, height = height,
+                      dpi = res, bg = "white")
+    }
     mime <- if (format == "svg") "image/svg+xml" else "image/png"
     uris[k] <- base64enc::dataURI(file = tmp, mime = mime)
   }

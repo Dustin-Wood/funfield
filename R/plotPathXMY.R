@@ -1,41 +1,43 @@
 #' Field-style path diagram for an X-M-Y model
 #'
 #' @description
-#' Renders the X to M to Y structure using the funfield visualization
-#' conventions:
+#' Renders the X to M to Y structure as a \pkg{ggplot2} object using the
+#' funfield visualization conventions:
 #'
 #' \itemize{
 #'   \item \strong{Nodes} are colored by their expected score when X is
-#'     held at 1: positive scores in blue, negative scores in red, with
-#'     gradient intensity proportional to magnitude. The X node is by
-#'     definition 1 (full blue); each mediator's score is its path
-#'     coefficient \eqn{b^1_{MX}}; Y's score is the sum of the direct and
-#'     indirect contributions, \eqn{b^1_{YX} + \sum_j b^1_{YM_j} \cdot
-#'     b^1_{MX_j}}.
-#'   \item \strong{Shape} is rectangle for X and each mediator (continuous
-#'     variables) and a left-facing triangle for Y (the focal action
-#'     likelihood).
+#'     held at 1, on a continuous diverging gradient
+#'     (\code{red -> white -> dodgerblue}) mapped to the \code{[-1, 1]}
+#'     range via \code{ggplot2::scale_fill_gradient2()}. The X node is
+#'     by definition 1 (full blue); each mediator's score is its path
+#'     coefficient \eqn{b^1_{MX}}; Y's score is the sum of the direct
+#'     and indirect contributions,
+#'     \eqn{b^1_{YX} + \sum_j b^1_{YM_j} \cdot b^1_{MX_j}}.
+#'   \item \strong{Shape} is a true square for X and each mediator
+#'     (continuous variables) and a left-facing triangle for Y (the
+#'     focal action likelihood).
+#'   \item \strong{Labels} sit outside the shapes: above for any
+#'     mediator (M), below for X and Y. This convention scales to the
+#'     fan view.
 #'   \item \strong{Edges} are solid for positive paths and dashed for
-#'     negative paths (\code{negDashed = TRUE}); edge thickness scales
-#'     with path magnitude. Edge labels carry the \code{b1 + bZ(Z)}
-#'     decomposition.
+#'     negative paths; edge linewidth scales with path magnitude.
+#'     Arrowheads are clipped to the node perimeter via shape-aware
+#'     intersection (L-infinity for squares, edge intersection for the
+#'     left-facing triangle). Edge labels carry the
+#'     \code{b1 + bZ(Z)} decomposition.
 #' }
 #'
 #' Two view modes:
 #' \itemize{
-#'   \item \strong{Triangle} (single mediator) — X at bottom-left, M at
-#'     top, Y at bottom-right. Shows the direct X to Y arrow and both
-#'     mediated paths from the single-mediator loop fit.
-#'   \item \strong{Fan} (multiple mediators) — X at left, mediators
-#'     stacked in the middle, Y at right. The mediator arms are an overlay
-#'     of the per-mediator loop fits (one X-M-Y model per mediator). When
-#'     the input carries joint multi-mediator results
-#'     (\code{pathXMY(joint = TRUE)}, the default), the residual X to Y
-#'     direct arrow is drawn from the joint fit — that is, the
-#'     \eqn{X \to Y} path controlling for the \emph{full} mediator set,
-#'     not for any one mediator. With an odd number of mediators the
-#'     stack is laid out asymmetrically so the straight X to Y arrow has
-#'     a clean gap at the y = 0 axis.
+#'   \item \strong{Triangle} (single mediator) -- X at bottom-left, M at
+#'     top, Y at bottom-right.
+#'   \item \strong{Fan} (multiple mediators) -- X at left, mediators
+#'     stacked in the middle, Y at right. The mediator arms are an
+#'     overlay of the per-mediator loop fits; with joint multi-mediator
+#'     results (\code{pathXMY(joint = TRUE)}, the default), the residual
+#'     X to Y direct arrow is drawn from the joint fit. With an odd
+#'     number of mediators the stack is laid out asymmetrically so the
+#'     straight X to Y arrow has a clean gap at the y = 0 axis.
 #' }
 #'
 #' @param x A \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}} return.
@@ -48,28 +50,35 @@
 #'   If \code{NULL}, the mediator variable names are used.
 #' @param digits Decimal places for edge labels (default 2).
 #' @param show_pvalues Logical; append p-values to edge labels.
-#' @param scale_max qgraph \code{maximum} argument controlling edge
-#'   thickness scaling. Default 0.8 (paths approaching this magnitude get
-#'   maximum thickness).
+#' @param scale_max Numeric. Path magnitude that maps to the maximum
+#'   edge linewidth. Default \code{0.8}.
 #' @param score_intensity_max Numeric. The expected-score absolute value
-#'   that maps to maximum color intensity. Default 1 (i.e. expected scores
-#'   range over [-1, 1]).
+#'   that maps to maximum color intensity. Default \code{1} (the
+#'   \code{[-1, 1]} range).
 #' @param Z_value Optional numeric scalar. If supplied, the diagram is
-#'   rendered \emph{conditional on Z at this value} — every coefficient
+#'   rendered \emph{conditional on Z at this value} -- every coefficient
 #'   becomes the effective slope at that Z (\code{b1 + bZ * Z_value}),
 #'   node colors reflect expected scores at that Z, and edge labels show
 #'   the single effective coefficient rather than the
-#'   \code{b1 + bZ(Z)} decomposition. Set to e.g. \code{-1} or \code{+1}
-#'   to view the field at a typical low or high level of a
-#'   z-standardized between-person moderator. See also
+#'   \code{b1 + bZ(Z)} decomposition. See also
 #'   \code{\link{plotPathXMY_ZLH}} for a paired low/high view.
+#' @param node_size Half-side of each square / half-bounding-box of the
+#'   triangle, in data coordinates (default \code{0.07}).
+#' @param label_pad Padding between a node's perimeter and its text
+#'   label, in data coordinates (default \code{0.05}).
 #' @param title Optional plot title.
-#' @param filename,filetype Optional; if \code{filename} is supplied,
-#'   qgraph writes the plot to a file (e.g., \code{filetype = "png"}).
-#' @param ... Additional arguments passed to \code{qgraph::qgraph()}.
-#' @return Invisibly returns the qgraph object.
+#' @param filename,filetype Optional. If \code{filename} is supplied,
+#'   the plot is also saved via \code{ggplot2::ggsave()} using
+#'   \code{filetype} as the device (e.g., \code{"png"}, \code{"pdf"}).
+#' @param ... Additional arguments passed to \code{ggplot2::ggsave()}
+#'   when \code{filename} is supplied (ignored otherwise).
+#' @return A \code{ggplot} object. Auto-prints in interactive sessions
+#'   and knitr chunks; assign to a variable to suppress and reuse.
 #' @seealso \code{\link{pathXMY}}, \code{\link{pathXMY_decompose}},
-#'   \code{\link{vshapes}}, \code{\link{fieldPolygons}}, \code{\link{pnLevels}}
+#'   \code{\link{plotPathXMY_ZLH}}, \code{\link{plotPathXMY_widget}}
+#' @import ggplot2
+#' @importFrom rlang .data
+#' @importFrom grid arrow unit
 #' @export
 plotPathXMY <- function(x,
                         mediator = NULL,
@@ -80,14 +89,14 @@ plotPathXMY <- function(x,
                         scale_max = 0.8,
                         score_intensity_max = 1,
                         Z_value = NULL,
+                        node_size = 0.07,
+                        label_pad = 0.05,
                         title = NULL,
                         filename = NULL,
                         filetype = "png",
                         ...) {
-  if (!requireNamespace("qgraph", quietly = TRUE))
-    stop("plotPathXMY() requires the 'qgraph' package.")
 
-  ## Accept either pathXMY or pathXMY_decompose
+  ## -- Extract tidy table ------------------------------------------
   tidy <- if (!is.null(x$fits) && !is.null(x$fits$full)) x$fits$full$tidy_loop
           else if (!is.null(x$tidy_loop))                 x$tidy_loop
           else stop("`x` must be a pathXMY() or pathXMY_decompose() return.")
@@ -104,7 +113,7 @@ plotPathXMY <- function(x,
   fan_view  <- n_m > 1L
   if (is.null(M_labels)) M_labels <- mediator
 
-  ## Coefficient pulls
+  ## -- Coefficient pulls -------------------------------------------
   pull <- function(med, param) {
     r <- tidy[tidy$mediator == med & tidy$param == param, , drop = FALSE]
     if (nrow(r) == 0L) list(est = NA_real_, pvalue = NA_real_)
@@ -117,9 +126,7 @@ plotPathXMY <- function(x,
   B1_YM <- vapply(mediator, pull_est, numeric(1), param = "B1_YM")
   BZ_YM <- vapply(mediator, pull_est, numeric(1), param = "BZ_YM")
 
-  ## Joint multi-mediator results (if present): used to draw the
-  ## residual X -> Y direct arrow in the fan view. Recognized by
-  ## the special row mediator = NA, param = "B1_YX_joint".
+  ## Joint multi-mediator direct path (special row with mediator = NA)
   pull_joint <- function(param) {
     r <- tidy[is.na(tidy$mediator) & tidy$param == param, , drop = FALSE]
     if (nrow(r) == 0L) list(est = NA_real_, pvalue = NA_real_)
@@ -128,26 +135,24 @@ plotPathXMY <- function(x,
   has_joint_direct <- any(is.na(tidy$mediator) &
                           tidy$param == "B1_YX_joint")
 
-  ## Direct paths: single-mediator loop fit (triangle view) or, in fan
-  ## view, the joint multi-mediator fit when available.
   if (fan_view) {
     if (has_joint_direct) {
-      has_direct <- TRUE
-      B1_YX <- pull_joint("B1_YX_joint")$est
-      BZ_YX <- pull_joint("BZ_YX_joint")$est
+      has_direct  <- TRUE
+      B1_YX       <- pull_joint("B1_YX_joint")$est
+      BZ_YX       <- pull_joint("BZ_YX_joint")$est
+      p_YX_pvalue <- pull_joint("B1_YX_joint")$pvalue
     } else {
       has_direct <- FALSE
-      B1_YX <- NA_real_
-      BZ_YX <- NA_real_
+      B1_YX <- NA_real_; BZ_YX <- NA_real_; p_YX_pvalue <- NA_real_
     }
   } else {
-    has_direct <- TRUE
-    B1_YX <- pull_est(mediator[1], "B1_YX")
-    BZ_YX <- pull_est(mediator[1], "BZ_YX")
+    has_direct  <- TRUE
+    B1_YX       <- pull_est(mediator[1], "B1_YX")
+    BZ_YX       <- pull_est(mediator[1], "BZ_YX")
+    p_YX_pvalue <- pull(mediator[1], "B1_YX")$pvalue
   }
 
-  ## If Z_value is supplied, collapse to effective coefficients at that Z.
-  ## NAs in the BZ paths (e.g. no Z in the fit) are treated as zero.
+  ## -- Z collapse --------------------------------------------------
   z_collapsed <- !is.null(Z_value)
   if (z_collapsed) {
     if (!is.numeric(Z_value) || length(Z_value) != 1L)
@@ -157,35 +162,73 @@ plotPathXMY <- function(x,
     YM_eff <- B1_YM + naz(BZ_YM) * Z_value
     YX_eff <- if (has_direct) B1_YX + naz(BZ_YX) * Z_value else NA_real_
   } else {
-    MX_eff <- B1_MX
-    YM_eff <- B1_YM
-    YX_eff <- B1_YX
+    MX_eff <- B1_MX; YM_eff <- B1_YM; YX_eff <- B1_YX
   }
 
-  ## Expected scores at X = 1 (using the effective coefficients)
-  X_score   <- 1
-  M_scores  <- MX_eff
-  Y_score   <- sum(YM_eff * MX_eff, na.rm = TRUE) +
-               (if (has_direct && !is.na(YX_eff)) YX_eff else 0)
+  ## -- Node scores at X = 1 ----------------------------------------
+  X_score  <- 1
+  M_scores <- MX_eff
+  Y_score  <- sum(YM_eff * MX_eff, na.rm = TRUE) +
+              (if (has_direct && !is.na(YX_eff)) YX_eff else 0)
+  scores_vec     <- c(X_score, M_scores, Y_score)
+  scores_clipped <- pmax(-score_intensity_max,
+                         pmin(score_intensity_max, scores_vec))
 
-  ## Node assembly
-  node_names  <- c("X", mediator, "Y")
-  node_labels <- c(X_label, M_labels, Y_label)
-  n_nodes     <- length(node_names)
-  scores_vec  <- c(X_score, M_scores, Y_score)
-
-  ## Adjacency matrix of path weights (using effective coefficients)
-  adj <- matrix(0, n_nodes, n_nodes,
-                dimnames = list(node_names, node_names))
-  for (i in seq_along(mediator)) {
-    adj["X", mediator[i]] <- MX_eff[i]
-    adj[mediator[i], "Y"] <- YM_eff[i]
+  ## -- Layout ------------------------------------------------------
+  if (fan_view) {
+    if (n_m %% 2L == 0L) {
+      y_pos <- seq(1, -1, length.out = n_m)
+    } else {
+      y_all   <- seq(1, -1, length.out = n_m + 1L)
+      drop_ix <- (n_m + 1L) %/% 2L + 1L
+      y_pos   <- y_all[-drop_ix]
+    }
+    layout_x <- c(-1.5, rep(0, n_m), 1.5)
+    layout_y <- c(0,    y_pos,        0)
+  } else {
+    layout_x <- c(-1.0, 0.0, 1.0)
+    layout_y <- c(-0.25, 0.35, -0.25)
   }
-  if (has_direct && !is.na(YX_eff)) adj["X", "Y"] <- YX_eff
 
-  ## Edge-label matrix. Two formats:
-  ##   - z_collapsed: show the single effective coefficient
-  ##   - otherwise:   show "b1 + bZ(Z)"
+  nodes <- data.frame(
+    name  = c("X", mediator, "Y"),
+    label = c(X_label, M_labels, Y_label),
+    role  = c("X", rep("M", n_m), "Y"),
+    x     = layout_x,
+    y     = layout_y,
+    score = scores_clipped,
+    shape = c("square", rep("square", n_m), "lfTri"),
+    stringsAsFactors = FALSE
+  )
+  ## Label convention: above for M, below for X and Y.
+  nodes$label_y <- ifelse(
+    nodes$role == "M",
+    nodes$y + node_size + label_pad,
+    nodes$y - node_size - label_pad
+  )
+  nodes$label_vjust <- ifelse(nodes$role == "M", 0, 1)
+
+  ## -- Polygon coords (one shape per node) -------------------------
+  build_polygon <- function(shape, s) {
+    if (shape == "square") {
+      list(px = c(-1,  1, 1, -1) * s,
+           py = c(-1, -1, 1,  1) * s)
+    } else if (shape == "lfTri") {
+      list(px = c(-1,  1,  1) * s,
+           py = c( 0,  1, -1) * s)
+    } else stop("Unknown shape: ", shape)
+  }
+  poly_df <- do.call(rbind, lapply(seq_len(nrow(nodes)), function(k) {
+    sh <- nodes$shape[k]; cx <- nodes$x[k]; cy <- nodes$y[k]
+    p  <- build_polygon(sh, node_size)
+    data.frame(name  = nodes$name[k],
+               px    = p$px + cx,
+               py    = p$py + cy,
+               score = nodes$score[k],
+               stringsAsFactors = FALSE)
+  }))
+
+  ## -- Edges -------------------------------------------------------
   fmt_path <- function(b1, bZ, pv = NA_real_) {
     if (is.na(b1)) return("")
     out <- sprintf(paste0("%+.", digits, "f"), b1)
@@ -197,99 +240,157 @@ plotPathXMY <- function(x,
     out
   }
 
-  elab <- matrix("", n_nodes, n_nodes,
-                 dimnames = list(node_names, node_names))
+  edge_rows <- list()
   for (i in seq_along(mediator)) {
-    p_MX <- pull(mediator[i], "B1_MX")$pvalue
-    p_YM <- pull(mediator[i], "B1_YM")$pvalue
-    elab["X", mediator[i]] <- fmt_path(MX_eff[i], BZ_MX[i], p_MX)
-    elab[mediator[i], "Y"] <- fmt_path(YM_eff[i], BZ_YM[i], p_YM)
+    med  <- mediator[i]
+    p_MX <- pull(med, "B1_MX")$pvalue
+    p_YM <- pull(med, "B1_YM")$pvalue
+    edge_rows[[length(edge_rows) + 1L]] <- data.frame(
+      from = "X", to = med,
+      coef = MX_eff[i], bZ = BZ_MX[i], pv = p_MX,
+      label = fmt_path(MX_eff[i], BZ_MX[i], p_MX),
+      stringsAsFactors = FALSE
+    )
+    edge_rows[[length(edge_rows) + 1L]] <- data.frame(
+      from = med, to = "Y",
+      coef = YM_eff[i], bZ = BZ_YM[i], pv = p_YM,
+      label = fmt_path(YM_eff[i], BZ_YM[i], p_YM),
+      stringsAsFactors = FALSE
+    )
   }
   if (has_direct && !is.na(YX_eff)) {
-    p_YX <- if (fan_view) pull_joint("B1_YX_joint")$pvalue
-            else          pull(mediator[1], "B1_YX")$pvalue
-    elab["X", "Y"] <- fmt_path(YX_eff, BZ_YX, p_YX)
+    edge_rows[[length(edge_rows) + 1L]] <- data.frame(
+      from = "X", to = "Y",
+      coef = YX_eff, bZ = BZ_YX, pv = p_YX_pvalue,
+      label = fmt_path(YX_eff, BZ_YX, p_YX_pvalue),
+      stringsAsFactors = FALSE
+    )
   }
+  edges <- do.call(rbind, edge_rows)
 
-  ## Layout
-  layout_mat <- matrix(0, n_nodes, 2,
-                       dimnames = list(node_names, NULL))
-  if (fan_view) {
-    layout_mat["X", ] <- c(-1.5, 0)
-    layout_mat["Y", ] <- c( 1.5, 0)
-    ## Even n_m: evenly spaced positions don't include y = 0, so the
-    ## X -> Y line crosses cleanly between mediators.
-    ## Odd n_m: take n_m + 1 evenly spaced slots and drop the slot just
-    ## below center, leaving an asymmetric gap that straddles y = 0 so
-    ## the straight X -> Y line never crosses a mediator node.
-    if (n_m == 1L) {
-      y_pos <- 0
-    } else if (n_m %% 2L == 0L) {
-      y_pos <- seq(1, -1, length.out = n_m)
-    } else {
-      y_all   <- seq(1, -1, length.out = n_m + 1L)
-      drop_ix <- (n_m + 1L) %/% 2L + 1L
-      y_pos   <- y_all[-drop_ix]
+  edges$from_x <- nodes$x[match(edges$from, nodes$name)]
+  edges$from_y <- nodes$y[match(edges$from, nodes$name)]
+  edges$to_x   <- nodes$x[match(edges$to,   nodes$name)]
+  edges$to_y   <- nodes$y[match(edges$to,   nodes$name)]
+  edges$mid_x  <- (edges$from_x + edges$to_x) / 2
+  edges$mid_y  <- (edges$from_y + edges$to_y) / 2
+  edges$lty    <- ifelse(!is.na(edges$coef) & edges$coef < 0,
+                         "dashed", "solid")
+  edges$lw     <- pmin(abs(edges$coef) / scale_max, 1) * 2.2 + 0.3
+  edges$from_shape <- nodes$shape[match(edges$from, nodes$name)]
+  edges$to_shape   <- nodes$shape[match(edges$to,   nodes$name)]
+
+  ## -- Shape-aware boundary clipping ------------------------------
+  ## Bounding boxes are centered on each node's layout point. For a
+  ## ray exiting the center along (ux, uy):
+  ##   square -> L-infinity:  s / max(|ux|, |uy|)
+  ##   lfTri  -> apex at (-s, 0), base corners (s, +/-s):
+  ##     ux > 0          -> base edge:    s / ux
+  ##     ux <= 0, uy > 0 -> top edge:     s / (2*uy - ux)
+  ##     ux <= 0, uy < 0 -> bottom edge:  s / (-2*uy - ux)
+  ##     ux < 0, uy == 0 -> apex:         s
+  node_exit <- function(shape, s, ux, uy) {
+    if (shape == "square") {
+      return(s / max(abs(ux), abs(uy), 1e-9))
+    } else if (shape == "lfTri") {
+      if (ux > 0) {
+        return(s / ux)
+      } else if (uy > 0) {
+        return(s / (2 * uy - ux))
+      } else if (uy < 0) {
+        return(s / (-2 * uy - ux))
+      } else {
+        return(s)
+      }
     }
-    for (i in seq_along(mediator))
-      layout_mat[mediator[i], ] <- c(0, y_pos[i])
-  } else {
-    ## Compact triangle: short vertical span so the diagram doesn't
-    ## eat as much fig.height as the fan view.
-    layout_mat["X", ] <- c(-1.0, -0.25)
-    layout_mat[mediator, ] <- c( 0.0,  0.35)
-    layout_mat["Y", ] <- c( 1.0, -0.25)
+    s
   }
+  edge_shorten <- function(x0, y0, x1, y1, from_shape, to_shape, s) {
+    dx <- x1 - x0; dy <- y1 - y0
+    d  <- sqrt(dx^2 + dy^2)
+    if (d == 0) return(c(x0, y0, x1, y1))
+    ux <- dx / d; uy <- dy / d
+    r0 <- node_exit(from_shape, s,  ux,  uy)
+    r1 <- node_exit(to_shape,   s, -ux, -uy)
+    c(x0 + r0 * ux, y0 + r0 * uy, x1 - r1 * ux, y1 - r1 * uy)
+  }
+  shortened <- t(mapply(edge_shorten,
+                        edges$from_x, edges$from_y,
+                        edges$to_x,   edges$to_y,
+                        edges$from_shape, edges$to_shape,
+                        MoreArgs = list(s = node_size)))
+  edges$sx <- shortened[, 1]; edges$sy <- shortened[, 2]
+  edges$ex <- shortened[, 3]; edges$ey <- shortened[, 4]
 
-  ## Shapes: rectangles for X and Ms, left-facing triangle for Y
-  shape_codes <- c("x", rep("x", n_m), "a")  # 'a' = appraisal -> lfTriangle
-  shapes      <- vshapes(shape_codes)
-
-  ## Color groupings and intensity scores
-  groups     <- pnLevels(scores_vec)
-  scores_int <- as.integer(round(pmin(abs(scores_vec) / score_intensity_max, 1) * 20))
-
-  ## In fan view, append a caption noting that the mediator arms are an
-  ## overlay of per-mediator loop fits, and (if shown) that the X -> Y
-  ## arrow is from the joint multi-mediator fit.
+  ## -- Title / subtitle (fan caption) ------------------------------
+  subtitle <- NULL
   if (fan_view) {
-    fan_caption <- if (has_joint_direct) {
+    subtitle <- if (has_joint_direct) {
       "Summary of per-mediator X to M to Y fits; X to Y from joint fit of all M"
     } else {
       "Summary of per-mediator X to M to Y fits across M"
     }
-    title <- if (is.null(title)) fan_caption
-             else                paste(title, fan_caption, sep = "\n")
   }
 
-  ## qgraph call
-  qargs <- list(
-    input          = adj,
-    shape          = shapes,
-    polygonList    = fieldPolygons(),
-    groups         = groups,
-    color          = c("dodgerblue", "red"),
-    scores         = scores_int,
-    scores.range   = c(0, 20),
-    edge.color     = "black",
-    edge.labels    = elab,
-    edge.label.cex = 0.95,
-    negDashed      = TRUE,
-    maximum        = scale_max,
-    layout         = layout_mat,
-    labels         = node_labels,
-    legend         = FALSE,
-    fade           = FALSE,
-    label.scale    = FALSE,
-    label.cex      = 0.85,
-    title          = title
-  )
+  squish01 <- function(x, range) pmin(pmax(x, range[1]), range[2])
+
+  ## -- Assemble ----------------------------------------------------
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_segment(
+      data  = edges,
+      ggplot2::aes(x = .data$sx, y = .data$sy,
+                   xend = .data$ex, yend = .data$ey,
+                   linetype  = .data$lty,
+                   linewidth = .data$lw),
+      arrow = grid::arrow(length = grid::unit(0.14, "inches"),
+                          type   = "closed"),
+      color = "black", lineend = "round") +
+    ggplot2::geom_label(
+      data = edges,
+      ggplot2::aes(x = .data$mid_x, y = .data$mid_y,
+                   label = .data$label),
+      size = 3.2,
+      label.padding = grid::unit(0.12, "lines"),
+      label.size    = 0,
+      fill          = "#FFFFFFDA") +
+    ggplot2::geom_polygon(
+      data = poly_df,
+      ggplot2::aes(x = .data$px, y = .data$py,
+                   group = .data$name, fill = .data$score),
+      color = "black", linewidth = 0.5) +
+    ggplot2::geom_text(
+      data = nodes,
+      ggplot2::aes(x = .data$x, y = .data$label_y,
+                   label = .data$label, vjust = .data$label_vjust),
+      size = 4) +
+    ggplot2::scale_fill_gradient2(
+      low      = "red",
+      mid      = "white",
+      high     = "dodgerblue",
+      midpoint = 0,
+      limits   = c(-score_intensity_max, score_intensity_max),
+      oob      = squish01,
+      name     = "score",
+      guide    = ggplot2::guide_colorbar(
+        barwidth  = grid::unit(2.2, "in"),
+        barheight = grid::unit(0.18, "in"))) +
+    ggplot2::scale_linetype_identity() +
+    ggplot2::scale_linewidth_identity() +
+    ggplot2::coord_equal(clip = "off") +
+    ggplot2::theme_void() +
+    ggplot2::theme(
+      plot.margin     = ggplot2::margin(8, 8, 8, 8),
+      plot.title      = ggplot2::element_text(
+        hjust = 0.5, size = 12,
+        margin = ggplot2::margin(b = 6)),
+      plot.subtitle   = ggplot2::element_text(
+        hjust = 0.5, size = 9,
+        margin = ggplot2::margin(b = 10)),
+      legend.position = "bottom") +
+    ggplot2::labs(title = title, subtitle = subtitle)
+
   if (!is.null(filename)) {
-    qargs$filename <- filename
-    qargs$filetype <- filetype
+    ggplot2::ggsave(filename, p, device = filetype, ...)
   }
-  qargs <- c(qargs, list(...))
-
-  q <- do.call(qgraph::qgraph, qargs)
-  invisible(q)
+  p
 }

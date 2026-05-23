@@ -27,15 +27,18 @@ titles. If \code{NULL}, panel titles are auto-generated using
 \code{Z_label} and the \code{Z_levels} values.}
 }
 \value{
-Invisibly returns \code{NULL}.
+A \code{patchwork} object combining two \code{ggplot} panels
+  with a shared bottom legend. Auto-prints in interactive sessions
+  and knitr chunks.
 }
 \description{
-Draws two \code{\link{plotPathXMY}} field diagrams side-by-side, one at
-a low value of \code{Z} and one at a high value. Each panel shows the
-field with coefficients \emph{collapsed} at the chosen \code{Z} value
-(\code{b1 + bZ \times Z_value}), so the moderation becomes visually
-concrete: edges thicken/thin, nodes shift color, and the implied total
-effect on Y shifts between panels.
+Returns a \pkg{patchwork} composition of two \code{\link{plotPathXMY}}
+panels, one at a low value of \code{Z} and one at a high value. Each
+panel renders the field with coefficients \emph{collapsed} at the
+chosen \code{Z} value (\code{b1 + bZ * Z_value}), so the moderation
+becomes visually concrete: edges thicken/thin, nodes shift color,
+and the implied total effect on Y shifts between panels. The two
+panels share a single color legend at the bottom.
 }
 \seealso{
 \code{\link{plotPathXMY}}

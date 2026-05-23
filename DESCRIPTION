@@ -25,7 +25,8 @@ Suggests:
     knitr,
     rmarkdown,
     visNetwork,
-    shiny
+    shiny,
+    patchwork
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 Imports:
@@ -35,4 +36,7 @@ Imports:
     stats,
     base64enc,
     htmltools,
-    fancyr
+    fancyr,
+    ggplot2,
+    rlang,
+    grid

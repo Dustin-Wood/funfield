@@ -16,6 +16,8 @@ plotPathXMY(
   scale_max = 0.8,
   score_intensity_max = 1,
   Z_value = NULL,
+  node_size = 0.07,
+  label_pad = 0.05,
   title = NULL,
   filename = NULL,
   filetype = "png",
@@ -39,73 +41,81 @@ If \code{NULL}, the mediator variable names are used.}
 
 \item{show_pvalues}{Logical; append p-values to edge labels.}
 
-\item{scale_max}{qgraph \code{maximum} argument controlling edge
-thickness scaling. Default 0.8 (paths approaching this magnitude get
-maximum thickness).}
+\item{scale_max}{Numeric. Path magnitude that maps to the maximum
+edge linewidth. Default \code{0.8}.}
 
 \item{score_intensity_max}{Numeric. The expected-score absolute value
-that maps to maximum color intensity. Default 1 (i.e. expected scores
-range over [-1, 1]).}
+that maps to maximum color intensity. Default \code{1} (the
+\code{[-1, 1]} range).}
 
 \item{Z_value}{Optional numeric scalar. If supplied, the diagram is
-rendered \emph{conditional on Z at this value} — every coefficient
+rendered \emph{conditional on Z at this value} -- every coefficient
 becomes the effective slope at that Z (\code{b1 + bZ * Z_value}),
 node colors reflect expected scores at that Z, and edge labels show
 the single effective coefficient rather than the
-\code{b1 + bZ(Z)} decomposition. Set to e.g. \code{-1} or \code{+1}
-to view the field at a typical low or high level of a
-z-standardized between-person moderator. See also
+\code{b1 + bZ(Z)} decomposition. See also
 \code{\link{plotPathXMY_ZLH}} for a paired low/high view.}
+
+\item{node_size}{Half-side of each square / half-bounding-box of the
+triangle, in data coordinates (default \code{0.07}).}
+
+\item{label_pad}{Padding between a node's perimeter and its text
+label, in data coordinates (default \code{0.05}).}
 
 \item{title}{Optional plot title.}
 
-\item{filename, filetype}{Optional; if \code{filename} is supplied,
-qgraph writes the plot to a file (e.g., \code{filetype = "png"}).}
+\item{filename, filetype}{Optional. If \code{filename} is supplied,
+the plot is also saved via \code{ggplot2::ggsave()} using
+\code{filetype} as the device (e.g., \code{"png"}, \code{"pdf"}).}
 
-\item{...}{Additional arguments passed to \code{qgraph::qgraph()}.}
+\item{...}{Additional arguments passed to \code{ggplot2::ggsave()}
+when \code{filename} is supplied (ignored otherwise).}
 }
 \value{
-Invisibly returns the qgraph object.
+A \code{ggplot} object. Auto-prints in interactive sessions
+  and knitr chunks; assign to a variable to suppress and reuse.
 }
 \description{
-Renders the X to M to Y structure using the funfield visualization
-conventions:
+Renders the X to M to Y structure as a \pkg{ggplot2} object using the
+funfield visualization conventions:
 
 \itemize{
   \item \strong{Nodes} are colored by their expected score when X is
-    held at 1: positive scores in blue, negative scores in red, with
-    gradient intensity proportional to magnitude. The X node is by
-    definition 1 (full blue); each mediator's score is its path
-    coefficient \eqn{b^1_{MX}}; Y's score is the sum of the direct and
-    indirect contributions, \eqn{b^1_{YX} + \sum_j b^1_{YM_j} \cdot
-    b^1_{MX_j}}.
-  \item \strong{Shape} is rectangle for X and each mediator (continuous
-    variables) and a left-facing triangle for Y (the focal action
-    likelihood).
+    held at 1, on a continuous diverging gradient
+    (\code{red -> white -> dodgerblue}) mapped to the \code{[-1, 1]}
+    range via \code{ggplot2::scale_fill_gradient2()}. The X node is
+    by definition 1 (full blue); each mediator's score is its path
+    coefficient \eqn{b^1_{MX}}; Y's score is the sum of the direct
+    and indirect contributions,
+    \eqn{b^1_{YX} + \sum_j b^1_{YM_j} \cdot b^1_{MX_j}}.
+  \item \strong{Shape} is a true square for X and each mediator
+    (continuous variables) and a left-facing triangle for Y (the
+    focal action likelihood).
+  \item \strong{Labels} sit outside the shapes: above for any
+    mediator (M), below for X and Y. This convention scales to the
+    fan view.
   \item \strong{Edges} are solid for positive paths and dashed for
-    negative paths (\code{negDashed = TRUE}); edge thickness scales
-    with path magnitude. Edge labels carry the \code{b1 + bZ(Z)}
-    decomposition.
+    negative paths; edge linewidth scales with path magnitude.
+    Arrowheads are clipped to the node perimeter via shape-aware
+    intersection (L-infinity for squares, edge intersection for the
+    left-facing triangle). Edge labels carry the
+    \code{b1 + bZ(Z)} decomposition.
 }
 
 Two view modes:
 \itemize{
-  \item \strong{Triangle} (single mediator) — X at bottom-left, M at
-    top, Y at bottom-right. Shows the direct X to Y arrow and both
-    mediated paths from the single-mediator loop fit.
-  \item \strong{Fan} (multiple mediators) — X at left, mediators
-    stacked in the middle, Y at right. The mediator arms are an overlay
-    of the per-mediator loop fits (one X-M-Y model per mediator). When
-    the input carries joint multi-mediator results
-    (\code{pathXMY(joint = TRUE)}, the default), the residual X to Y
-    direct arrow is drawn from the joint fit — that is, the
-    \eqn{X \to Y} path controlling for the \emph{full} mediator set,
-    not for any one mediator. With an odd number of mediators the
-    stack is laid out asymmetrically so the straight X to Y arrow has
-    a clean gap at the y = 0 axis.
+  \item \strong{Triangle} (single mediator) -- X at bottom-left, M at
+    top, Y at bottom-right.
+  \item \strong{Fan} (multiple mediators) -- X at left, mediators
+    stacked in the middle, Y at right. The mediator arms are an
+    overlay of the per-mediator loop fits; with joint multi-mediator
+    results (\code{pathXMY(joint = TRUE)}, the default), the residual
+    X to Y direct arrow is drawn from the joint fit. With an odd
+    number of mediators the stack is laid out asymmetrically so the
+    straight X to Y arrow has a clean gap at the y = 0 axis.
 }
 }
 \seealso{
 \code{\link{pathXMY}}, \code{\link{pathXMY_decompose}},
-  \code{\link{vshapes}}, \code{\link{fieldPolygons}}, \code{\link{pnLevels}}
+  \code{\link{plotPathXMY_ZLH}}, \code{\link{plotPathXMY_widget}}
 }
