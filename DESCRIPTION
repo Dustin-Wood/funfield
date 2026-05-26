@@ -27,7 +27,6 @@ Suggests:
     visNetwork,
     shiny,
     patchwork
-RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 Imports:
     reshape2,
@@ -40,3 +39,4 @@ Imports:
     ggplot2,
     rlang,
     grid
+Config/roxygen2/version: 8.0.0

@@ -147,6 +147,95 @@ for (v in L1cols) {
 
 ## Normative model (no moderator)
 
+Before introducing any moderators, we work through the **normative**
+path-decomposition logic — how the total `Speed → Likelihood` effect
+is built up from the per-mediator routes plus a residual direct path.
+The section walks through three steps in order:
+
+1. **Total effect.** The unmediated `Speed → Likelihood` slope — the
+   single number that everything that follows is an account of.
+2. **Per-mediator decomposition.** The loop-fit identity that splits
+   the total into an indirect route through one mediator at a time
+   plus a residual.
+3. **The full mediator set.** The joint-fit identity that splits
+   the total into the sum of indirect routes through every measured
+   mediator plus a single residual direct path.
+
+The "Total moderation" section later in the vignette mirrors these
+three steps exactly, with the moderator's path-weight shifts
+(`BZ_MX × B1_YM`, `B1_MX × BZ_YM`, `BZ_YX_joint`) playing the role of
+the indirect/residual terms here. Reading the normative half first
+makes the symmetric structure of the moderation half obvious.
+
+### Indexing the total effect (here: imagined speeding on action likelihood)
+
+Before decomposing the field into routes, it helps to index the
+**total normative effect** — the unmediated `Speed → Likelihood` slope
+that everything to follow is going to be an account of. Run
+`pathXMY()` with no mediators:
+
+```{r total-effect}
+dec0 <- pathXMY(dat, X = "Speed", Y = "Likelihood")
+dec0$tidy_loop
+```
+
+`B1_YX ≈ -0.28`, with a 95% CI of roughly [-0.33, -0.22]. On the
+`[0, 1]` POMP scale (Speed = 0 at the speed limit, 0.5 at +5 mph, 1 at
++10+ mph), this can be interpreted roughly as: in the same situation,
+respondents say they would be about **28 percentage points less likely
+to drive 10 mph over the speed limit than to drive at the speed
+limit**, averaged across the random factor configurations they were
+shown. That single number is the target of the decomposition that
+follows — every per-mediator indirect effect below is one route's
+account of *why* the slope is that negative (or, for `OnTime`, a route
+that pushes the other way).
+
+### Decomposing the total effect
+
+The total `Speed → Likelihood` effect can be split into an **indirect
+route through a mediator** and a **residual direct path**. For a
+single-mediator model the identity is
+
+$$\beta^*_{1_{YX}} \;=\; \beta_{1_{MX}} \cdot \beta_{1_{YM}}
+\;+\; \beta_{1_{YX}}$$
+
+^[This is the classic Baron-Kenny / Sobel mediation identity
+$c \,=\, a \cdot b \,+\, c'$ in funfield's notation: $a = \beta_{1_{MX}}$,
+$b = \beta_{1_{YM}}$, $c' = \beta_{1_{YX}}$, and the total $c$ is
+$\beta^*_{1_{YX}}$.]
+which generalizes to a set of mediators as
+
+$$\beta^*_{1_{YX}} \;=\; \sum_{M} \beta_{1_{MX}} \cdot \beta_{1_{YM}}
+\;+\; \beta_{1_{YX}}$$
+
+Each term:
+
+- **Term 0** (`B1_YX_total`, on the left): the total normative
+  `X → Y` effect — the value we indexed above.
+- **Term 1** (`B1_MX × B1_YM`): the **indirect effect** through one
+  mediator `M` (or, summed across `M`, through the full mediator set).
+  This is the part of the total `X → Y` slope that operates via
+  the expectation-then-valuation route.
+- **Term 2** (`B1_YX`): the **residual direct effect** after the
+  mediator(s) are accounted for. In the single-mediator case this is
+  the loop fit's `B1_YX` (a residual controlling only for that one
+  mediator); in the multi-mediator case it is `B1_YX_joint`, the
+  joint fit's residual after controlling for every measured mediator
+  simultaneously. A near-zero value indicates the mediator set has
+  collectively captured the `X → Y` association.
+
+Unlike the moderation decomposition later in the vignette (which is
+*approximate* per Muller, Judd, & Yzerbyt, 2005), this normative
+identity is *exact* — it falls out of the OLS algebra of the loop
+and joint regressions.
+
+The next two subsections walk Terms 1 and 2 through the speeding
+data: first the per-mediator loop fits (Term 1 one mediator at a
+time, plus the per-mediator residual), then the joint fit (Term 1
+summed across all eight mediators, plus the single global residual).
+
+### Mediated breakdown
+
 How does each expected outcome mediate the link between an action's
 speed and how likely the respondent is to take it, averaging across
 people and conditions?
@@ -186,6 +275,21 @@ group_kable(
 )
 ```
 
+The same coefficients as a field diagram — every path in the table
+becomes one labeled, signed, and weighted arrow. Edges left of the
+mediator column are `B1_MX`; edges right are `B1_YM`. Mediator node
+fills show each `B1_MX` directly (red = expected outcome drops with
+speed, blue = rises); the `Likelihood` node fills with the implied
+total effect when `Speed = 1`. (See the **Field-style diagrams**
+section below for the full convention.)
+
+```{r plot-norm-fan, fig.width = 9, fig.height = 6}
+plotPathXMY(norm,
+            X_label = "Speed", Y_label = "Likelihood",
+            X_shape = "rtTri",
+            title = "Normative field for speeding decisions")
+```
+
 *Expectation paths (`B1_MX`).* Faster speeds are expected to
 substantially increase `Ticket`, `Crash`, `Injured`, `OnTime`, and (more
 modestly) `MoneyCost`, and to substantially reduce perceived
@@ -213,14 +317,67 @@ knitr::kable(
 The pathways through `Ticket`, `Appropriate`, `Crash`, and `Injured` are
 all large and negative: faster speeds are expected to produce tickets
 and accidents (each of which strongly suppresses action likelihood) and
-to be less appropriate (which also strongly suppresses likelihood). The
-`OnTime` pathway is the lone strong positive: faster speeds are expected
-to get the respondent to the meeting on time, which increases
-likelihood. `FunDrive` and `IntQuality` contribute essentially nothing
-here — because faster speeds don't shift those expectations, the
-pathways are near zero despite their strong valuation paths.
+to be less appropriate (which also strongly suppresses likelihood).
+Notably, the loop indirect through `Ticket` alone (`-0.30`) and through
+`Appropriate` alone (`-0.29`) each rival the total normative effect of
+`-0.28` indexed [above](#indexing-the-total-effect-here-imagined-speeding-on-action-likelihood)
+— either route, taken on its own, is large enough to mechanically
+account for the entire normative drop in action likelihood. The
+`OnTime` pathway is the lone strong positive (`+0.09`): faster speeds
+are expected to get the respondent to the meeting on time, which
+*increases* likelihood, partially offsetting the cost routes. This is
+the model's formal account of a reason *to* speed. `FunDrive` and
+`IntQuality` contribute essentially nothing — because faster speeds
+don't shift those expectations, the pathways are near zero despite
+their strong valuation paths. The joint multi-mediator residual
+direct path (`B1_YX_joint ≈ +0.02`, *p* ≈ .76) is essentially zero:
+all eight mediators together fully account for the total.
+
+### Joint-fit field: how the full mediator set carries the total
+
+The loop overlay above shows each mediator's `Speed → M → Likelihood`
+arm in isolation. The *joint* fit asks a complementary question: if
+all eight expected outcomes are entered into the `Likelihood`
+regression simultaneously, how much of the total `Speed → Likelihood`
+slope remains unmediated? `plotPathXMY(norm, from = "joint")` renders
+the joint simultaneous fit on the same canvas — per-mediator slopes
+are now partial slopes net of the other seven mediators, and the
+straight `Speed → Likelihood` arrow is the single global
+`B1_YX_joint` residual direct path.
+
+```{r plot-norm-joint, fig.width = 9, fig.height = 6}
+plotPathXMY(norm, from = "joint",
+            X_label = "Speed", Y_label = "Likelihood",
+            X_shape = "rtTri",
+            title = "Joint-fit field for speeding decisions")
+```
+
+The residual `B1_YX_joint ≈ +0.02` (the labeled center arrow) is the
+visual confirmation that the eight expected outcomes collectively
+absorb the entire `-0.28` normative effect — there is essentially
+nothing left for `Speed` to do directly. The per-mediator joint
+slopes, by contrast, look quite different from their loop
+counterparts: `Crash → Likelihood` drops from `-0.68` in the loop
+fit to `-0.27` here, `FunDrive → Likelihood` from `+0.72` to `+0.41`,
+and so on. That is the natural consequence of high collinearity among
+the eight expected outcomes: each joint slope is now a partial slope
+net of the others, so much of what looked like one mediator's
+"weight" in the loop view is being absorbed by its correlated
+neighbors. The loop fit is the right tool for *which mediator*
+questions; the joint fit is the right tool for *system-level*
+diagnostics like the residual direct path.
 
 ## Total moderation and its decomposition {#total-moderation-and-its-decomposition}
+
+This section mirrors the three-step normative structure above, but for
+a *moderator* `Z` instead of the bare `X → Y` slope: (1) the **total
+moderation effect** — how much `Z` shifts the `X → Y` slope —
+followed by (2) the per-mediator decomposition of that shift, and
+later (3) the joint residual `BZ_YX_joint`. The normative
+[decomposition identity](#decomposing-the-total-effect) gains one
+extra term in the moderation case because `Z` can rebuild the field
+in two ways: through `M`'s expected level (`BZ_MX × B1_YM`) and
+through how strongly `M` is weighted (`B1_MX × BZ_YM`).
 
 ### (here: What personal and situational factors affect the likelihood of speeding, and why?)
 
@@ -316,6 +473,25 @@ group_kable(
   col_labels = c("Mediator", "est", "se", "z", "p",
                              "est", "se", "z", "p")
 )
+```
+
+The same coefficients as a **Z-overlay field** — the same graph
+layout as the normative field above, but with each `B1` swapped for
+its `BZ` counterpart. Each edge is therefore the per-unit-`SRFast`
+change in that path's weight; coefficients near zero fade to light
+gray so the strong moderation paths stand out cleanly. Nodes are
+drawn white because expected scores have no meaning in a
+per-unit-Z slope field. `scale_max = 0.3` is set tighter than the
+normative default `0.8` because BZ magnitudes are typically smaller
+than B1's.
+
+```{r plot-overlay, fig.width = 9, fig.height = 6}
+plotPathXMY(mod_p,
+            X_label = "Speed", Y_label = "Likelihood",
+            Z_label = "SRFast", X_shape = "rtTri",
+            Z_overlay = TRUE,
+            scale_max = 0.3,
+            title = "Z overlay: how SRFast shifts path weights")
 ```
 
 On the **expectation** side (`BZ_MX`), self-described fast drivers expect
@@ -436,15 +612,16 @@ plotPathXMY(dec,
             title = "Full X-M-Y field for speeding decisions")
 ```
 
-The fan diagram is a **summary overlay**, not a single fit. The mediator
-arms are read off the per-mediator *loop* fits — one X to M to Y model
-per mediator — so each `Speed -> M_k` and `M_k -> Likelihood` arm is
-interpretable on its own without worrying about how the other mediators
-are competing for variance. The straight **X to Likelihood arrow** is
-different: it is drawn from the *joint* multi-mediator fit (added
-automatically by `pathXMY(joint = TRUE)`, the default), and shows the
-residual direct effect of `Speed` after controlling for the *full*
-mediator set.
+The fan diagram is a **summary overlay**, not a single fit. The
+mediator arms are read off the per-mediator *loop* fits — one
+X to M to Y model per mediator — so each `Speed -> M_k` and
+`M_k -> Likelihood` arm is interpretable on its own without worrying
+about how the other mediators are competing for variance. Because no
+single direct path would be coherent in such an overlay, **no direct
+X to Y arrow is drawn here**; the residual direct path of the joint
+simultaneous fit lives instead in the [joint-fit field
+section](#joint-fit-field-how-the-full-mediator-set-carries-the-total)
+in the normative-model block above.
 
 The mediator column reveals which expectations move with Speed: `Ticket`
 (+0.55) and `Appropriate` (-0.45) are the strongest in opposite

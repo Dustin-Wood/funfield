@@ -18,6 +18,8 @@ plotPathXMY(
   scale_max = 0.8,
   score_intensity_max = 1,
   Z_value = NULL,
+  Z_overlay = FALSE,
+  from = c("loop", "joint"),
   node_size = 0.07,
   label_pad = 0.025,
   title = NULL,
@@ -66,6 +68,19 @@ node colors reflect expected scores at that Z, and edge labels show
 the single effective coefficient rather than the
 \code{b1 + bZ(Z)} decomposition. See also
 \code{\link{plotPathXMY_ZLH}} for a paired low/high view.}
+
+\item{Z_overlay}{Logical. If \code{TRUE}, render the \emph{Z-overlay}:
+the same graph layout as the normative model, but each B1
+coefficient is swapped for its BZ counterpart -- i.e. the
+per-unit-Z change in path weight. Nodes are drawn white since
+expected scores have no meaning in this view. Mutually exclusive
+with \code{Z_value}.}
+
+\item{from}{One of \code{"loop"} (default) or \code{"joint"}: which
+tidy table on the \code{pathXMY()} return drives the diagram.
+See the description for behavior. The joint view requires that
+the fit was produced with \code{joint = TRUE} (the default) and
+\code{length(M) > 1}.}
 
 \item{node_size}{Half-side of each square / half-bounding-box of the
 triangle, in data coordinates (default \code{0.07}).}
@@ -121,13 +136,30 @@ Two view modes:
   \item \strong{Triangle} (single mediator) -- X at bottom-left, M at
     top, Y at bottom-right.
   \item \strong{Fan} (multiple mediators) -- X at left, mediators
-    stacked in the middle, Y at right. The mediator arms are an
-    overlay of the per-mediator loop fits; with joint multi-mediator
-    results (\code{pathXMY(joint = TRUE)}, the default), the residual
-    X to Y direct arrow is drawn from the joint fit. With an odd
-    number of mediators the stack is laid out asymmetrically so the
-    straight X to Y arrow has a clean gap at the y = 0 axis.
+    stacked in the middle, Y at right. With an odd number of
+    mediators the stack is laid out asymmetrically so the straight
+    X to Y arrow has a clean gap at the y = 0 axis.
 }
+
+\code{from} controls which fit drives the diagram:
+\itemize{
+  \item \code{"loop"} (default): per-mediator loop overlay. In fan
+    view the overlay is intentionally pure -- no residual direct
+    X to Y arrow is drawn, since the only sensible direct path in
+    that picture would have to come from a different (joint) fit.
+    In single-mediator triangle view, the X to Y direct path is
+    that one mediator's loop residual.
+  \item \code{"joint"}: the joint multi-mediator simultaneous-fit
+    picture -- each mediator's slopes are the partial slopes net of
+    the other mediators, and the X to Y arrow is the single global
+    \code{B1_YX_joint} direct path after controlling for all M.
+}
+
+Passing \code{Z_overlay = TRUE} renders the same layout but with
+each B1 coefficient swapped for its BZ counterpart -- a clean view
+of the moderator's per-unit effect on path weights, isolated from
+the normative field. Nodes are drawn white in that view since
+expected scores have no meaning for a per-unit-Z slope.
 }
 \seealso{
 \code{\link{pathXMY}}, \code{\link{pathXMY_decompose}},

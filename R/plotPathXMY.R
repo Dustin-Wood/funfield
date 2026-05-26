@@ -24,10 +24,14 @@
 #'     mediator (M), below for X and Y. This convention scales to the
 #'     fan view.
 #'   \item \strong{Edges} are solid for positive paths and dashed for
-#'     negative paths; edge linewidth scales with path magnitude.
-#'     Arrowheads are clipped to the node perimeter via shape-aware
-#'     intersection (L-infinity for squares, edge intersection for the
-#'     triangles). Edge labels carry the \code{b1 + bZ(Z)} decomposition.
+#'     negative paths. Linewidth and edge color both scale with path
+#'     magnitude (capped at \code{scale_max}): the largest paths
+#'     render thick and near-black, and paths with coefficients near
+#'     zero fade to a thin, near-white line so they recede into the
+#'     background. Arrowheads are clipped to the node perimeter via
+#'     shape-aware intersection (L-infinity for squares, edge
+#'     intersection for the triangles). Edge labels carry the
+#'     \code{b1 + bZ(Z)} decomposition.
 #' }
 #'
 #' Two view modes:
@@ -35,13 +39,30 @@
 #'   \item \strong{Triangle} (single mediator) -- X at bottom-left, M at
 #'     top, Y at bottom-right.
 #'   \item \strong{Fan} (multiple mediators) -- X at left, mediators
-#'     stacked in the middle, Y at right. The mediator arms are an
-#'     overlay of the per-mediator loop fits; with joint multi-mediator
-#'     results (\code{pathXMY(joint = TRUE)}, the default), the residual
-#'     X to Y direct arrow is drawn from the joint fit. With an odd
-#'     number of mediators the stack is laid out asymmetrically so the
-#'     straight X to Y arrow has a clean gap at the y = 0 axis.
+#'     stacked in the middle, Y at right. With an odd number of
+#'     mediators the stack is laid out asymmetrically so the straight
+#'     X to Y arrow has a clean gap at the y = 0 axis.
 #' }
+#'
+#' \code{from} controls which fit drives the diagram:
+#' \itemize{
+#'   \item \code{"loop"} (default): per-mediator loop overlay. In fan
+#'     view the overlay is intentionally pure -- no residual direct
+#'     X to Y arrow is drawn, since the only sensible direct path in
+#'     that picture would have to come from a different (joint) fit.
+#'     In single-mediator triangle view, the X to Y direct path is
+#'     that one mediator's loop residual.
+#'   \item \code{"joint"}: the joint multi-mediator simultaneous-fit
+#'     picture -- each mediator's slopes are the partial slopes net of
+#'     the other mediators, and the X to Y arrow is the single global
+#'     \code{B1_YX_joint} direct path after controlling for all M.
+#' }
+#'
+#' Passing \code{Z_overlay = TRUE} renders the same layout but with
+#' each B1 coefficient swapped for its BZ counterpart -- a clean view
+#' of the moderator's per-unit effect on path weights, isolated from
+#' the normative field. Nodes are drawn white in that view since
+#' expected scores have no meaning for a per-unit-Z slope.
 #'
 #' @param x A \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}} return.
 #' @param mediator Character vector. If \code{NULL} (default) and \code{x}
@@ -72,6 +93,17 @@
 #'   the single effective coefficient rather than the
 #'   \code{b1 + bZ(Z)} decomposition. See also
 #'   \code{\link{plotPathXMY_ZLH}} for a paired low/high view.
+#' @param Z_overlay Logical. If \code{TRUE}, render the \emph{Z-overlay}:
+#'   the same graph layout as the normative model, but each B1
+#'   coefficient is swapped for its BZ counterpart -- i.e. the
+#'   per-unit-Z change in path weight. Nodes are drawn white since
+#'   expected scores have no meaning in this view. Mutually exclusive
+#'   with \code{Z_value}.
+#' @param from One of \code{"loop"} (default) or \code{"joint"}: which
+#'   tidy table on the \code{pathXMY()} return drives the diagram.
+#'   See the description for behavior. The joint view requires that
+#'   the fit was produced with \code{joint = TRUE} (the default) and
+#'   \code{length(M) > 1}.
 #' @param node_size Half-side of each square / half-bounding-box of the
 #'   triangle, in data coordinates (default \code{0.07}).
 #' @param label_pad Padding between a node's perimeter and its text
@@ -101,6 +133,8 @@ plotPathXMY <- function(x,
                         scale_max = 0.8,
                         score_intensity_max = 1,
                         Z_value = NULL,
+                        Z_overlay = FALSE,
+                        from = c("loop", "joint"),
                         node_size = 0.07,
                         label_pad = 0.025,
                         title = NULL,
@@ -110,15 +144,35 @@ plotPathXMY <- function(x,
 
   ## -- Extract tidy tables -----------------------------------------
   ## tidy_loop carries per-mediator loop-fit rows; tidy_joint (when
-  ## present) carries the joint multi-mediator fit, including the
-  ## global B1_YX_joint / BZ_YX_joint rows (mediator = NA) that drive
-  ## the residual X to Y direct arrow in the fan view.
-  tidy <- if (!is.null(x$fits) && !is.null(x$fits$full)) x$fits$full$tidy_loop
-          else if (!is.null(x$tidy_loop))                 x$tidy_loop
-          else stop("`x` must be a pathXMY() or pathXMY_decompose() return.")
+  ## present) carries the joint multi-mediator simultaneous-fit rows,
+  ## including the global B1_YX_joint / BZ_YX_joint rows
+  ## (mediator = NA). `from` selects which table drives the diagram:
+  ##  - "loop" (default): per-mediator loop overlay; in fan view this
+  ##    overlay is intentionally pure -- NO direct X to Y arrow is
+  ##    drawn, because the only sensible direct path in that picture
+  ##    would be from a different (joint) fit.
+  ##  - "joint": the joint simultaneous-fit picture, including the
+  ##    single global X to Y direct arrow.
+  from <- match.arg(from)
+  loop_tidy <- if (!is.null(x$fits) && !is.null(x$fits$full)) x$fits$full$tidy_loop
+               else if (!is.null(x$tidy_loop))                 x$tidy_loop
+               else NULL
   joint_tidy <- if (!is.null(x$fits) && !is.null(x$fits$full)) x$fits$full$tidy_joint
                 else if (!is.null(x$tidy_joint))                x$tidy_joint
                 else NULL
+  if (from == "joint") {
+    if (is.null(joint_tidy))
+      stop("`from = \"joint\"` requires a joint multi-mediator fit ",
+           "(pathXMY(joint = TRUE) with length(M) > 1).")
+    tidy <- joint_tidy
+    param_suffix <- "_joint"
+  } else {
+    if (is.null(loop_tidy))
+      stop("`x` must be a pathXMY() or pathXMY_decompose() return.")
+    tidy <- loop_tidy
+    param_suffix <- ""
+  }
+  mk <- function(base) paste0(base, param_suffix)
 
   all_meds <- unique(tidy$mediator)
   all_meds <- all_meds[!is.na(all_meds)]
@@ -143,35 +197,37 @@ plotPathXMY <- function(x,
   }
   pull_est <- function(med, param) pull(med, param)$est
 
-  B1_MX <- vapply(mediator, pull_est, numeric(1), param = "B1_MX")
-  BZ_MX <- vapply(mediator, pull_est, numeric(1), param = "BZ_MX")
-  B1_YM <- vapply(mediator, pull_est, numeric(1), param = "B1_YM")
-  BZ_YM <- vapply(mediator, pull_est, numeric(1), param = "BZ_YM")
+  B1_MX <- vapply(mediator, pull_est, numeric(1), param = mk("B1_MX"))
+  BZ_MX <- vapply(mediator, pull_est, numeric(1), param = mk("BZ_MX"))
+  B1_YM <- vapply(mediator, pull_est, numeric(1), param = mk("B1_YM"))
+  BZ_YM <- vapply(mediator, pull_est, numeric(1), param = mk("BZ_YM"))
 
-  ## Joint multi-mediator direct path (special row with mediator = NA
-  ## in tidy_joint).
-  pull_joint <- function(param) {
-    if (is.null(joint_tidy))
-      return(list(est = NA_real_, pvalue = NA_real_))
-    r <- joint_tidy[is.na(joint_tidy$mediator) &
-                    joint_tidy$param == param, , drop = FALSE]
+  ## Direct X to Y path:
+  ##  - from = "joint": pull the single global B*_YX_joint row
+  ##    (mediator = NA) from the joint table.
+  ##  - from = "loop", triangle: per-mediator residual B1_YX from
+  ##    that one mediator's loop fit.
+  ##  - from = "loop", fan: intentionally NO direct arrow, so the
+  ##    loop overlay is pure.
+  pull_global <- function(param) {
+    r <- tidy[is.na(tidy$mediator) & tidy$param == param, , drop = FALSE]
     if (nrow(r) == 0L) list(est = NA_real_, pvalue = NA_real_)
     else list(est = r$est[1], pvalue = r$pvalue[1])
   }
-  has_joint_direct <- !is.null(joint_tidy) &&
-                      any(is.na(joint_tidy$mediator) &
-                          joint_tidy$param == "B1_YX_joint")
-
-  if (fan_view) {
-    if (has_joint_direct) {
+  if (from == "joint") {
+    has_global <- any(is.na(tidy$mediator) & tidy$param == mk("B1_YX"))
+    if (has_global) {
       has_direct  <- TRUE
-      B1_YX       <- pull_joint("B1_YX_joint")$est
-      BZ_YX       <- pull_joint("BZ_YX_joint")$est
-      p_YX_pvalue <- pull_joint("B1_YX_joint")$pvalue
+      B1_YX       <- pull_global(mk("B1_YX"))$est
+      BZ_YX       <- pull_global(mk("BZ_YX"))$est
+      p_YX_pvalue <- pull_global(mk("B1_YX"))$pvalue
     } else {
       has_direct <- FALSE
       B1_YX <- NA_real_; BZ_YX <- NA_real_; p_YX_pvalue <- NA_real_
     }
+  } else if (fan_view) {
+    has_direct <- FALSE
+    B1_YX <- NA_real_; BZ_YX <- NA_real_; p_YX_pvalue <- NA_real_
   } else {
     has_direct  <- TRUE
     B1_YX       <- pull_est(mediator[1], "B1_YX")
@@ -179,12 +235,24 @@ plotPathXMY <- function(x,
     p_YX_pvalue <- pull(mediator[1], "B1_YX")$pvalue
   }
 
-  ## -- Z collapse --------------------------------------------------
+  ## -- Z collapse / Z overlay --------------------------------------
   z_collapsed <- !is.null(Z_value)
-  if (z_collapsed) {
+  if (!is.logical(Z_overlay) || length(Z_overlay) != 1L || is.na(Z_overlay))
+    stop("`Z_overlay` must be TRUE or FALSE.")
+  if (z_collapsed && Z_overlay)
+    stop("Pass either `Z_value` or `Z_overlay`, not both.")
+  naz <- function(v) { v[is.na(v)] <- 0; v }
+  if (Z_overlay) {
+    MX_eff <- naz(BZ_MX)
+    YM_eff <- naz(BZ_YM)
+    YX_eff <- if (has_direct) naz(BZ_YX) else NA_real_
+    if (has_direct) {
+      p_YX_pvalue <- if (from == "joint") pull_global(mk("BZ_YX"))$pvalue
+                     else pull(mediator[1], "BZ_YX")$pvalue
+    }
+  } else if (z_collapsed) {
     if (!is.numeric(Z_value) || length(Z_value) != 1L)
       stop("`Z_value` must be a single numeric scalar.")
-    naz <- function(v) { v[is.na(v)] <- 0; v }
     MX_eff <- B1_MX + naz(BZ_MX) * Z_value
     YM_eff <- B1_YM + naz(BZ_YM) * Z_value
     YX_eff <- if (has_direct) B1_YX + naz(BZ_YX) * Z_value else NA_real_
@@ -193,13 +261,20 @@ plotPathXMY <- function(x,
   }
 
   ## -- Node scores at X = 1 ----------------------------------------
-  X_score  <- 1
-  M_scores <- MX_eff
-  Y_score  <- sum(YM_eff * MX_eff, na.rm = TRUE) +
-              (if (has_direct && !is.na(YX_eff)) YX_eff else 0)
-  scores_vec     <- c(X_score, M_scores, Y_score)
-  scores_clipped <- pmax(-score_intensity_max,
-                         pmin(score_intensity_max, scores_vec))
+  ## Expected scores have no meaning in the Z-overlay view (each path
+  ## is a per-unit-Z slope, not an outcome under X = 1), so suppress
+  ## fill there. NA scores are rendered via `na.value = "white"` below.
+  if (Z_overlay) {
+    scores_clipped <- rep(NA_real_, n_m + 2L)
+  } else {
+    X_score  <- 1
+    M_scores <- MX_eff
+    Y_score  <- sum(YM_eff * MX_eff, na.rm = TRUE) +
+                (if (has_direct && !is.na(YX_eff)) YX_eff else 0)
+    scores_vec     <- c(X_score, M_scores, Y_score)
+    scores_clipped <- pmax(-score_intensity_max,
+                           pmin(score_intensity_max, scores_vec))
+  }
 
   ## -- Layout ------------------------------------------------------
   if (fan_view) {
@@ -273,7 +348,7 @@ plotPathXMY <- function(x,
   fmt_path <- function(b1, bZ, pv = NA_real_) {
     if (is.na(b1)) return("")
     out <- sprintf(paste0("%+.", digits, "f"), b1)
-    if (!z_collapsed && !is.na(bZ) && abs(bZ) > 0)
+    if (!z_collapsed && !Z_overlay && !is.na(bZ) && abs(bZ) > 0)
       out <- paste0(out, " ",
                     sprintf(paste0("%+.", digits, "f(%s)"), bZ, Z_label))
     if (show_pvalues && !is.na(pv))
@@ -284,8 +359,8 @@ plotPathXMY <- function(x,
   edge_rows <- list()
   for (i in seq_along(mediator)) {
     med  <- mediator[i]
-    p_MX <- pull(med, "B1_MX")$pvalue
-    p_YM <- pull(med, "B1_YM")$pvalue
+    p_MX <- pull(med, mk(if (Z_overlay) "BZ_MX" else "B1_MX"))$pvalue
+    p_YM <- pull(med, mk(if (Z_overlay) "BZ_YM" else "B1_YM"))$pvalue
     edge_rows[[length(edge_rows) + 1L]] <- data.frame(
       from = "X", to = med,
       coef = MX_eff[i], bZ = BZ_MX[i], pv = p_MX,
@@ -317,7 +392,16 @@ plotPathXMY <- function(x,
   edges$mid_y  <- (edges$from_y + edges$to_y) / 2
   edges$lty    <- ifelse(!is.na(edges$coef) & edges$coef < 0,
                          "dashed", "solid")
-  edges$lw     <- pmin(abs(edges$coef) / scale_max, 1) * 2.2 + 0.3
+  ## Magnitude -> linewidth (nonlinear; small coefs get very thin) and
+  ## magnitude -> grayscale (power curve; largest |coef| renders
+  ## near-black, near-zero |coef| fades to nearly white). Same formula
+  ## for the normative loop view, the joint view, and the Z-overlay --
+  ## scale_max is the per-call knob if a tighter or looser cap is
+  ## wanted (e.g. scale_max = 0.3 for a typical bZ field, the default
+  ## 0.8 for a B1 field).
+  mag_ratio   <- pmin(abs(edges$coef) / scale_max, 1)
+  edges$lw    <- mag_ratio^1.4 * 3.0 + 0.05
+  edges$ecol  <- grDevices::gray((1 - mag_ratio)^3)
   edges$from_shape <- nodes$shape[match(edges$from, nodes$name)]
   edges$to_shape   <- nodes$shape[match(edges$to,   nodes$name)]
 
@@ -379,13 +463,16 @@ plotPathXMY <- function(x,
   edges$sx <- shortened[, 1]; edges$sy <- shortened[, 2]
   edges$ex <- shortened[, 3]; edges$ey <- shortened[, 4]
 
-  ## -- Title / subtitle (fan caption) ------------------------------
+  ## -- Title / subtitle (fan / overlay caption) -------------------
   subtitle <- NULL
-  if (fan_view) {
-    subtitle <- if (has_joint_direct) {
-      "Summary of per-mediator X to M to Y fits; X to Y from joint fit of all M"
+  if (Z_overlay) {
+    subtitle <- sprintf(
+      "Z overlay: per-unit-%s change in path weight (bZ paths)", Z_label)
+  } else if (fan_view) {
+    subtitle <- if (from == "joint") {
+      "Joint multi-mediator fit (one simultaneous regression with all M and direct X to Y)"
     } else {
-      "Summary of per-mediator X to M to Y fits across M"
+      "Per-mediator loop fits (one X to M to Y regression per mediator, overlaid)"
     }
   }
 
@@ -398,10 +485,11 @@ plotPathXMY <- function(x,
       ggplot2::aes(x = .data$sx, y = .data$sy,
                    xend = .data$ex, yend = .data$ey,
                    linetype  = .data$lty,
-                   linewidth = .data$lw),
+                   linewidth = .data$lw,
+                   color     = .data$ecol),
       arrow = grid::arrow(length = grid::unit(0.14, "inches"),
                           type   = "closed"),
-      color = "black", lineend = "round") +
+      lineend = "round") +
     ggplot2::geom_label(
       data = edges,
       ggplot2::aes(x = .data$mid_x, y = .data$mid_y,
@@ -427,12 +515,14 @@ plotPathXMY <- function(x,
       midpoint = 0,
       limits   = c(-score_intensity_max, score_intensity_max),
       oob      = squish01,
+      na.value = "white",
       name     = "score",
-      guide    = ggplot2::guide_colorbar(
+      guide    = if (Z_overlay) "none" else ggplot2::guide_colorbar(
         barwidth  = grid::unit(2.2, "in"),
         barheight = grid::unit(0.18, "in"))) +
     ggplot2::scale_linetype_identity() +
     ggplot2::scale_linewidth_identity() +
+    ggplot2::scale_color_identity() +
     ggplot2::coord_equal(clip = "off") +
     ggplot2::theme_void() +
     ggplot2::theme(

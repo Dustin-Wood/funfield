@@ -42,7 +42,12 @@
       "Bash(\"C:/Program Files/R/R-4.5.3/bin/Rscript.exe\" .tmp_vignette_preview.R)",
       "Bash(\"C:/Program Files/R/R-4.5.3/bin/Rscript.exe\" .tmp_codebook.R)",
       "Bash(Rscript .tmp_build_coworker.R)",
-      "PowerShell([System.IO.Directory]::GetDirectories\\(\"C:\\\\Program Files\\\\R\"\\))"
+      "PowerShell([System.IO.Directory]::GetDirectories\\(\"C:\\\\Program Files\\\\R\"\\))",
+      "PowerShell(& \"C:\\\\Program Files\\\\R\\\\R-4.6.0\\\\bin\\\\Rscript.exe\" -e \"library\\(funfield\\); data\\(speedingESJT\\); str\\(speedingESJT$PSI, max.level=1\\); cat\\('inherits df:', inherits\\(speedingESJT$PSI, 'data.frame'\\), '\\\\n'\\)\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\R\\\\R-4.6.0\\\\bin\\\\Rscript.exe\" -e \"library\\(funfield\\); data\\(speedingESJT\\); cat\\('class:', paste\\(class\\(speedingESJT$PSI\\), collapse=','\\), '\\\\n'\\); cat\\('names:', paste\\(names\\(speedingESJT$PSI\\), collapse=','\\), '\\\\n'\\); cat\\('dim:', paste\\(dim\\(speedingESJT$PSI\\), collapse='x'\\), '\\\\n'\\); cat\\('row 1 col 1:', as.character\\(speedingESJT$PSI[1,1]\\), '\\\\n'\\)\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\R\\\\R-4.6.0\\\\bin\\\\Rscript.exe\" -e \"library\\(funfield\\); data\\(speedingESJT\\); cat\\('top class:', paste\\(class\\(speedingESJT\\), collapse=','\\), '\\\\n'\\); cat\\('top names:', paste\\(names\\(speedingESJT\\), collapse=','\\), '\\\\n'\\); for \\(n in names\\(speedingESJT\\)\\) cat\\(sprintf\\('  %s: %s\\\\n', n, paste\\(class\\(speedingESJT[[n]]\\), collapse=','\\)\\)\\)\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\R\\\\R-4.6.0\\\\bin\\\\Rscript.exe\" -e \"library\\(funfield\\); x <- speedingESJT$PSI; cat\\('class:', paste\\(class\\(x\\), collapse=','\\), '\\\\n'\\); cat\\('is.df:', is.data.frame\\(x\\), '\\\\n'\\); cat\\('dim:', paste\\(dim\\(x\\), collapse='x'\\), '\\\\n'\\); cat\\('names:', paste\\(head\\(names\\(x\\), 15\\), collapse=','\\), '\\\\n'\\)\")",
+      "PowerShell(& \"C:\\\\Program Files\\\\R\\\\R-4.6.0\\\\bin\\\\Rscript.exe\" \"C:/Users/dusti/Dropbox/R/funfield/scratch/test_overlay.R\" 2>&1; & \"C:\\\\Program Files\\\\R\\\\R-4.6.0\\\\bin\\\\Rscript.exe\" \"C:/Users/dusti/Dropbox/R/funfield/scratch/test_from.R\" 2>&1)"
     ]
   }
 }
