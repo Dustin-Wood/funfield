@@ -69,7 +69,7 @@ fieldEditor <- function(fprops, fieldMatrix = NULL) {
             from  = r,
             to    = co,
             value = abs(w),
-            color = if (w > 0) "#2196F3" else "#F44336",
+            color = if (w > 0) "#1572da" else "#b73712",
             stringsAsFactors = FALSE
           ))
         }
@@ -145,7 +145,7 @@ fieldEditor <- function(fprops, fieldMatrix = NULL) {
           vsize       = fprops$vsizes * 8,
           polygonList = polys,
           edge.color  = if (!is.null(fieldMatrix)) {
-            ifelse(fieldMatrix[fieldMatrix != 0] > 0, "#2196F3", "#F44336")
+            ifelse(fieldMatrix[fieldMatrix != 0] > 0, "#1572da", "#b73712")
           } else "black"
         )
       })

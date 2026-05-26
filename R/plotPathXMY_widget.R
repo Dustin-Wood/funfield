@@ -13,8 +13,12 @@
 #'   data URIs, so the HTML file is fully self-contained.
 #'
 #' @param x A \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}} return.
-#' @param mediator,X_label,Y_label,Z_label,M_labels,digits,scale_max,score_intensity_max,...
+#' @param mediator,X_label,Y_label,Z_label,M_labels,X_shape,Y_shape,digits,scale_max,score_intensity_max,...
 #'   Passed through to \code{\link{plotPathXMY}}. See there for details.
+#'   In particular, \code{X_shape = "rtTri"} marks X as itself an imagined
+#'   action (speeding / overtime EXSJTs) and \code{Y_shape = "square"}
+#'   marks Y as a regular continuous outcome rather than an action
+#'   likelihood.
 #' @param Z_levels Numeric vector of Z values to render, one frame each.
 #'   Default \code{c(-1, 0, 1)} — one SD below the mean, the mean, and
 #'   one SD above, for a z-standardized between-person moderator. Linear

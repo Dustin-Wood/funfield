@@ -11,6 +11,8 @@ plotPathXMY(
   Y_label = "Y",
   Z_label = "Z",
   M_labels = NULL,
+  X_shape = c("square", "rtTri"),
+  Y_shape = c("lfTri", "square"),
   digits = 2,
   show_pvalues = FALSE,
   scale_max = 0.8,
@@ -36,6 +38,15 @@ a single name for the triangle view. Pass a subset for a smaller fan.}
 \item{M_labels}{Optional character vector of labels for the mediators,
 parallel to \code{mediator} (or to the natural order in the fit).
 If \code{NULL}, the mediator variable names are used.}
+
+\item{X_shape}{Shape for the X node: \code{"square"} (default; X is a
+regular variable) or \code{"rtTri"} (right-facing triangle; X is an
+imagined action, as in the speeding and overtime EXSJTs).}
+
+\item{Y_shape}{Shape for the Y node: \code{"lfTri"} (default; Y is an
+action likelihood, the typical focal outcome) or \code{"square"} (Y
+is a regular continuous variable). Mediators are always drawn as
+squares.}
 
 \item{digits}{Decimal places for edge labels (default 2).}
 
@@ -81,16 +92,20 @@ funfield visualization conventions:
 
 \itemize{
   \item \strong{Nodes} are colored by their expected score when X is
-    held at 1, on a continuous diverging gradient
-    (\code{red -> white -> dodgerblue}) mapped to the \code{[-1, 1]}
-    range via \code{ggplot2::scale_fill_gradient2()}. The X node is
-    by definition 1 (full blue); each mediator's score is its path
+    held at 1, on a continuous diverging gradient (deep red to white
+    to deep blue, midpoint at 0) mapped to the \code{[-1, 1]} range
+    via \code{ggplot2::scale_fill_gradient2()}. The X node is by
+    definition 1 (full blue); each mediator's score is its path
     coefficient \eqn{b^1_{MX}}; Y's score is the sum of the direct
     and indirect contributions,
     \eqn{b^1_{YX} + \sum_j b^1_{YM_j} \cdot b^1_{MX_j}}.
-  \item \strong{Shape} is a true square for X and each mediator
-    (continuous variables) and a left-facing triangle for Y (the
-    focal action likelihood).
+  \item \strong{Shape} defaults to a true square for X and each
+    mediator (continuous variables) and a left-facing triangle for Y
+    (the focal action likelihood). \code{X_shape} and \code{Y_shape}
+    override this: use \code{X_shape = "rtTri"} when X is itself an
+    imagined action (e.g. the speeding / overtime EXSJTs), and
+    \code{Y_shape = "square"} when Y is a regular continuous variable
+    rather than an action likelihood. Mediators are always squares.
   \item \strong{Labels} sit outside the shapes: above for any
     mediator (M), below for X and Y. This convention scales to the
     fan view.
@@ -98,8 +113,7 @@ funfield visualization conventions:
     negative paths; edge linewidth scales with path magnitude.
     Arrowheads are clipped to the node perimeter via shape-aware
     intersection (L-infinity for squares, edge intersection for the
-    left-facing triangle). Edge labels carry the
-    \code{b1 + bZ(Z)} decomposition.
+    triangles). Edge labels carry the \code{b1 + bZ(Z)} decomposition.
 }
 
 Two view modes:

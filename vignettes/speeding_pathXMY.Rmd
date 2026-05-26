@@ -387,8 +387,14 @@ the funfield visualization style:
   (`scale_fill_gradient2()`). X is by definition full blue (score = 1);
   each mediator is colored by its `B1_MX` coefficient; Y is colored by
   the implied total effect at X = 1.
-- X and each mediator are drawn as squares; Y (Likelihood) is a
-  left-facing triangle to signal that it's the focal action node.
+- The default shape convention reads action-status off the variable
+  role: squares for regular continuous variables, triangles for action
+  variables. Y (Likelihood) is drawn as a **left-facing triangle**
+  (`Y_shape = "lfTri"`) to mark it as the focal action node; in this
+  EXSJT, X (Speed) is itself an imagined action and so is drawn as a
+  **right-facing triangle** (`X_shape = "rtTri"`). Mediators are always
+  squares. For a Y that is a regular continuous outcome rather than an
+  action likelihood, pass `Y_shape = "square"`.
 - Node **labels sit outside the shapes**: above for any mediator,
   below for X and Y. This convention carries to the fan view so labels
   stay unambiguously attached to their box.
@@ -404,6 +410,7 @@ the funfield visualization style:
 plotPathXMY(dec, mediator = "Appropriate",
             X_label = "Speed", Y_label = "Likelihood",
             Z_label = "SRFast",
+            X_shape = "rtTri",
             title = "Speed -> Appropriate -> Likelihood (Z = SRFastDriver)")
 ```
 
@@ -425,6 +432,7 @@ available mediators are arranged in a fan between X and Y:
 plotPathXMY(dec,
             X_label = "Speed", Y_label = "Likelihood",
             Z_label = "SRFast",
+            X_shape = "rtTri",
             title = "Full X-M-Y field for speeding decisions")
 ```
 
@@ -517,6 +525,7 @@ between panels.
 plotPathXMY_ZLH(dec,
                 X_label = "Speed", Y_label = "Likelihood",
                 Z_label = "SRFast",
+                X_shape = "rtTri",
                 Z_levels = c(-1, 1))
 ```
 
@@ -546,6 +555,7 @@ Forward buttons.
 plotPathXMY_widget(dec,
                    X_label = "Speed", Y_label = "Likelihood",
                    Z_label = "SRFast",
+                   X_shape = "rtTri",
                    format  = "svg")
 ```
 
@@ -595,6 +605,7 @@ the standard `BZ_MX` table.
 plotPathXMY(dec_sk, mediator = "Crash",
             X_label = "Speed", Y_label = "Likelihood",
             Z_label = "Skill",
+            X_shape = "rtTri",
             title = "Speed -> Crash -> Likelihood (Z = DrivingSkill)")
 ```
 
@@ -608,6 +619,7 @@ change rides on a single arm.
 plotPathXMY_widget(dec_sk, mediator = "Crash",
                    X_label = "Speed", Y_label = "Likelihood",
                    Z_label = "Skill",
+                   X_shape = "rtTri",
                    format  = "svg")
 ```
 

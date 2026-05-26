@@ -246,6 +246,7 @@ knitr::kable(dec_paid$total, digits = 3,
 plotPathXMY(dec_paid,
             X_label = "Overtime", Y_label = "Likelihood",
             Z_label = "paid",
+            X_shape = "rtTri",
             title = "Overtime -> M -> Likelihood (Z = paid)")
 ```
 
@@ -265,6 +266,7 @@ as a system-level diagnostic (Wood, Adanu, & Harms, 2025).
 plotPathXMY_widget(dec_paid,
                    X_label = "Overtime", Y_label = "Likelihood",
                    Z_label = "paid",
+                   X_shape = "rtTri",
                    Z_levels = c(-1, 1),
                    format   = "svg")
 ```
@@ -336,6 +338,7 @@ knitr::kable(dec_vt$total, digits = 3,
 plotPathXMY(dec_vt, mediator = "Finances",
             X_label = "Overtime", Y_label = "Likelihood",
             Z_label = "vTime",
+            X_shape = "rtTri",
             title = "Overtime -> Finances -> Likelihood (Z = vTime)")
 ```
 
@@ -343,6 +346,7 @@ plotPathXMY(dec_vt, mediator = "Finances",
 plotPathXMY_widget(dec_vt, mediator = "Finances",
                    X_label = "Overtime", Y_label = "Likelihood",
                    Z_label = "vTime",
+                   X_shape = "rtTri",
                    format  = "svg")
 ```
 

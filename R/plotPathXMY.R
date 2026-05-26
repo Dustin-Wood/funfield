@@ -6,16 +6,20 @@
 #'
 #' \itemize{
 #'   \item \strong{Nodes} are colored by their expected score when X is
-#'     held at 1, on a continuous diverging gradient
-#'     (\code{red -> white -> dodgerblue}) mapped to the \code{[-1, 1]}
-#'     range via \code{ggplot2::scale_fill_gradient2()}. The X node is
-#'     by definition 1 (full blue); each mediator's score is its path
+#'     held at 1, on a continuous diverging gradient (deep red to white
+#'     to deep blue, midpoint at 0) mapped to the \code{[-1, 1]} range
+#'     via \code{ggplot2::scale_fill_gradient2()}. The X node is by
+#'     definition 1 (full blue); each mediator's score is its path
 #'     coefficient \eqn{b^1_{MX}}; Y's score is the sum of the direct
 #'     and indirect contributions,
 #'     \eqn{b^1_{YX} + \sum_j b^1_{YM_j} \cdot b^1_{MX_j}}.
-#'   \item \strong{Shape} is a true square for X and each mediator
-#'     (continuous variables) and a left-facing triangle for Y (the
-#'     focal action likelihood).
+#'   \item \strong{Shape} defaults to a true square for X and each
+#'     mediator (continuous variables) and a left-facing triangle for Y
+#'     (the focal action likelihood). \code{X_shape} and \code{Y_shape}
+#'     override this: use \code{X_shape = "rtTri"} when X is itself an
+#'     imagined action (e.g. the speeding / overtime EXSJTs), and
+#'     \code{Y_shape = "square"} when Y is a regular continuous variable
+#'     rather than an action likelihood. Mediators are always squares.
 #'   \item \strong{Labels} sit outside the shapes: above for any
 #'     mediator (M), below for X and Y. This convention scales to the
 #'     fan view.
@@ -23,8 +27,7 @@
 #'     negative paths; edge linewidth scales with path magnitude.
 #'     Arrowheads are clipped to the node perimeter via shape-aware
 #'     intersection (L-infinity for squares, edge intersection for the
-#'     left-facing triangle). Edge labels carry the
-#'     \code{b1 + bZ(Z)} decomposition.
+#'     triangles). Edge labels carry the \code{b1 + bZ(Z)} decomposition.
 #' }
 #'
 #' Two view modes:
@@ -48,6 +51,13 @@
 #' @param M_labels Optional character vector of labels for the mediators,
 #'   parallel to \code{mediator} (or to the natural order in the fit).
 #'   If \code{NULL}, the mediator variable names are used.
+#' @param X_shape Shape for the X node: \code{"square"} (default; X is a
+#'   regular variable) or \code{"rtTri"} (right-facing triangle; X is an
+#'   imagined action, as in the speeding and overtime EXSJTs).
+#' @param Y_shape Shape for the Y node: \code{"lfTri"} (default; Y is an
+#'   action likelihood, the typical focal outcome) or \code{"square"} (Y
+#'   is a regular continuous variable). Mediators are always drawn as
+#'   squares.
 #' @param digits Decimal places for edge labels (default 2).
 #' @param show_pvalues Logical; append p-values to edge labels.
 #' @param scale_max Numeric. Path magnitude that maps to the maximum
@@ -84,6 +94,8 @@ plotPathXMY <- function(x,
                         mediator = NULL,
                         X_label = "X", Y_label = "Y", Z_label = "Z",
                         M_labels = NULL,
+                        X_shape = c("square", "rtTri"),
+                        Y_shape = c("lfTri", "square"),
                         digits = 2,
                         show_pvalues = FALSE,
                         scale_max = 0.8,
@@ -119,6 +131,9 @@ plotPathXMY <- function(x,
   n_m       <- length(mediator)
   fan_view  <- n_m > 1L
   if (is.null(M_labels)) M_labels <- mediator
+
+  X_shape <- match.arg(X_shape)
+  Y_shape <- match.arg(Y_shape)
 
   ## -- Coefficient pulls -------------------------------------------
   pull <- function(med, param) {
@@ -220,7 +235,7 @@ plotPathXMY <- function(x,
     x     = layout_x,
     y     = layout_y,
     score = scores_clipped,
-    shape = c("square", rep("square", n_m), "lfTri"),
+    shape = c(X_shape, rep("square", n_m), Y_shape),
     stringsAsFactors = FALSE
   )
   ## Label convention: above for M, below for X and Y.
@@ -238,6 +253,9 @@ plotPathXMY <- function(x,
            py = c(-1, -1, 1,  1) * s)
     } else if (shape == "lfTri") {
       list(px = c(-1,  1,  1) * s,
+           py = c( 0,  1, -1) * s)
+    } else if (shape == "rtTri") {
+      list(px = c( 1, -1, -1) * s,
            py = c( 0,  1, -1) * s)
     } else stop("Unknown shape: ", shape)
   }
@@ -312,6 +330,12 @@ plotPathXMY <- function(x,
   ##     ux <= 0, uy > 0 -> top edge:     s / (2*uy - ux)
   ##     ux <= 0, uy < 0 -> bottom edge:  s / (-2*uy - ux)
   ##     ux < 0, uy == 0 -> apex:         s
+  ##   rtTri  -> apex at (+s, 0), base corners (-s, +/-s)
+  ##     (mirror of lfTri across x = 0):
+  ##     ux < 0          -> base edge:    s / (-ux)
+  ##     ux >= 0, uy > 0 -> top edge:     s / (ux + 2*uy)
+  ##     ux >= 0, uy < 0 -> bottom edge:  s / (ux - 2*uy)
+  ##     ux > 0, uy == 0 -> apex:         s
   node_exit <- function(shape, s, ux, uy) {
     if (shape == "square") {
       return(s / max(abs(ux), abs(uy), 1e-9))
@@ -322,6 +346,16 @@ plotPathXMY <- function(x,
         return(s / (2 * uy - ux))
       } else if (uy < 0) {
         return(s / (-2 * uy - ux))
+      } else {
+        return(s)
+      }
+    } else if (shape == "rtTri") {
+      if (ux < 0) {
+        return(s / (-ux))
+      } else if (uy > 0) {
+        return(s / (ux + 2 * uy))
+      } else if (uy < 0) {
+        return(s / (ux - 2 * uy))
       } else {
         return(s)
       }
@@ -387,9 +421,9 @@ plotPathXMY <- function(x,
                    label = .data$label, vjust = .data$label_vjust),
       size = 4) +
     ggplot2::scale_fill_gradient2(
-      low      = "red",
+      low      = "#b73712",
       mid      = "white",
-      high     = "dodgerblue",
+      high     = "#1572da",
       midpoint = 0,
       limits   = c(-score_intensity_max, score_intensity_max),
       oob      = squish01,

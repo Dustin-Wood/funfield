@@ -10,8 +10,12 @@
 #' panels share a single color legend at the bottom.
 #'
 #' @param x A \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}} return.
-#' @param mediator,X_label,Y_label,Z_label,M_labels,digits,scale_max,score_intensity_max,...
+#' @param mediator,X_label,Y_label,Z_label,M_labels,X_shape,Y_shape,digits,scale_max,score_intensity_max,...
 #'   Passed through to \code{\link{plotPathXMY}}. See there for details.
+#'   In particular, \code{X_shape = "rtTri"} marks X as itself an imagined
+#'   action (speeding / overtime EXSJTs) and \code{Y_shape = "square"}
+#'   marks Y as a regular continuous outcome rather than an action
+#'   likelihood.
 #' @param Z_levels Numeric length-2 vector of low and high Z values
 #'   (default \code{c(-1, 1)}, i.e. one SD below and above the mean for a
 #'   z-standardized between-person moderator).
