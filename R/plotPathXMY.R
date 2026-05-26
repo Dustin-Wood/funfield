@@ -32,6 +32,15 @@
 #'     shape-aware intersection (L-infinity for squares, edge
 #'     intersection for the triangles). Edge labels carry the
 #'     \code{b1 + bZ(Z)} decomposition.
+#'   \item \strong{Moderator (Z) coloring.} Anything that is purely a
+#'     bZ coefficient renders in limegreen. In the default decomposed
+#'     label, only the trailing \code{bZ(Z)} fragment is green (the b1
+#'     portion and the edge itself describe the normative path). In the
+#'     Z-overlay view (\code{Z_overlay = TRUE}), the entire label and
+#'     the edge are green, since the edge \emph{is} a bZ coefficient.
+#'     A Z-collapsed view (\code{Z_value} supplied) renders normally:
+#'     the label there is a single total slope \code{b1 + bZ * Z_value},
+#'     not a bZ coefficient on its own.
 #' }
 #'
 #' Two view modes:
@@ -63,6 +72,19 @@
 #' of the moderator's per-unit effect on path weights, isolated from
 #' the normative field. Nodes are drawn white in that view since
 #' expected scores have no meaning for a per-unit-Z slope.
+#'
+#' Passing \code{route = "expectation"} or \code{"valuation"} renders
+#' a per-route view of the moderation. The \emph{expectation route}
+#' shows \code{BZ_MX} on the X-to-M arm (green) and \code{B1_YM} on the
+#' M-to-Y arm (black); the \emph{valuation route} flips the arms
+#' (\code{B1_MX} on the left, \code{BZ_YM} on the right). The visual
+#' grammar of the new coloring scheme makes the two route components of
+#' the moderation decomposition read directly: if both arms of a
+#' mediator carry visible weight in one of the two graphs, that
+#' green--black or black--green chain identifies a \emph{reason} that
+#' the moderator shifts the X-to-Y relationship. Mutually exclusive
+#' with \code{Z_value} and \code{Z_overlay}; nodes are drawn white in
+#' route views for the same reason as the Z overlay.
 #'
 #' @param x A \code{\link{pathXMY}} or \code{\link{pathXMY_decompose}} return.
 #' @param mediator Character vector. If \code{NULL} (default) and \code{x}
@@ -98,7 +120,15 @@
 #'   coefficient is swapped for its BZ counterpart -- i.e. the
 #'   per-unit-Z change in path weight. Nodes are drawn white since
 #'   expected scores have no meaning in this view. Mutually exclusive
-#'   with \code{Z_value}.
+#'   with \code{Z_value} and \code{route}.
+#' @param route One of \code{"none"} (default), \code{"expectation"}, or
+#'   \code{"valuation"}. Selects a per-route moderation view rather than
+#'   the decomposed default. \code{"expectation"} puts \code{BZ_MX} on
+#'   the X-to-M arm (green) and \code{B1_YM} on the M-to-Y arm (black);
+#'   \code{"valuation"} flips them (\code{B1_MX} green-less left,
+#'   \code{BZ_YM} green right). No direct X-to-Y arrow is drawn since
+#'   the route concept is about the indirect path through M. Mutually
+#'   exclusive with \code{Z_value} and \code{Z_overlay}.
 #' @param from One of \code{"loop"} (default) or \code{"joint"}: which
 #'   tidy table on the \code{pathXMY()} return drives the diagram.
 #'   See the description for behavior. The joint view requires that
@@ -134,6 +164,7 @@ plotPathXMY <- function(x,
                         score_intensity_max = 1,
                         Z_value = NULL,
                         Z_overlay = FALSE,
+                        route = c("none", "expectation", "valuation"),
                         from = c("loop", "joint"),
                         node_size = 0.07,
                         label_pad = 0.025,
@@ -235,13 +266,25 @@ plotPathXMY <- function(x,
     p_YX_pvalue <- pull(mediator[1], "B1_YX")$pvalue
   }
 
-  ## -- Z collapse / Z overlay --------------------------------------
+  ## -- Z collapse / Z overlay / route -----------------------------
+  ## Three view-mode switches that all alter which coefficients drive
+  ## the edges. They are mutually exclusive (each implies a different
+  ## semantics) and together with the default decomposed view form four
+  ## edge interpretations. Per-arm `MX_is_bZ` / `YM_is_bZ` flags drive
+  ## both the label coloring and the edge color ramp downstream so the
+  ## new "anything purely bZ renders in limegreen" convention is
+  ## consistent across all view modes.
   z_collapsed <- !is.null(Z_value)
   if (!is.logical(Z_overlay) || length(Z_overlay) != 1L || is.na(Z_overlay))
     stop("`Z_overlay` must be TRUE or FALSE.")
-  if (z_collapsed && Z_overlay)
-    stop("Pass either `Z_value` or `Z_overlay`, not both.")
+  route <- match.arg(route)
+  if (sum(z_collapsed, Z_overlay, route != "none") > 1L)
+    stop("Pass at most one of `Z_value`, `Z_overlay`, `route`.")
   naz <- function(v) { v[is.na(v)] <- 0; v }
+  ## Per-arm bZ flag: TRUE when the arm displays a bare bZ coefficient.
+  MX_is_bZ <- Z_overlay || route == "expectation"
+  YM_is_bZ <- Z_overlay || route == "valuation"
+  YX_is_bZ <- Z_overlay
   if (Z_overlay) {
     MX_eff <- naz(BZ_MX)
     YM_eff <- naz(BZ_YM)
@@ -256,15 +299,30 @@ plotPathXMY <- function(x,
     MX_eff <- B1_MX + naz(BZ_MX) * Z_value
     YM_eff <- B1_YM + naz(BZ_YM) * Z_value
     YX_eff <- if (has_direct) B1_YX + naz(BZ_YX) * Z_value else NA_real_
+  } else if (route == "expectation") {
+    ## Expectation route: bZ on MX (green), b1 on YM (black). The
+    ## direct X-to-Y arrow is suppressed because the route concept is
+    ## about the indirect path through M, not the residual direct path.
+    MX_eff <- naz(BZ_MX); YM_eff <- B1_YM
+    YX_eff <- NA_real_; has_direct <- FALSE
+  } else if (route == "valuation") {
+    ## Valuation route: b1 on MX (black), bZ on YM (green).
+    MX_eff <- B1_MX; YM_eff <- naz(BZ_YM)
+    YX_eff <- NA_real_; has_direct <- FALSE
   } else {
     MX_eff <- B1_MX; YM_eff <- B1_YM; YX_eff <- B1_YX
   }
+  ## Suppress node fill in any "purely bZ on some arm" presentation
+  ## (Z_overlay collapses both arms; route views collapse one). Node
+  ## scoring under those conditions mixes scales (bZ ~0.1 vs b1 ~0.5)
+  ## and would mislead the diverging fill scale.
+  suppress_scores <- Z_overlay || route != "none"
 
   ## -- Node scores at X = 1 ----------------------------------------
-  ## Expected scores have no meaning in the Z-overlay view (each path
-  ## is a per-unit-Z slope, not an outcome under X = 1), so suppress
-  ## fill there. NA scores are rendered via `na.value = "white"` below.
-  if (Z_overlay) {
+  ## Expected scores have no meaning when an arm is itself a bZ slope,
+  ## so suppress fill in Z-overlay and route views. NA scores are
+  ## rendered via `na.value = "white"` below.
+  if (suppress_scores) {
     scores_clipped <- rep(NA_real_, n_m + 2L)
   } else {
     X_score  <- 1
@@ -345,32 +403,54 @@ plotPathXMY <- function(x,
   }))
 
   ## -- Edges -------------------------------------------------------
-  fmt_path <- function(b1, bZ, pv = NA_real_) {
-    if (is.na(b1)) return("")
-    out <- sprintf(paste0("%+.", digits, "f"), b1)
-    if (!z_collapsed && !Z_overlay && !is.na(bZ) && abs(bZ) > 0)
-      out <- paste0(out, " ",
-                    sprintf(paste0("%+.", digits, "f(%s)"), bZ, Z_label))
+  ## Label coloring convention: any fragment that is purely a bZ
+  ## coefficient renders in limegreen. There are two display modes:
+  ##  - "decomposed" (default view): the label is "b1 + bZ(Z)"; only
+  ##    the trailing bZ fragment is wrapped in green.
+  ##  - "single" (Z_overlay, Z_value, route): the label is one number.
+  ##    If the arm itself is bZ (is_bZ_arm), the whole label is green;
+  ##    otherwise it stays black.
+  z_green     <- "#32CD32"
+  wrap_green  <- function(s) paste0("<span style='color:", z_green, "'>",
+                                    s, "</span>")
+  single_mode <- Z_overlay || z_collapsed || route != "none"
+  fmt_path <- function(coef, bZ, pv = NA_real_, is_bZ_arm = FALSE) {
+    if (is.na(coef)) return("")
+    main <- sprintf(paste0("%+.", digits, "f"), coef)
+    if (single_mode) {
+      out <- main
+      if (show_pvalues && !is.na(pv))
+        out <- paste0(out, "<br>p=", sprintf("%.3f", pv))
+      return(if (is_bZ_arm) wrap_green(out) else out)
+    }
+    ## Decomposed view: b1 head + green bZ fragment.
+    out <- main
+    if (!is.na(bZ) && abs(bZ) > 0) {
+      bz_part <- sprintf(paste0("%+.", digits, "f(%s)"), bZ, Z_label)
+      out <- paste0(out, " ", wrap_green(bz_part))
+    }
     if (show_pvalues && !is.na(pv))
-      out <- paste0(out, "\np=", sprintf("%.3f", pv))
+      out <- paste0(out, "<br>p=", sprintf("%.3f", pv))
     out
   }
 
   edge_rows <- list()
   for (i in seq_along(mediator)) {
     med  <- mediator[i]
-    p_MX <- pull(med, mk(if (Z_overlay) "BZ_MX" else "B1_MX"))$pvalue
-    p_YM <- pull(med, mk(if (Z_overlay) "BZ_YM" else "B1_YM"))$pvalue
+    p_MX <- pull(med, mk(if (MX_is_bZ) "BZ_MX" else "B1_MX"))$pvalue
+    p_YM <- pull(med, mk(if (YM_is_bZ) "BZ_YM" else "B1_YM"))$pvalue
     edge_rows[[length(edge_rows) + 1L]] <- data.frame(
       from = "X", to = med,
       coef = MX_eff[i], bZ = BZ_MX[i], pv = p_MX,
-      label = fmt_path(MX_eff[i], BZ_MX[i], p_MX),
+      is_bZ = MX_is_bZ,
+      label = fmt_path(MX_eff[i], BZ_MX[i], p_MX, MX_is_bZ),
       stringsAsFactors = FALSE
     )
     edge_rows[[length(edge_rows) + 1L]] <- data.frame(
       from = med, to = "Y",
       coef = YM_eff[i], bZ = BZ_YM[i], pv = p_YM,
-      label = fmt_path(YM_eff[i], BZ_YM[i], p_YM),
+      is_bZ = YM_is_bZ,
+      label = fmt_path(YM_eff[i], BZ_YM[i], p_YM, YM_is_bZ),
       stringsAsFactors = FALSE
     )
   }
@@ -378,7 +458,8 @@ plotPathXMY <- function(x,
     edge_rows[[length(edge_rows) + 1L]] <- data.frame(
       from = "X", to = "Y",
       coef = YX_eff, bZ = BZ_YX, pv = p_YX_pvalue,
-      label = fmt_path(YX_eff, BZ_YX, p_YX_pvalue),
+      is_bZ = YX_is_bZ,
+      label = fmt_path(YX_eff, BZ_YX, p_YX_pvalue, YX_is_bZ),
       stringsAsFactors = FALSE
     )
   }
@@ -401,7 +482,19 @@ plotPathXMY <- function(x,
   ## 0.8 for a B1 field).
   mag_ratio   <- pmin(abs(edges$coef) / scale_max, 1)
   edges$lw    <- mag_ratio^1.4 * 3.0 + 0.05
-  edges$ecol  <- grDevices::gray((1 - mag_ratio)^3)
+  ## Per-edge color ramp: green ramp (saturated limegreen to near-white)
+  ## for arms that ARE a bZ coefficient; grayscale ramp otherwise. This
+  ## handles the Z-overlay (both arms green) and route views (one arm
+  ## green, one black) with the same per-edge logic.
+  fade        <- (1 - mag_ratio)^3
+  gray_col    <- grDevices::gray(fade)
+  g_rgb       <- c(50, 205, 50) / 255
+  green_col   <- grDevices::rgb(
+    red   = g_rgb[1] + (1 - g_rgb[1]) * fade,
+    green = g_rgb[2] + (1 - g_rgb[2]) * fade,
+    blue  = g_rgb[3] + (1 - g_rgb[3]) * fade
+  )
+  edges$ecol  <- ifelse(edges$is_bZ, green_col, gray_col)
   edges$from_shape <- nodes$shape[match(edges$from, nodes$name)]
   edges$to_shape   <- nodes$shape[match(edges$to,   nodes$name)]
 
@@ -463,11 +556,19 @@ plotPathXMY <- function(x,
   edges$sx <- shortened[, 1]; edges$sy <- shortened[, 2]
   edges$ex <- shortened[, 3]; edges$ey <- shortened[, 4]
 
-  ## -- Title / subtitle (fan / overlay caption) -------------------
+  ## -- Title / subtitle (fan / overlay / route caption) -----------
   subtitle <- NULL
   if (Z_overlay) {
     subtitle <- sprintf(
       "Z overlay: per-unit-%s change in path weight (bZ paths)", Z_label)
+  } else if (route == "expectation") {
+    subtitle <- sprintf(
+      "Expectation route: BZ_MX(%s) on the left arm, B1_YM on the right",
+      Z_label)
+  } else if (route == "valuation") {
+    subtitle <- sprintf(
+      "Valuation route: B1_MX on the left arm, BZ_YM(%s) on the right",
+      Z_label)
   } else if (fan_view) {
     subtitle <- if (from == "joint") {
       "Joint multi-mediator fit (one simultaneous regression with all M and direct X to Y)"
@@ -490,11 +591,11 @@ plotPathXMY <- function(x,
       arrow = grid::arrow(length = grid::unit(0.14, "inches"),
                           type   = "closed"),
       lineend = "round") +
-    ggplot2::geom_label(
+    ggtext::geom_richtext(
       data = edges,
       ggplot2::aes(x = .data$mid_x, y = .data$mid_y,
                    label = .data$label),
-      size = 3.2,
+      size          = 3.2,
       label.padding = grid::unit(0.12, "lines"),
       label.size    = 0,
       fill          = "#FFFFFFDA") +
@@ -517,7 +618,7 @@ plotPathXMY <- function(x,
       oob      = squish01,
       na.value = "white",
       name     = "score",
-      guide    = if (Z_overlay) "none" else ggplot2::guide_colorbar(
+      guide    = if (suppress_scores) "none" else ggplot2::guide_colorbar(
         barwidth  = grid::unit(2.2, "in"),
         barheight = grid::unit(0.18, "in"))) +
     ggplot2::scale_linetype_identity() +

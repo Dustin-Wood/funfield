@@ -19,6 +19,7 @@ plotPathXMY(
   score_intensity_max = 1,
   Z_value = NULL,
   Z_overlay = FALSE,
+  route = c("none", "expectation", "valuation"),
   from = c("loop", "joint"),
   node_size = 0.07,
   label_pad = 0.025,
@@ -74,7 +75,16 @@ the same graph layout as the normative model, but each B1
 coefficient is swapped for its BZ counterpart -- i.e. the
 per-unit-Z change in path weight. Nodes are drawn white since
 expected scores have no meaning in this view. Mutually exclusive
-with \code{Z_value}.}
+with \code{Z_value} and \code{route}.}
+
+\item{route}{One of \code{"none"} (default), \code{"expectation"}, or
+\code{"valuation"}. Selects a per-route moderation view rather than
+the decomposed default. \code{"expectation"} puts \code{BZ_MX} on
+the X-to-M arm (green) and \code{B1_YM} on the M-to-Y arm (black);
+\code{"valuation"} flips them (\code{B1_MX} green-less left,
+\code{BZ_YM} green right). No direct X-to-Y arrow is drawn since
+the route concept is about the indirect path through M. Mutually
+exclusive with \code{Z_value} and \code{Z_overlay}.}
 
 \item{from}{One of \code{"loop"} (default) or \code{"joint"}: which
 tidy table on the \code{pathXMY()} return drives the diagram.
@@ -125,10 +135,23 @@ funfield visualization conventions:
     mediator (M), below for X and Y. This convention scales to the
     fan view.
   \item \strong{Edges} are solid for positive paths and dashed for
-    negative paths; edge linewidth scales with path magnitude.
-    Arrowheads are clipped to the node perimeter via shape-aware
-    intersection (L-infinity for squares, edge intersection for the
-    triangles). Edge labels carry the \code{b1 + bZ(Z)} decomposition.
+    negative paths. Linewidth and edge color both scale with path
+    magnitude (capped at \code{scale_max}): the largest paths
+    render thick and near-black, and paths with coefficients near
+    zero fade to a thin, near-white line so they recede into the
+    background. Arrowheads are clipped to the node perimeter via
+    shape-aware intersection (L-infinity for squares, edge
+    intersection for the triangles). Edge labels carry the
+    \code{b1 + bZ(Z)} decomposition.
+  \item \strong{Moderator (Z) coloring.} Anything that is purely a
+    bZ coefficient renders in limegreen. In the default decomposed
+    label, only the trailing \code{bZ(Z)} fragment is green (the b1
+    portion and the edge itself describe the normative path). In the
+    Z-overlay view (\code{Z_overlay = TRUE}), the entire label and
+    the edge are green, since the edge \emph{is} a bZ coefficient.
+    A Z-collapsed view (\code{Z_value} supplied) renders normally:
+    the label there is a single total slope \code{b1 + bZ * Z_value},
+    not a bZ coefficient on its own.
 }
 
 Two view modes:
@@ -160,6 +183,19 @@ each B1 coefficient swapped for its BZ counterpart -- a clean view
 of the moderator's per-unit effect on path weights, isolated from
 the normative field. Nodes are drawn white in that view since
 expected scores have no meaning for a per-unit-Z slope.
+
+Passing \code{route = "expectation"} or \code{"valuation"} renders
+a per-route view of the moderation. The \emph{expectation route}
+shows \code{BZ_MX} on the X-to-M arm (green) and \code{B1_YM} on the
+M-to-Y arm (black); the \emph{valuation route} flips the arms
+(\code{B1_MX} on the left, \code{BZ_YM} on the right). The visual
+grammar of the new coloring scheme makes the two route components of
+the moderation decomposition read directly: if both arms of a
+mediator carry visible weight in one of the two graphs, that
+green--black or black--green chain identifies a \emph{reason} that
+the moderator shifts the X-to-Y relationship. Mutually exclusive
+with \code{Z_value} and \code{Z_overlay}; nodes are drawn white in
+route views for the same reason as the Z overlay.
 }
 \seealso{
 \code{\link{pathXMY}}, \code{\link{pathXMY_decompose}},

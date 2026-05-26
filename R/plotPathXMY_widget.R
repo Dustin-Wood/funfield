@@ -83,22 +83,37 @@ plotPathXMY_widget <- function(x,
     stop("`panel_titles` must have length equal to `Z_levels` when supplied.")
   }
 
-  ## Render one frame per Z value via ggsave on the returned ggplot.
-  uris <- character(n_frames)
-  for (k in seq_along(Z_levels)) {
+  ## Build each frame as a ggplot, then hand off to the shared widget
+  ## assembler. Render-to-data-URI + toggle JS is in pxmy_widget_html().
+  plots <- lapply(seq_along(Z_levels), function(k) {
+    plotPathXMY(x,
+                mediator = mediator,
+                Z_value  = Z_levels[k],
+                Z_label  = Z_label,
+                title    = panel_titles[k],
+                ...)
+  })
+  pxmy_widget_html(plots, panel_titles, width, height, res, format)
+}
+
+## Internal: assemble a navigable image widget from a list of ggplots.
+## Each plot is rendered to a temp file (PNG or SVG), embedded as a
+## base64 data URI, and shown as one frame with Back / Forward buttons
+## swapping in place. Used by both plotPathXMY_widget() (Z-level
+## scrubbing) and plotPathXMY_widget_routes() (expectation/valuation
+## toggle); future widget modes can reuse it the same way.
+pxmy_widget_html <- function(plots, panel_titles,
+                             width, height, res, format) {
+  n_frames <- length(plots)
+  uris     <- character(n_frames)
+  for (k in seq_len(n_frames)) {
     tmp <- tempfile(fileext = if (format == "svg") ".svg" else ".png")
     on.exit(unlink(tmp), add = TRUE)
-    p <- plotPathXMY(x,
-                     mediator = mediator,
-                     Z_value  = Z_levels[k],
-                     Z_label  = Z_label,
-                     title    = panel_titles[k],
-                     ...)
     if (format == "svg") {
-      ggplot2::ggsave(tmp, p, device = "svg",
+      ggplot2::ggsave(tmp, plots[[k]], device = "svg",
                       width = width, height = height, bg = "white")
     } else {
-      ggplot2::ggsave(tmp, p, device = "png",
+      ggplot2::ggsave(tmp, plots[[k]], device = "png",
                       width = width, height = height,
                       dpi = res, bg = "white")
     }
