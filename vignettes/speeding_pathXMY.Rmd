@@ -1153,9 +1153,61 @@ differ in their raw response variances. In this fit
 $\mathrm{SD}(\Delta L) \approx .51$, so the empirical relationship
 is $\mathrm{BZ\_YX}[1] \approx .51 \times r$, with the constant
 being just the variability of the per-person Speed effect in this
-sample. The *p*-values agree within a small factor across the top
-of the list. For "which traits should I look at next" the screen is
+sample. For "which traits should I look at next" the screen is
 a useful shortcut: a few `cor.test()` calls in place of 30 SEM fits.
+
+**Where the *p*-values disagree, and the estimator that matches.**
+The b₂ identity above is exact; the *p*-value identity is not —
+`cor.test()` and `pathXMY()` use different finite-sample SE formulas,
+so the two *p*-values can differ by a factor of 20× or more at the
+tails. The estimator that *does* reproduce the screen's *p* exactly
+is the same regression with **person fixed effects** — the
+panel-econometrics identity that first-differencing equals the
+within transformation under a balanced design:
+
+```{r screen-fe-identity}
+## Balanced 2-level within-person design: pull raw PSI (since `dat`
+## has Speed within-person-deviated for the pathXMY pipeline) and
+## drop the middle Speed level so each person contributes the
+## endpoint difference L|Speed=1 - L|Speed=0.
+d2 <- subset(speedingESJT$PSI, Speed != 0.5)
+d2 <- merge(d2,
+            transform(speedingESJT$traits[, c("p","SR_30")],
+                      SRz = as.numeric(scale(SR_30)))[, c("p","SRz")],
+            by = "p")
+d2 <- d2[order(d2$p, d2$Speed), ]
+
+## (A) per-person Δ regression -- the "screen" form, 1 row per person
+dL  <- tapply(d2$Likelihood, d2$p, function(L) L[2] - L[1])
+SRz <- tapply(d2$SRz,        d2$p, `[`, 1)
+coef(summary(lm(dL ~ SRz)))["SRz", ]
+
+## (A') what screenModerators() actually calls -- Pearson cor.test on
+## the same Δ vector. The `estimate` it returns is `r` (the
+## standardized form of b₂; SD(dL) cancels into SD-units) but the
+## *t*-statistic and *p*-value are the same hypothesis test.
+ct <- cor.test(dL, SRz)
+c(r = unname(ct$estimate), t = unname(ct$statistic), p = ct$p.value)
+
+## (B) same numbers from person fixed effects on the 2N-row form
+coef(summary(lm(Likelihood ~ Speed * SRz + factor(p),
+                data = d2)))["Speed:SRz", ]
+```
+
+All three calls return the same *t* and *p* to machine precision; (A)
+and (B) additionally share b₂ and its SE. The screen's
+`cor.test`-based *p* IS the per-person Δ regression's *p* IS the
+person-fixed-effects *p*. pathXMY's *p* is asymptotically the same
+with a cluster-robust SE that differs in finite samples, and a
+random-intercept LMER (`(1 | p)`) gives still-different SEs because it
+pools person variance through a normal prior. Pick the SE that matches
+your inferential intent.
+
+The lm-`cor.test` equivalence above is a recurring pattern across
+`funfield`: wherever a coefficient can be re-expressed as a Pearson
+correlation between two derived per-unit summaries (per person, per
+situation, per scenario), the bare `cor.test()` recovers the same
+*t* and *p* as the corresponding regression slope test.
 
 The substance of the list is worth a moment. Beyond the
 self-reported fast-driver item at the top (which we already
