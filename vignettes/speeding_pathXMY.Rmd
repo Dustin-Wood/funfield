@@ -216,6 +216,27 @@ single-mediator model the identity is
 $$\beta^*_{1_{YX}} \;=\; \beta_{1_{MX}} \cdot \beta_{1_{YM}}
 \;+\; \beta_{1_{YX}}$$
 
+The two sides of the identity, pictured. The left-hand side is the
+unmediated `X → Y` slope (a single arrow); the right-hand side
+unpacks that one arrow into the indirect product through `M` plus
+a residual direct arrow. Every symbol in the equation above is one
+arrow in one of these two diagrams.
+
+```{r path-schema-total, fig.width = 7, fig.height = 1.2}
+plotPathSchema(
+  XY_label = "&beta;*<sub>1<sub>YX</sub></sub>"
+)
+```
+
+```{r path-schema-med, fig.width = 7, fig.height = 3.2}
+plotPathSchema(
+  M_label  = "M",
+  XM_label = "&beta;<sub>1<sub>MX</sub></sub>",
+  MY_label = "&beta;<sub>1<sub>YM</sub></sub>",
+  XY_label = "&beta;<sub>1<sub>YX</sub></sub>"
+)
+```
+
 ^[This is the classic Baron-Kenny / Sobel mediation identity
 $c \,=\, a \cdot b \,+\, c'$ in funfield's notation: $a = \beta_{1_{MX}}$,
 $b = \beta_{1_{YM}}$, $c' = \beta_{1_{YX}}$, and the total $c$ is
