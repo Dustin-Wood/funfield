@@ -616,7 +616,7 @@ plotPathXMY <- function(x,
       size          = 3.2,
       label.padding = grid::unit(0.12, "lines"),
       label.size    = 0,
-      fill          = "#FFFFFFDA") +
+      fill          = "white") +
     ggplot2::geom_polygon(
       data = poly_df,
       ggplot2::aes(x = .data$px, y = .data$py,

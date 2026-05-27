@@ -11,6 +11,11 @@ plotPathSchema(
   XY_label = NULL,
   XM_label = NULL,
   MY_label = NULL,
+  X_shape = c("square", "rtTri", "lfTri"),
+  Y_shape = c("square", "rtTri", "lfTri"),
+  XM_color = "black",
+  MY_color = "black",
+  XY_color = "black",
   node_size = 0.09,
   label_pad = 0.03,
   text_size = 4.5,
@@ -35,7 +40,22 @@ triangle layout, \code{XM_label} and \code{MY_label} carry the
 indirect arms; \code{XY_label} is optional and, when supplied,
 labels the direct \code{X to Y} residual arrow.}
 
-\item{node_size}{Half-side of each square in data coordinates.
+\item{X_shape, Y_shape}{Shape for the X / Y node:
+\code{"square"} (default), \code{"rtTri"} (right-facing triangle,
+apex on the right -- conventional for an "action" / initiating
+node), or \code{"lfTri"} (left-facing triangle, apex on the left
+-- conventional for a likelihood / outcome node). Triangles are
+sized so their bounding box matches the square's, and edges are
+clipped against the shape's actual perimeter.}
+
+\item{XM_color, MY_color, XY_color}{Per-edge arrow colors. All default
+to \code{"black"}. Use \code{"#32CD32"} (limegreen, the bZ
+convention) when an arm represents a bZ moderation route, and a
+light gray (e.g. \code{"#BBBBBB"}) to fade arms that are not part
+of the term being highlighted in a panel. Ignored for any edge
+not drawn (e.g. \code{XY_color} when \code{XY_label} is NULL).}
+
+\item{node_size}{Half-side of each node shape in data coordinates.
 Default \code{0.09}.}
 
 \item{label_pad}{Padding between a node's perimeter and its text
@@ -62,10 +82,12 @@ A \code{ggplot} object.
 \description{
 Renders a clean pedagogical schematic of the X to Y path (with an
 optional single mediator M) as a \pkg{ggplot2} object. Nodes are
-drawn as white squares, edges as uniform solid black arrows. Edge
-labels are arbitrary user-supplied strings (typically coefficient
-symbols) rather than fitted numbers, so the schematic can sit
-alongside an algebraic identity term-for-term.
+drawn as white shapes (square by default; right- or left-facing
+triangle if requested via \code{X_shape}/\code{Y_shape}), edges as
+uniform solid black arrows. Edge labels are arbitrary user-supplied
+strings (typically coefficient symbols) rather than fitted numbers,
+so the schematic can sit alongside an algebraic identity
+term-for-term.
 
 Two layouts:
 \itemize{
@@ -86,15 +108,26 @@ nested subscripts.
 }
 \examples{
 \dontrun{
-## Total path
+## Total path (default squares)
 plotPathSchema(XY_label = "&beta;*<sub>1<sub>YX</sub></sub>")
 
-## Single-mediator decomposition
+## Single-mediator decomposition (default squares)
 plotPathSchema(
   M_label  = "M",
   XM_label = "&beta;<sub>1<sub>MX</sub></sub>",
   MY_label = "&beta;<sub>1<sub>YM</sub></sub>",
   XY_label = "&beta;<sub>1<sub>YX</sub></sub>"
+)
+
+## Expectancy x Value styling: X = action (right-facing triangle),
+## Y = likelihood (left-facing triangle).
+plotPathSchema(
+  M_label  = "M",
+  XM_label = "&beta;<sub>1<sub>MX</sub></sub>",
+  MY_label = "&beta;<sub>1<sub>YM</sub></sub>",
+  XY_label = "&beta;<sub>1<sub>YX</sub></sub>",
+  X_shape  = "rtTri",
+  Y_shape  = "lfTri"
 )
 }
 }

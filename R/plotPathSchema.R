@@ -3,10 +3,12 @@
 #' @description
 #' Renders a clean pedagogical schematic of the X to Y path (with an
 #' optional single mediator M) as a \pkg{ggplot2} object. Nodes are
-#' drawn as white squares, edges as uniform solid black arrows. Edge
-#' labels are arbitrary user-supplied strings (typically coefficient
-#' symbols) rather than fitted numbers, so the schematic can sit
-#' alongside an algebraic identity term-for-term.
+#' drawn as white shapes (square by default; right- or left-facing
+#' triangle if requested via \code{X_shape}/\code{Y_shape}), edges as
+#' uniform solid black arrows. Edge labels are arbitrary user-supplied
+#' strings (typically coefficient symbols) rather than fitted numbers,
+#' so the schematic can sit alongside an algebraic identity
+#' term-for-term.
 #'
 #' Two layouts:
 #' \itemize{
@@ -34,7 +36,20 @@
 #'   triangle layout, \code{XM_label} and \code{MY_label} carry the
 #'   indirect arms; \code{XY_label} is optional and, when supplied,
 #'   labels the direct \code{X to Y} residual arrow.
-#' @param node_size Half-side of each square in data coordinates.
+#' @param X_shape,Y_shape Shape for the X / Y node:
+#'   \code{"square"} (default), \code{"rtTri"} (right-facing triangle,
+#'   apex on the right -- conventional for an "action" / initiating
+#'   node), or \code{"lfTri"} (left-facing triangle, apex on the left
+#'   -- conventional for a likelihood / outcome node). Triangles are
+#'   sized so their bounding box matches the square's, and edges are
+#'   clipped against the shape's actual perimeter.
+#' @param XM_color,MY_color,XY_color Per-edge arrow colors. All default
+#'   to \code{"black"}. Use \code{"#32CD32"} (limegreen, the bZ
+#'   convention) when an arm represents a bZ moderation route, and a
+#'   light gray (e.g. \code{"#BBBBBB"}) to fade arms that are not part
+#'   of the term being highlighted in a panel. Ignored for any edge
+#'   not drawn (e.g. \code{XY_color} when \code{XY_label} is NULL).
+#' @param node_size Half-side of each node shape in data coordinates.
 #'   Default \code{0.09}.
 #' @param label_pad Padding between a node's perimeter and its text
 #'   label, in data coordinates. Default \code{0.03}.
@@ -52,15 +67,26 @@
 #'   that renders fitted coefficients on the same layout.
 #' @examples
 #' \dontrun{
-#' ## Total path
+#' ## Total path (default squares)
 #' plotPathSchema(XY_label = "&beta;*<sub>1<sub>YX</sub></sub>")
 #'
-#' ## Single-mediator decomposition
+#' ## Single-mediator decomposition (default squares)
 #' plotPathSchema(
 #'   M_label  = "M",
 #'   XM_label = "&beta;<sub>1<sub>MX</sub></sub>",
 #'   MY_label = "&beta;<sub>1<sub>YM</sub></sub>",
 #'   XY_label = "&beta;<sub>1<sub>YX</sub></sub>"
+#' )
+#'
+#' ## Expectancy x Value styling: X = action (right-facing triangle),
+#' ## Y = likelihood (left-facing triangle).
+#' plotPathSchema(
+#'   M_label  = "M",
+#'   XM_label = "&beta;<sub>1<sub>MX</sub></sub>",
+#'   MY_label = "&beta;<sub>1<sub>YM</sub></sub>",
+#'   XY_label = "&beta;<sub>1<sub>YX</sub></sub>",
+#'   X_shape  = "rtTri",
+#'   Y_shape  = "lfTri"
 #' )
 #' }
 #' @import ggplot2
@@ -73,6 +99,11 @@ plotPathSchema <- function(X_label = "X",
                            XY_label = NULL,
                            XM_label = NULL,
                            MY_label = NULL,
+                           X_shape = c("square", "rtTri", "lfTri"),
+                           Y_shape = c("square", "rtTri", "lfTri"),
+                           XM_color = "black",
+                           MY_color = "black",
+                           XY_color = "black",
                            node_size = 0.09,
                            label_pad = 0.03,
                            text_size = 4.5,
@@ -82,6 +113,9 @@ plotPathSchema <- function(X_label = "X",
                            filename = NULL,
                            filetype = "png",
                            ...) {
+
+  X_shape <- match.arg(X_shape)
+  Y_shape <- match.arg(Y_shape)
 
   has_M <- !is.null(M_label)
   if (!has_M && is.null(XY_label))
@@ -96,6 +130,7 @@ plotPathSchema <- function(X_label = "X",
       name  = c("X", "M", "Y"),
       label = c(X_label, M_label, Y_label),
       role  = c("X", "M", "Y"),
+      shape = c(X_shape, "square", Y_shape),
       x     = c(-1.0, 0.0, 1.0),
       y     = c(-0.25, 0.35, -0.25),
       stringsAsFactors = FALSE
@@ -105,6 +140,7 @@ plotPathSchema <- function(X_label = "X",
       name  = c("X", "Y"),
       label = c(X_label, Y_label),
       role  = c("X", "Y"),
+      shape = c(X_shape, Y_shape),
       x     = c(-1.0, 1.0),
       y     = c(0, 0),
       stringsAsFactors = FALSE
@@ -118,12 +154,27 @@ plotPathSchema <- function(X_label = "X",
   )
   nodes$label_vjust <- ifelse(nodes$role == "M", 0, 1)
 
-  ## -- Polygon corners (white squares) -----------------------------
+  ## -- Polygon corners (white shapes) ------------------------------
+  ## Bounding box for every shape is the +/- node_size square, so
+  ## switching shape does not change the slot a node occupies.
+  build_polygon <- function(shape, s) {
+    if (shape == "square") {
+      list(px = c(-1,  1, 1, -1) * s,
+           py = c(-1, -1, 1,  1) * s)
+    } else if (shape == "lfTri") {
+      list(px = c(-1,  1,  1) * s,
+           py = c( 0,  1, -1) * s)
+    } else if (shape == "rtTri") {
+      list(px = c( 1, -1, -1) * s,
+           py = c( 0,  1, -1) * s)
+    } else stop("Unknown shape: ", shape)
+  }
   poly_df <- do.call(rbind, lapply(seq_len(nrow(nodes)), function(k) {
-    cx <- nodes$x[k]; cy <- nodes$y[k]
+    sh <- nodes$shape[k]; cx <- nodes$x[k]; cy <- nodes$y[k]
+    p  <- build_polygon(sh, node_size)
     data.frame(name = nodes$name[k],
-               px   = c(-1,  1, 1, -1) * node_size + cx,
-               py   = c(-1, -1, 1,  1) * node_size + cy,
+               px   = p$px + cx,
+               py   = p$py + cy,
                stringsAsFactors = FALSE)
   }))
 
@@ -133,19 +184,19 @@ plotPathSchema <- function(X_label = "X",
     if (!is.null(XM_label))
       edge_rows[[length(edge_rows) + 1L]] <-
         data.frame(from = "X", to = "M", label = XM_label,
-                   stringsAsFactors = FALSE)
+                   ecol = XM_color, stringsAsFactors = FALSE)
     if (!is.null(MY_label))
       edge_rows[[length(edge_rows) + 1L]] <-
         data.frame(from = "M", to = "Y", label = MY_label,
-                   stringsAsFactors = FALSE)
+                   ecol = MY_color, stringsAsFactors = FALSE)
     if (!is.null(XY_label))
       edge_rows[[length(edge_rows) + 1L]] <-
         data.frame(from = "X", to = "Y", label = XY_label,
-                   stringsAsFactors = FALSE)
+                   ecol = XY_color, stringsAsFactors = FALSE)
   } else {
     edge_rows[[1L]] <-
       data.frame(from = "X", to = "Y", label = XY_label,
-                 stringsAsFactors = FALSE)
+                 ecol = XY_color, stringsAsFactors = FALSE)
   }
   edges <- do.call(rbind, edge_rows)
 
@@ -155,36 +206,72 @@ plotPathSchema <- function(X_label = "X",
   edges$to_y   <- nodes$y[match(edges$to,   nodes$name)]
   edges$mid_x  <- (edges$from_x + edges$to_x) / 2
   edges$mid_y  <- (edges$from_y + edges$to_y) / 2
+  edges$from_shape <- nodes$shape[match(edges$from, nodes$name)]
+  edges$to_shape   <- nodes$shape[match(edges$to,   nodes$name)]
 
-  ## L-infinity square clip: shorten each edge so its arrowhead lands
-  ## at the destination square's perimeter (not its center).
-  edge_shorten <- function(x0, y0, x1, y1, s) {
+  ## -- Shape-aware boundary clipping ------------------------------
+  ## Same intersection geometry as plotPathXMY(): for a ray exiting
+  ## the center along (ux, uy), return the distance to the shape
+  ## perimeter so the arrowhead lands on the edge, not the centroid.
+  node_exit <- function(shape, s, ux, uy) {
+    if (shape == "square") {
+      return(s / max(abs(ux), abs(uy), 1e-9))
+    } else if (shape == "lfTri") {
+      if (ux > 0) {
+        return(s / ux)
+      } else if (uy > 0) {
+        return(s / (2 * uy - ux))
+      } else if (uy < 0) {
+        return(s / (-2 * uy - ux))
+      } else {
+        return(s)
+      }
+    } else if (shape == "rtTri") {
+      if (ux < 0) {
+        return(s / (-ux))
+      } else if (uy > 0) {
+        return(s / (ux + 2 * uy))
+      } else if (uy < 0) {
+        return(s / (ux - 2 * uy))
+      } else {
+        return(s)
+      }
+    }
+    s
+  }
+  edge_shorten <- function(x0, y0, x1, y1, from_shape, to_shape, s) {
     dx <- x1 - x0; dy <- y1 - y0
     d  <- sqrt(dx^2 + dy^2)
     if (d == 0) return(c(x0, y0, x1, y1))
     ux <- dx / d; uy <- dy / d
-    r0 <- s / max(abs( ux), abs( uy), 1e-9)
-    r1 <- s / max(abs(-ux), abs(-uy), 1e-9)
+    r0 <- node_exit(from_shape, s,  ux,  uy)
+    r1 <- node_exit(to_shape,   s, -ux, -uy)
     c(x0 + r0 * ux, y0 + r0 * uy, x1 - r1 * ux, y1 - r1 * uy)
   }
   shortened <- t(mapply(edge_shorten,
                         edges$from_x, edges$from_y,
                         edges$to_x,   edges$to_y,
+                        edges$from_shape, edges$to_shape,
                         MoreArgs = list(s = node_size)))
   edges$sx <- shortened[, 1]; edges$sy <- shortened[, 2]
   edges$ex <- shortened[, 3]; edges$ey <- shortened[, 4]
 
   ## -- Assemble ----------------------------------------------------
+  ## Per-edge stroke color via aes(color = ecol) + scale_color_identity.
+  ## Arrowhead inherits stroke color so faded arms get fully faded
+  ## heads. Labels are rendered as ggtext richtext, so per-fragment
+  ## coloring is the caller's responsibility (via <span style='color:'>).
   p <- ggplot2::ggplot() +
     ggplot2::geom_segment(
       data  = edges,
       ggplot2::aes(x = .data$sx, y = .data$sy,
-                   xend = .data$ex, yend = .data$ey),
+                   xend = .data$ex, yend = .data$ey,
+                   color = .data$ecol),
       arrow     = grid::arrow(length = grid::unit(0.14, "inches"),
                               type   = "closed"),
       linewidth = edge_linewidth,
-      color     = "black",
       lineend   = "round") +
+    ggplot2::scale_color_identity() +
     ggtext::geom_richtext(
       data = edges,
       ggplot2::aes(x = .data$mid_x, y = .data$mid_y,
@@ -192,7 +279,7 @@ plotPathSchema <- function(X_label = "X",
       size          = edge_text_size,
       label.padding = grid::unit(0.18, "lines"),
       label.size    = 0,
-      fill          = "#FFFFFFDA") +
+      fill          = "white") +
     ggplot2::geom_polygon(
       data = poly_df,
       ggplot2::aes(x = .data$px, y = .data$py, group = .data$name),

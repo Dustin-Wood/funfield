@@ -216,31 +216,6 @@ single-mediator model the identity is
 $$\beta^*_{1_{YX}} \;=\; \beta_{1_{MX}} \cdot \beta_{1_{YM}}
 \;+\; \beta_{1_{YX}}$$
 
-The two sides of the identity, pictured. The left-hand side is the
-unmediated `X → Y` slope (a single arrow); the right-hand side
-unpacks that one arrow into the indirect product through `M` plus
-a residual direct arrow. Every symbol in the equation above is one
-arrow in one of these two diagrams.
-
-```{r path-schema-total, fig.width = 7, fig.height = 1.2}
-plotPathSchema(
-  XY_label = "&beta;*<sub>1<sub>YX</sub></sub>"
-)
-```
-
-```{r path-schema-med, fig.width = 7, fig.height = 3.2}
-plotPathSchema(
-  M_label  = "M",
-  XM_label = "&beta;<sub>1<sub>MX</sub></sub>",
-  MY_label = "&beta;<sub>1<sub>YM</sub></sub>",
-  XY_label = "&beta;<sub>1<sub>YX</sub></sub>"
-)
-```
-
-^[This is the classic Baron-Kenny / Sobel mediation identity
-$c \,=\, a \cdot b \,+\, c'$ in funfield's notation: $a = \beta_{1_{MX}}$,
-$b = \beta_{1_{YM}}$, $c' = \beta_{1_{YX}}$, and the total $c$ is
-$\beta^*_{1_{YX}}$.]
 which generalizes to a set of mediators as
 
 $$\beta^*_{1_{YX}} \;=\; \sum_{M} \beta_{1_{MX}} \cdot \beta_{1_{YM}}
@@ -266,6 +241,99 @@ Unlike the moderation decomposition later in the vignette (which is
 *approximate* per Muller, Judd, & Yzerbyt, 2005), this normative
 identity is *exact* — it falls out of the OLS algebra of the loop
 and joint regressions.
+
+#### General mediation
+
+The two sides of the identity, pictured. The left-hand side is the
+unmediated `X → Y` slope (a single arrow); the right-hand side
+unpacks that one arrow into the indirect product through `M` plus
+a residual direct arrow. Every symbol in the equation above is one
+arrow in one of these two diagrams.
+
+```{r path-schema-total, fig.width = 7, fig.height = 1.2}
+plotPathSchema(
+  XY_label = "&beta;*<sub>1<sub>YX</sub></sub>"
+)
+```
+
+```{r path-schema-med, fig.width = 7, fig.height = 3.2}
+plotPathSchema(
+  M_label  = "M",
+  XM_label = "&beta;<sub>1<sub>MX</sub></sub>",
+  MY_label = "&beta;<sub>1<sub>YM</sub></sub>",
+  XY_label = "&beta;<sub>1<sub>YX</sub></sub>"
+)
+```
+
+This is the classic Baron-Kenny / Sobel mediation identity
+$c \,=\, a \cdot b \,+\, c'$ in funfield's notation: $a = \beta_{1_{MX}}$,
+$b = \beta_{1_{YM}}$, $c' = \beta_{1_{YX}}$, and the total $c$ is
+$\beta^*_{1_{YX}}$.
+
+#### Expectancy × Value application
+
+The same identity carries a more specific reading when **X is the
+imagined performance of an action**, **Y is the rated likelihood of
+*actually* doing that action**, and **M is an expected outcome of
+performing the action**. The algebra of the decomposition is
+unchanged; what changes is how the two indirect arms are read.
+
+Following the convention used in the field diagrams later in this
+vignette, X is drawn as a right-facing triangle (an *initiating*
+action) and Y as a left-facing triangle (an action-likelihood
+outcome); the mediator stays a square because it is a continuous
+expected outcome.
+
+```{r path-schema-total-ev, fig.width = 7, fig.height = 1.2}
+plotPathSchema(
+  XY_label = "&beta;*<sub>1<sub>YX</sub></sub>",
+  X_shape  = "rtTri",
+  Y_shape  = "lfTri"
+)
+```
+
+```{r path-schema-med-ev, fig.width = 7, fig.height = 3.2}
+plotPathSchema(
+  M_label  = "M",
+  XM_label = "&beta;<sub>1<sub>MX</sub></sub>",
+  MY_label = "&beta;<sub>1<sub>YM</sub></sub>",
+  XY_label = "&beta;<sub>1<sub>YX</sub></sub>",
+  X_shape  = "rtTri",
+  Y_shape  = "lfTri"
+)
+```
+
+In this framing the two indirect arms operationalize the two terms
+of an **Expectancy × Value** model:
+
+- $\beta_{1_{MX}}$ is the **expectancy** arm — how strongly imagining
+  the action shifts the rated expectation of that outcome `M`. It is
+  the respondent's subjective probability (in slope form) that the
+  action produces `M`.
+- $\beta_{1_{YM}}$ is the **value** arm — how strongly the expected
+  outcome `M`, in turn, shifts the likelihood of actually doing the
+  action. It is how much that outcome weighs on the action-choice
+  side: outcomes with a steeper `B1_YM` are the ones the respondent
+  effectively cares about.
+
+The product $\beta_{1_{MX}} \cdot \beta_{1_{YM}}$ is then the
+indirect route's E×V contribution: an outcome only moves action
+likelihood through `M` to the extent the action moves the
+expectation *and* the expectation moves the choice.
+
+A concrete read for one of the speeding mediators (`OnTime`):
+driving 10 mph over the limit raises the expectation of arriving
+on time, so $\beta_{1_{MX}}$ is positive (the expectancy arm). On
+the choice side, respondents who expect to be on time are more
+likely to report they would do the action, so $\beta_{1_{YM}}$ is
+also positive (the value arm). Their product is the share of the
+total `Speed → Likelihood` slope that runs through "I'll arrive on
+time" as a reason to speed. A mediator whose expectancy arm is
+strong but whose value arm is near zero (an outcome people predict
+but don't weight) contributes little; one whose value arm is strong
+but whose expectancy arm is near zero (an outcome people weight but
+the action doesn't shift) contributes little; the indirect effect
+only lights up when both arms do.
 
 The next two subsections walk Terms 1 and 2 through the speeding
 data: first the per-mediator loop fits (Term 1 one mediator at a
@@ -435,7 +503,154 @@ When `X` is an action, `M` is an outcome, and `Y` is the rated action likelihood
 
 Note also that the decomposition will result in an *approximation* of the initial `BZ_YX` term prior to considering the mediator.  It will not be exactly equal for reasons detailed by Muller, Judd, & Yzerbyt, (2005) - although the decomposition will tend to be very close.
 
-When a moderator produces a large (`BZ_MX × B1_YM`) or (`B1_MX × BZ_YM`) effect, this can be described as formally indicating a *reason* for the behavior. 
+When a moderator produces a large (`BZ_MX × B1_YM`) or (`B1_MX × BZ_YM`) effect, this can be described as formally indicating a *reason* for the behavior.
+
+#### Schematic of the moderated decomposition
+
+The same E×V schematics from the normative section carry over once a
+moderator `Z` is in the field — every coefficient gains a "+ bZ"
+companion that captures how `Z` shifts that arm. To match the
+[field-style convention](#field-style-diagrams) used later in this
+section, every fragment colored <span style="color:#32CD32">**limegreen**</span>
+is a bZ term (the part of an arm that varies with `Z`); the leading
+b1 term stays black.
+
+```{r mod-schema-setup}
+## Local helpers for the three moderation schematics below. Wrap a
+## fragment in limegreen to flag it as a bZ coefficient, and in light
+## gray to fade it into "not part of this term".
+## Note: starred-total betas use &#42; (HTML numeric entity for `*`)
+## rather than a literal asterisk -- gridtext treats paired `*`
+## characters as Markdown italic, which would break color spans that
+## happen to bracket them.
+green <- "#32CD32"; gray <- "#E5E5E5"
+gz <- function(s) paste0("<span style='color:", green, "'>", s, "</span>")
+gr <- function(s) paste0("<span style='color:", gray,  "'>", s, "</span>")
+
+b1_MX <- "&beta;<sub>1<sub>MX</sub></sub>"
+b1_YM <- "&beta;<sub>1<sub>YM</sub></sub>"
+b1_YX <- "&beta;<sub>1<sub>YX</sub></sub>"
+bZ_MX <- "&beta;<sub>Z<sub>MX</sub></sub>"
+bZ_YM <- "&beta;<sub>Z<sub>YM</sub></sub>"
+bZ_YX <- "&beta;<sub>Z<sub>YX</sub></sub>"
+
+b1s_YX <- "&beta;&#42;<sub>1<sub>YX</sub></sub>"   # starred b1 (total)
+bZs_YX <- "&beta;&#42;<sub>Z<sub>YX</sub></sub>"   # starred bZ (total)
+```
+
+**Figure 1 — Total moderation effect.** Before decomposing, index the
+total moderation: the single arrow from `X` to `Y` carries both the
+unmediated `X → Y` slope ($\beta^*_{1_{YX}}$) and how that slope is
+shifted by `Z` ($\beta^*_{Z_{YX}}$). The whole "Term 0" of the identity
+above is what the green fragment names.
+
+```{r mod-schema-total, fig.width = 7, fig.height = 1.2}
+plotPathSchema(
+  XY_label = paste0(b1s_YX, " ", gz(paste0("+&nbsp;", bZs_YX))),
+  X_shape  = "rtTri",
+  Y_shape  = "lfTri"
+)
+```
+
+**Figure 2 — Full moderated mediation triangle.** Once a mediator is in
+the picture, each of the three arms carries its own b1+bZ pair: the
+b1 piece is the arm as fit at the average level of `Z`, and the bZ
+piece is how that arm bends as `Z` moves.
+
+```{r mod-schema-full, fig.width = 7, fig.height = 3.2}
+plotPathSchema(
+  M_label  = "M",
+  XM_label = paste0(b1_MX, " ", gz(paste0("+&nbsp;", bZ_MX))),
+  MY_label = paste0(b1_YM, " ", gz(paste0("+&nbsp;", bZ_YM))),
+  XY_label = paste0(b1_YX, " ", gz(paste0("+&nbsp;", bZ_YX))),
+  X_shape  = "rtTri",
+  Y_shape  = "lfTri"
+)
+```
+
+**Figure 3 — One panel per term in the decomposition.** Each panel
+shows the same triangle but fades every fragment that is *not* part of
+the term being indexed. Active b1 terms stay black, active bZ terms
+stay limegreen, and arrows whose color matches their label are the
+ones contributing to that panel's product; everything else drops to
+light gray.
+
+```{r mod-schema-panels, fig.width = 12, fig.height = 3.0, out.width = "100%", message = FALSE}
+## Helper: stitch a single XY-label string for an arm where one of
+## (b1, bZ) is active and the other is faded.
+arm_lab <- function(b1, bZ, active = c("b1", "bZ")) {
+  active <- match.arg(active)
+  if (active == "b1") paste0(b1,     " ", gr(paste0("+&nbsp;", bZ)))
+  else                paste0(gr(b1), " ", gz(paste0("+&nbsp;", bZ)))
+}
+## And a fully faded label (whole "b1 + bZ" string wrapped in gray).
+arm_off <- function(b1, bZ) gr(paste0(b1, " +&nbsp;", bZ))
+
+## Panel 1: BZ_MX * B1_YM (expectation-route moderation).
+p1 <- plotPathSchema(
+  M_label  = "M",
+  XM_label = arm_lab(b1_MX, bZ_MX, "bZ"),   # bZ active -> green line
+  MY_label = arm_lab(b1_YM, bZ_YM, "b1"),   # b1 active -> black line
+  XY_label = arm_off(b1_YX, bZ_YX),         # not in this term
+  X_shape  = "rtTri", Y_shape = "lfTri",
+  XM_color = green, MY_color = "black", XY_color = gray,
+  title    = "Term 1:  &beta;<sub>Z<sub>MX</sub></sub> &middot; &beta;<sub>1<sub>YM</sub></sub>"
+) + ggplot2::theme(plot.title = ggtext::element_markdown(hjust = 0.5))
+
+## Panel 2: B1_MX * BZ_YM (valuation-route moderation).
+p2 <- plotPathSchema(
+  M_label  = "M",
+  XM_label = arm_lab(b1_MX, bZ_MX, "b1"),
+  MY_label = arm_lab(b1_YM, bZ_YM, "bZ"),
+  XY_label = arm_off(b1_YX, bZ_YX),
+  X_shape  = "rtTri", Y_shape = "lfTri",
+  XM_color = "black", MY_color = green, XY_color = gray,
+  title    = "Term 2:  &beta;<sub>1<sub>MX</sub></sub> &middot; &beta;<sub>Z<sub>YM</sub></sub>"
+) + ggplot2::theme(plot.title = ggtext::element_markdown(hjust = 0.5))
+
+## Panel 3: BZ_YX (residual direct moderation).
+p3 <- plotPathSchema(
+  M_label  = "M",
+  XM_label = arm_off(b1_MX, bZ_MX),
+  MY_label = arm_off(b1_YM, bZ_YM),
+  XY_label = arm_lab(b1_YX, bZ_YX, "bZ"),
+  X_shape  = "rtTri", Y_shape = "lfTri",
+  XM_color = gray, MY_color = gray, XY_color = green,
+  title    = "Term 3:  &beta;<sub>Z<sub>YX</sub></sub>"
+) + ggplot2::theme(plot.title = ggtext::element_markdown(hjust = 0.5))
+
+patchwork::wrap_plots(p1, p2, p3, ncol = 3)
+```
+
+Reading across the panels: the indirect Z-routes (Terms 1 and 2) each
+need *one* bZ arm paired with the surviving b1 on the other arm —
+expectation-route moderation operates through `Z` shifting `B1_MX`
+while the average valuation `B1_YM` does the carrying, and the
+valuation route is the mirror image. Term 3 is what `Z` does *directly*
+to `Y` once the indirect routes are accounted for. The three terms
+sum to (an approximation of) the green Term-0 arrow in Figure 1.
+
+**Toggleable overlay.** Side-by-side helps with comparison, but the
+three panels live on the *same* triangle — so it can be easier to see
+how the highlight migrates by overlaying them in place and clicking
+through.
+
+```{r mod-schema-widget, fig.show = "hide"}
+## Same three frames as Figure 3, but stitched into a Back/Forward
+## widget so they swap at pixel-identical layout instead of sitting
+## side by side. p1/p2/p3 are reused from the chunk above.
+plotsAsWidget(
+  list(p1, p2, p3),
+  panel_titles = c(
+    "Term 1: B_Z_MX * B_1_YM (expectation route)",
+    "Term 2: B_1_MX * B_Z_YM (valuation route)",
+    "Term 3: B_Z_YX (residual direct)"
+  ),
+  width  = 7,
+  height = 3.5,
+  format = "svg"
+)
+```
 
 ## Example of Person-level moderation: self-reported fast-driver tendency
 

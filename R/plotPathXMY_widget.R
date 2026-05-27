@@ -96,6 +96,59 @@ plotPathXMY_widget <- function(x,
   pxmy_widget_html(plots, panel_titles, width, height, res, format)
 }
 
+#' Wrap a list of ggplots in a navigable Back / Forward HTML widget
+#'
+#' @description Pixel-identical-layout image carousel: each ggplot in
+#'   \code{plots} becomes one frame, and the widget swaps frames in
+#'   place via \strong{Back} / \strong{Forward} buttons. This is the
+#'   same machinery that powers \code{\link{plotPathXMY_widget}} and
+#'   \code{\link{plotPathXMY_widget_routes}}, exposed so callers can
+#'   stitch custom panel sequences from any plot family -- e.g. the
+#'   three term-decomposition panels from \code{\link{plotPathSchema}}
+#'   overlaid in place rather than shown side by side.
+#'
+#'   All frames are rendered at the same width / height so they swap
+#'   in place without reflowing the page; build each constituent plot
+#'   with the same canvas size.
+#'
+#' @param plots A list of \code{ggplot} objects, one per frame.
+#' @param panel_titles Character vector of captions, one per frame,
+#'   shown in the widget's counter strip and used as image \code{alt}
+#'   text. If \code{NULL} (default), frames are auto-labeled
+#'   \dQuote{Frame k of n}.
+#' @param width,height Frame width and height in inches. Default
+#'   \code{9} x \code{3.5}.
+#' @param res PNG resolution in pixels per inch (ignored for SVG).
+#'   Default \code{192} (2x retina for sharpness on high-DPI displays).
+#' @param format One of \code{"png"} (default) or \code{"svg"}. SVG
+#'   scales crisply at any zoom; PNG renders faster and matches the
+#'   default for the other widget functions in the package.
+#'
+#' @return An \code{htmltools::tagList} that auto-renders as an
+#'   interactive widget in knitr / R Markdown HTML output. The HTML is
+#'   fully self-contained -- all images are embedded as base64 data
+#'   URIs, no server required.
+#' @seealso \code{\link{plotPathXMY_widget}},
+#'   \code{\link{plotPathXMY_widget_routes}}
+#' @export
+plotsAsWidget <- function(plots,
+                          panel_titles = NULL,
+                          width  = 9,
+                          height = 3.5,
+                          res    = 192,
+                          format = c("png", "svg")) {
+  format <- match.arg(format)
+  if (!is.list(plots) || length(plots) < 1L)
+    stop("`plots` must be a non-empty list of ggplot objects.")
+  if (is.null(panel_titles)) {
+    panel_titles <- sprintf("Frame %d of %d",
+                            seq_along(plots), length(plots))
+  } else if (length(panel_titles) != length(plots)) {
+    stop("`panel_titles` must have one entry per plot.")
+  }
+  pxmy_widget_html(plots, panel_titles, width, height, res, format)
+}
+
 ## Internal: assemble a navigable image widget from a list of ggplots.
 ## Each plot is rendered to a temp file (PNG or SVG), embedded as a
 ## base64 data URI, and shown as one frame with Back / Forward buttons
