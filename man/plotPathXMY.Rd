@@ -15,6 +15,7 @@ plotPathXMY(
   Y_shape = c("lfTri", "square"),
   digits = 2,
   show_pvalues = FALSE,
+  strip0 = TRUE,
   scale_max = 0.8,
   score_intensity_max = 1,
   Z_value = NULL,
@@ -54,6 +55,11 @@ squares.}
 \item{digits}{Decimal places for edge labels (default 2).}
 
 \item{show_pvalues}{Logical; append p-values to edge labels.}
+
+\item{strip0}{Logical; if \code{TRUE} (default), edge-label
+coefficients render without their leading zero (\code{0.31 -> .31})
+in keeping with the funfield decimal house style. Set to
+\code{FALSE} to keep the leading zero.}
 
 \item{scale_max}{Numeric. Path magnitude that maps to the maximum
 edge linewidth. Default \code{0.8}.}

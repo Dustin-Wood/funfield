@@ -103,6 +103,10 @@
 #'   squares.
 #' @param digits Decimal places for edge labels (default 2).
 #' @param show_pvalues Logical; append p-values to edge labels.
+#' @param strip0 Logical; if \code{TRUE} (default), edge-label
+#'   coefficients render without their leading zero (\code{0.31 -> .31})
+#'   in keeping with the funfield decimal house style. Set to
+#'   \code{FALSE} to keep the leading zero.
 #' @param scale_max Numeric. Path magnitude that maps to the maximum
 #'   edge linewidth. Default \code{0.8}.
 #' @param score_intensity_max Numeric. The expected-score absolute value
@@ -160,6 +164,7 @@ plotPathXMY <- function(x,
                         Y_shape = c("lfTri", "square"),
                         digits = 2,
                         show_pvalues = FALSE,
+                        strip0 = TRUE,
                         scale_max = 0.8,
                         score_intensity_max = 1,
                         Z_value = NULL,
@@ -414,23 +419,36 @@ plotPathXMY <- function(x,
   wrap_green  <- function(s) paste0("<span style='color:", z_green, "'>",
                                     s, "</span>")
   single_mode <- Z_overlay || z_collapsed || route != "none"
+  ## Coefficient formatter: f0() strips the leading zero per the
+  ## funfield house style; sprintf("%+.Nf") is the fallback when
+  ## strip0 = FALSE. keep_sign = TRUE in f0() preserves the leading
+  ## "+" on non-negative values so the dashed/solid + sign convention
+  ## reads consistently.
+  fmt_coef <- function(x) {
+    if (strip0) f0(x, digits = digits, keep_sign = TRUE)
+    else        sprintf(paste0("%+.", digits, "f"), x)
+  }
+  fmt_pv <- function(p) {
+    if (strip0) f0(p, digits = 3, keep_sign = FALSE)
+    else        sprintf("%.3f", p)
+  }
   fmt_path <- function(coef, bZ, pv = NA_real_, is_bZ_arm = FALSE) {
     if (is.na(coef)) return("")
-    main <- sprintf(paste0("%+.", digits, "f"), coef)
+    main <- fmt_coef(coef)
     if (single_mode) {
       out <- main
       if (show_pvalues && !is.na(pv))
-        out <- paste0(out, "<br>p=", sprintf("%.3f", pv))
+        out <- paste0(out, "<br>p=", fmt_pv(pv))
       return(if (is_bZ_arm) wrap_green(out) else out)
     }
     ## Decomposed view: b1 head + green bZ fragment.
     out <- main
     if (!is.na(bZ) && abs(bZ) > 0) {
-      bz_part <- sprintf(paste0("%+.", digits, "f(%s)"), bZ, Z_label)
+      bz_part <- paste0(fmt_coef(bZ), "(", Z_label, ")")
       out <- paste0(out, " ", wrap_green(bz_part))
     }
     if (show_pvalues && !is.na(pv))
-      out <- paste0(out, "<br>p=", sprintf("%.3f", pv))
+      out <- paste0(out, "<br>p=", fmt_pv(pv))
     out
   }
 
@@ -618,6 +636,14 @@ plotPathXMY <- function(x,
       oob      = squish01,
       na.value = "white",
       name     = "score",
+      ## Score-axis labels honor the house strip0 style. Exact zero
+      ## renders as "0" (not ".0") since it's a category, not a
+      ## rounded value.
+      labels   = if (strip0) function(x) {
+                   out <- f0(x, digits = 1, keep_sign = FALSE)
+                   out[!is.na(x) & x == 0] <- "0"
+                   out
+                 } else ggplot2::waiver(),
       guide    = if (suppress_scores) "none" else ggplot2::guide_colorbar(
         barwidth  = grid::unit(2.2, "in"),
         barheight = grid::unit(0.18, "in"))) +

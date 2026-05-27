@@ -4,7 +4,14 @@
 \alias{group_kable}
 \title{Render a Wide Data Frame as an HTML Table with Grouped Column Headers}
 \usage{
-group_kable(df, groups, col_labels = NULL, digits = 3, caption = NULL)
+group_kable(
+  df,
+  groups,
+  col_labels = NULL,
+  digits = 3,
+  caption = NULL,
+  strip0 = TRUE
+)
 }
 \arguments{
 \item{df}{A data frame to render. Numeric columns are formatted to
@@ -24,6 +31,11 @@ frame's own column names are used.}
 \item{digits}{Number of decimal places for numeric columns (default 3).}
 
 \item{caption}{Optional table caption (character; may contain HTML).}
+
+\item{strip0}{Logical; if \code{TRUE}, numeric columns are formatted
+via \code{\link{f0}} so the leading zero is stripped from any
+decimal whose absolute value is less than 1 (\code{0.123 -> .123}).
+Default \code{TRUE} matches the funfield vignette house style.}
 }
 \value{
 An \code{\link[htmltools]{HTML}} object: a complete

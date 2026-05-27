@@ -27,6 +27,10 @@
 #'   frame's own column names are used.
 #' @param digits Number of decimal places for numeric columns (default 3).
 #' @param caption Optional table caption (character; may contain HTML).
+#' @param strip0 Logical; if \code{TRUE}, numeric columns are formatted
+#'   via \code{\link{f0}} so the leading zero is stripped from any
+#'   decimal whose absolute value is less than 1 (\code{0.123 -> .123}).
+#'   Default \code{TRUE} matches the funfield vignette house style.
 #'
 #' @return An \code{\link[htmltools]{HTML}} object: a complete
 #'   \code{<table>} preceded by an inline \code{<style>} block, which knitr
@@ -53,7 +57,7 @@
 #'
 #' @export
 group_kable <- function(df, groups, col_labels = NULL, digits = 3,
-                        caption = NULL) {
+                        caption = NULL, strip0 = TRUE) {
   stopifnot(is.data.frame(df), ncol(df) >= 1L,
             length(groups) >= 1L, !is.null(names(groups)))
   n <- ncol(df)
@@ -71,8 +75,11 @@ group_kable <- function(df, groups, col_labels = NULL, digits = 3,
                  length(col_labels), n), call. = FALSE)
   }
 
-  fmt <- function(x) if (is.numeric(x))
-    formatC(x, format = "f", digits = digits) else as.character(x)
+  fmt <- function(x) {
+    if (!is.numeric(x)) return(as.character(x))
+    if (strip0) f0(x, digits = digits)
+    else        formatC(x, format = "f", digits = digits)
+  }
   B <- as.data.frame(lapply(df, fmt), stringsAsFactors = FALSE)
 
   gstart <- cumsum(c(1L, gspan))[seq_along(gspan)]
@@ -95,7 +102,11 @@ group_kable <- function(df, groups, col_labels = NULL, digits = 3,
 
   css <- paste0(
     '<style>',
-    'table.grouptbl{border-collapse:collapse;margin:0 auto 1.2em;}',
+    'table.grouptbl{border-collapse:collapse;margin:0 auto 1.2em;',
+      ## Tabular (fixed-width) digits make decimal points line up
+      ## under right-aligned numeric cells even when integer parts
+      ## differ in width (e.g., ".664" vs "-4.654").
+      'font-variant-numeric:tabular-nums;}',
     'table.grouptbl caption{caption-side:top;font-style:italic;',
       'padding-bottom:4px;}',
     'table.grouptbl th,table.grouptbl td{padding:3px 10px;',
