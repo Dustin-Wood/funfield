@@ -1,0 +1,32 @@
+# Effective N from Weighted Data
+
+This will return a list of the effective number of items (effNitems) and
+effective number of markers for X (effNXitems) for the different VOIs
+contained in specified S matrix.
+
+Note that variables should be on a -1 to 1 scale, where values near -1
+or 1 indicate highly loading items, and items near 0 indicate items that
+should be weighted negligibly.
+
+(\*\*This function currently has issues when there are missing
+values...\*\*)
+
+## Usage
+
+``` r
+effectiveN(vois, id = F)
+```
+
+## Arguments
+
+- vois:
+
+  variables of interest
+
+- id:
+
+  is there an identifying variable? Defaults to `TRUE`
+
+## Value
+
+effective N for different variables

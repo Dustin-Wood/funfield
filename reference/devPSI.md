@@ -1,0 +1,49 @@
+# Deviation Action Scoring of PSI matrix
+
+Will estimate how p's rating of outcomes of each action deviate within
+situation s deviated from their average rating of outcomes of different
+actions in that situation
+
+## Usage
+
+``` r
+devPSI(PSIdata, locX = c(4:ncol(PSIdata)))
+```
+
+## Arguments
+
+- PSIdata:
+
+  PSI-structured dataframe (should have 'p','s','i' as their first three
+  features)
+
+- locX:
+
+  location of expected outcome ratings (note: default generously assumes
+  the prescribed 'c(p,s,i,...,Likelihood)' data structure) ratings
+  provided at different portion of survey)
+
+## Value
+
+deviated ratings of effects of action i as rated by p within situation s
+from the person's average rating of actions in that situation.
+
+## Details
+
+This essentially forces 'deviation' scoring.
+
+Note that when nI = 2, the two deviation scores within a
+person-situation are exact reflections of one another. With *naive*
+(non-clustered) standard errors this doubles the apparent sample size
+and makes significance tests anti-conservative, so keeping only one
+action per situation (e.g. i = 1) would be advisable. With
+**cluster-robust standard errors clustered at the person level** – as
+used by
+[`pathXMY`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
+– this is not a concern: the sandwich estimator counts clusters, not
+rows, and the perfectly mirrored rows sit within the same person
+cluster, so duplicating them leaves every standard error unchanged. Both
+action rows can be kept.
+
+If we want the difference of the two actions (rather than deviation
+scoring), we can pair the devPSI function with diffPSI.

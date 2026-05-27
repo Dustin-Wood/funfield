@@ -1,0 +1,12 @@
+pandoc: 3.8.3
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  coffee_field_model: coffee_field_model.html
+  coworker_pathXMY: coworker_pathXMY.html
+  overtime_pathXMY: overtime_pathXMY.html
+  speeding_pathXMY: speeding_pathXMY.html
+last_built: 2026-05-27T18:32Z
+urls:
+  reference: https://dustin-wood.github.io/funfield/reference
+  article: https://dustin-wood.github.io/funfield/articles
