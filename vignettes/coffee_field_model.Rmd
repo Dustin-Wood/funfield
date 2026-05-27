@@ -55,9 +55,7 @@ etc.  The motivational prerequisites (`Want(Co).p`, `H(Ings).p`) and the
 terminal utility appraisal (`U.p`) are placed in the rightmost column.
 
 ```{r layout}
-# During development, load from source so new functions are always available.
-# Replace with library(funfield) once the package is installed.
-pkgload::load_all("..", quiet = TRUE)
+library(funfield)
 
 coffee_layout <- matrix(0, nrow = 5, ncol = 15)
 
