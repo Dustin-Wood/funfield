@@ -1,33 +1,25 @@
 Package: funfield
 Type: Package
-Title: Functional Field Functions
+Title: Functional Field Models for Psychology
 Version: 0.1.0
-Author: Dustin Wood
-Maintainer: Dustin Wood <dustinwood79@gmail.com>
-Description: A group of functions that are useful for estimation 
-    of functional field models, either from Elaborated Situational 
-    Judgment Test (ESJT) data, or from direct specification of a model.
-    Functions include:
-    - Some indices useful for data quality screens (e.g., 'straight-lining' behavior
-    across particular action ratings; low variability screens)
-    - Adjustments for response variability
-    - Calculating fields for 'low', 'medium' and 'high' subgroups
-    Note that many of the functions assume the data is structured to have \emph{p, s, i}
-    as the first three columns.  See Wood
-    Note that this package relies heavily on functions built in 
-    other libraries, especially \code{psych}, \code{qgraph}, and \code{plyr}.
-License: What license is it under?
+Authors@R: person("Dustin", "Wood",
+                  email = "dustinwood79@gmail.com",
+                  role  = c("aut", "cre"))
+Description: Tools for building, fitting, and visualizing functional
+    field models in psychology. Models expected outcomes of actions in
+    situations as covariance structures, estimates path coefficients
+    from Elaborated Situational Judgment Test (ESJT) data via 'lavaan',
+    and renders the results as field-style causal path diagrams.
+    Includes helpers for data-quality screens, within-person deviation,
+    moderator screening across trait batteries, and mediation /
+    moderation decomposition. Most core functions assume the input data
+    is structured with person, situation, and initiating-action columns
+    ('p', 's', 'i') as the first three columns. See Wood (in preparation).
+License: MIT + file LICENSE
+URL: https://github.com/Dustin-Wood/funfield, https://dustin-wood.github.io/funfield/
+BugReports: https://github.com/Dustin-Wood/funfield/issues
 Encoding: UTF-8
 LazyData: true
-Suggests:
-    qgraph,
-    psych,
-    knitr,
-    rmarkdown,
-    visNetwork,
-    shiny,
-    patchwork
-VignetteBuilder: knitr
 Imports:
     reshape2,
     dplyr,
@@ -40,5 +32,18 @@ Imports:
     ggtext,
     rlang,
     grid
+Suggests:
+    qgraph,
+    psych,
+    knitr,
+    rmarkdown,
+    visNetwork,
+    shiny,
+    patchwork,
+    ragg,
+    svglite
+Remotes:
+    Dustin-Wood/fancyr
+VignetteBuilder: knitr
 Config/roxygen2/version: 8.0.0
 RoxygenNote: 7.3.3

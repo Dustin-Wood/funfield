@@ -3,3 +3,9 @@
 ^README\.Rmd$
 ^\.positai$
 ^\.claude$
+^CLAUDE\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
+^LICENSE\.md$

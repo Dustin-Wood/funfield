@@ -7,7 +7,6 @@
 #' @param locX location of expected outcome ratings (note: default generously assumes
 #' the prescribed 'c(p,s,i,...,Likelihood)' data structure)
 #' ratings provided at different portion of survey)
-#' @examples (develop some example code)
 #' @details This essentially forces 'deviation' scoring.
 #'
 #' Note that when nI = 2, the two deviation scores within a person-situation

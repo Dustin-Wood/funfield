@@ -38,6 +38,3 @@ unchanged. Both action rows can be kept.
 If we want the difference of the two actions (rather than deviation scoring),
 we can pair the devPSI function with diffPSI.
 }
-\examples{
-(develop some example code)
-}
