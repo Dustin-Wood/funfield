@@ -40,8 +40,11 @@ stitched string here.}
 
 \item{layout}{A data frame describing node placement, with columns
 `name` (matching the model's variables), `x`, `y`, and `shape` (one
-of `"square"`, `"diamond"`, `"rtTri"`, `"lfTri"`). An optional
-`label` column supplies display text (defaults to `name`).}
+of `"square"`, `"diamond"`, `"rtTri"`, `"lfTri"`, `"circle"`). By
+convention objects are diamonds, actions right-facing triangles, the
+likelihood readout a left-facing triangle, and a choice / chance node
+a circle. An optional `label` column supplies display text (defaults
+to `name`).}
 
 \item{plan}{Optional `lavaan`-syntax sub-model string. Edges whose
 source -> target identity appears in `plan` are drawn in

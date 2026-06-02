@@ -1,5 +1,5 @@
 ---
-title: "Coffee Field Model: Affordances and a Process in Time"
+title: "Coffee Field Model: Affordances, Choice, and a Process in Time"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Coffee Field Model}
@@ -40,16 +40,19 @@ the `fZ_X.Y` parameter schema — see
 `vignette("notation", package = "funfield")`.
 
 The worked example is making a cup of drip coffee: ready your supplies,
-turn the machine on, pour, sip. We build that field once and then run it
-two ways, which answer two different questions:
+turn the machine on, pour, sip. We build that field once and put it to
+three uses, which answer three different questions:
 
-- **What does the plan ultimately afford?** Resolve the whole causal
-  chain at once and read off the result. This is a *topological sweep*.
-- **How does the process unfold in time, step by step, using things
-  up as it goes?** Advance the state one move at a time and let earlier
-  stages be *consumed* as the token moves down the line. This needs the
-  field to carry **memory**, which brings in the **stock / flow**
-  distinction.
+- **What does a plan afford?** Resolve its whole causal chain at once and
+  read off the result. This is a *topological sweep*.
+- **Which plan should the agent choose?** Appraise several candidate
+  plans the same way and keep the one that affords the most value. This
+  is what a **choice / chance node** does, and
+  [`chooseF()`](../reference/chooseF.html) computes it.
+- **How does the chosen plan unfold in time, using things up as it
+  goes?** Advance the state one move at a time and let earlier stages be
+  *consumed* as the token moves down the line. This needs the field to
+  carry **memory**, which brings in the **stock / flow** distinction.
 
 ## The field step
 
@@ -79,7 +82,7 @@ by concatenation: the **situation** — the affordance structure of the
 world, which exists whether or not anyone acts — and the **action
 plan** — a set of conditional intentions the agent layers on top.
 
-## Step 1: The situation
+## Step 1: The situation and the choice point
 
 Each stage of the coffee process is an **afforded force**: a path that
 contributes nothing until its prerequisite state variable is on. In the
@@ -87,22 +90,29 @@ contributes nothing until its prerequisite state variable is on. In the
 baseline — `fZ_X.Y * X:Z` — so the `X → Y` force is zero whenever
 `s[Z] = 0` and switches on once `s[Z]` flips positive.
 
-The four gated stages, plus a terminal utility force:
+The physical chain, plus a terminal value force:
 
 | Force | Afforded by | Reads as |
 |---|---|---|
-| `make → s2`        | `s1`     | setting up the rig works once you're ready to make coffee |
+| `make → s2`        | —        | making the rig sets it up (the entry point) |
 | `TurnOn → HCoPot`  | `s2`     | turning it on brews into the pot once the rig is ready |
 | `Pour → HCoCup`    | `HCoPot` | pouring fills the cup once there's coffee in the pot |
 | `Sip → HCo`        | `HCoCup` | sipping yields "having coffee" once it's in the cup |
-| `HCo → L`          | —        | having coffee produces likelihood / value (baseline) |
+| `HCo → L`          | —        | having (consumed) coffee produces likelihood / value |
 
 The terminal node is **`L`** — likelihood. In ESJT data `L` is the rated
 likelihood of taking an action, and here it plays the role an economist
 would give *subjective expected utility*: the field assumes a person
 takes the action they appraise most positively. Reading `L` off the
-settled field is reading off which action the agent is predicted to
-choose.
+settled field is reading off how good an action looks.
+
+That lone baseline `HCo → L` carries the model's whole motivational
+charge. A strong `f1_HCo.L` says *if an action resolves with me having
+consumed coffee, I am much more likely to do it* — which is just what it
+means, here, to **want coffee**. Wanting is not a node; it is a property
+of the situation, the standing force that gives the terminal outcome its
+value. Everything upstream is causally neutral plumbing that matters
+only because of where it leads.
 
 Node names are lavaan-safe (letters, digits, `_`); the `.` inside each
 parameter label is the source/target separator.
@@ -117,7 +127,7 @@ the wave propagates without attenuation:
 library(funfield)
 
 situation <- labelF("
-  s2     ~ 1 * s1:make
+  s2     ~ 1 * make
   HCoPot ~ 1 * s2:TurnOn
   HCoCup ~ 1 * HCoPot:Pour
   HCo    ~ 1 * HCoCup:Sip
@@ -130,72 +140,110 @@ situation$params
 
 `s2:TurnOn` is the force from the action `TurnOn` to `HCoPot`, afforded
 by the state `s2`, labelled `fs2_TurnOn.HCoPot`. The lone baseline term
-`L ~ HCo` becomes `f1_HCo.L` — always active once `HCo` is present.
-Nothing here actually *fires* an action; the situation says only what
-each action *would* produce given the right prerequisites. The firing is
-the plan's job.
+`L ~ HCo` becomes `f1_HCo.L` — the want — and `make → s2` is a baseline
+too (`f1_make.s2`): making the rig is the entry point, gated by nothing
+but the act itself. Nothing here actually *fires* an action; the
+situation says only what each action *would* produce given the right
+prerequisites.
 
-## Step 2: The action plan
+Sitting at the head of the field is the **choice point** (a
+*choice / chance node*, which we draw as a circle). Its job is not to
+want anything but to **appraise the whole situation and pick a
+response**: it weighs the candidate plans by simulating what each
+affords and commits to the one with the highest expected value, with `L`
+standing in for subjective expected utility. The wanting lives in the
+`f1_HCo.L` force; the choosing lives here. We meet the mechanism in
+Step 3.
+
+## Step 2: Candidate action plans
 
 A **conditional action plan** says *when* to act: fire each action once
 its prerequisite situational state is achieved. Each rule is a force
 from a *state* to an *action* — the opposite direction from the
-situation's action → outcome forces:
+situation's action → outcome forces. The first action is triggered not
+by a situational state but by the **choice point** itself: committing to
+the plan is what sets it in motion.
 
-```{r plan}
-plan <- labelF("
-  make   ~ 1 * s1
+```{r plan-full}
+full <- "
+  make   ~ 1 * choice
   TurnOn ~ 1 * s2
   Pour   ~ 1 * HCoPot
   Sip    ~ 1 * HCoCup
-")
+"
+```
 
-cat(plan$model)
+To give the choice point something to choose between, we draft a second
+plan that skips a step — turning the machine on and then reaching for a
+sip without pouring first:
+
+```{r plan-nopour}
+no_pour <- "
+  make   ~ 1 * choice
+  TurnOn ~ 1 * s2
+  Sip    ~ 1 * HCoCup
+"
 ```
 
 Fixing each trigger at `1` is a structural commitment — "act, fully,
 once the prerequisite holds" — rather than a force estimated from data.
-Because both halves are plain `lavaan` strings, we stitch the field
-together and combine the parameter vectors:
 
-```{r stitch}
-model  <- paste(situation$model, plan$model, sep = "\n")
-params <- c(situation$params, plan$params)
-```
+## Step 3: Appraise and choose
 
-## Step 3: Sweep — what the plan affords
+The agent starts at the choice point, committed (`choice = 1`), with
+everything else off. Stitch a plan onto the situation and the default
+`mode = "sweep"` evaluates the nodes in causal order, each reading the
+freshly-updated values of its inputs, so the whole chain resolves in a
+**single step**:
 
-The agent starts **ready to make coffee** (`s1 = 1`) and everything else
-off. The default `mode = "sweep"` evaluates the nodes in causal order,
-each reading the freshly-updated values of its inputs, so the whole
-chain resolves in a **single step**:
-
-```{r sweep}
-s_0 <- c(s1 = 1, make = 0, s2 = 0, TurnOn = 0, HCoPot = 0,
+```{r sweep-one}
+s_0 <- c(choice = 1, make = 0, s2 = 0, TurnOn = 0, HCoPot = 0,
          Pour = 0, HCoCup = 0, Sip = 0, HCo = 0, L = 0)
 
-round(runF(model, params, s_0, steps = 2), 2)
+model  <- paste(situation$model, full, sep = "\n")
+round(runF(model, situation$params, s_0, steps = 1), 2)
 ```
 
-By `t = 1` every node is on and `L = 1`: given the plan and a ready
-agent, the field affords coffee. The sweep handles the gating correctly
-even though it happens "all at once" — `HCoPot`'s force is keyed on
-`s2`, and because `s2` is computed before `HCoPot` in the causal
-ordering, the gate is already open by the time it is read. This is the
-quick **equilibrium read**: *does this plan, in this situation, afford
+By `t = 1` the whole chain has settled and `L = 1`: given the full plan
+and a committed agent, the field affords coffee. The sweep handles the
+gating correctly even though it happens "all at once" — `HCoPot`'s force
+is keyed on `s2`, and because `s2` is computed before `HCoPot` in the
+causal ordering, the gate is already open by the time it is read. This
+is the **equilibrium read**: *does this plan, in this situation, reach
 the outcome?* — answered in one resolution, with `L` as the verdict.
+
+A choice point needs at least two responses to choose between.
+[`chooseF()`](../reference/chooseF.html) appraises each candidate plan
+with exactly this sweep, tabulates what it affords, and flags the
+highest-value one. It appends a do-nothing baseline by default, giving
+the minimal "act vs. do nothing" contrast:
+
+```{r choose}
+chooseF(situation$model, situation$params, s_0,
+        plans = list(full = full, no_pour = no_pour))
+```
+
+The full plan reaches `HCo = 1` and earns `L = 1`; doing nothing earns
+`L = 0`. The telling row is `no_pour`. It turns the machine on —
+`HCoPot = 1`, there really is coffee in the pot — but because the
+`Sip → HCo` force is gated on `HCoCup`, and the cup is never filled,
+sipping affords nothing: `HCoCup`, `HCo`, and `L` all stay at `0`. A
+plan that skips a prerequisite step reaches a dead end, and the choice
+point reads that straight off the value column and selects the full
+plan. Causal gating is doing the work: a plan is only as good as its
+weakest link in the chain.
 
 ## Step 4: A process happens in time — and uses things up
 
-The sweep tells us the plan *affords* coffee, but it says nothing about
-*sequence* or *resources*. Two things are missing from the affordance
-picture if we want to watch the process actually run:
+The sweep tells us the chosen plan *affords* coffee, but it says nothing
+about *sequence* or *resources*. Two things are missing from the
+affordance picture if we want to watch the process actually run:
 
 1. **Order in time.** Sipping is not merely afforded after pouring — it
    *happens* after it.
 2. **Consumption.** Making coffee uses things up. Once the machine has
-   brewed, the grounds and water (`s2`, "ready to make") are *spent*;
-   you are no longer "about to make coffee," you have made it.
+   brewed, the rig (`s2`, the set-up state) is *spent*; you are no
+   longer "about to brew," you have brewed.
 
 Neither is captured by forces that are simply afforded-or-not. To run
 the process in time we switch to `mode = "sync"` (one move per step) and
@@ -203,7 +251,7 @@ give the field two new capacities: **memory**, so a state stays on once
 attained, and **consumption**, so an earlier state empties out once the
 next stage draws on it. That is the **stock / flow** distinction.
 
-## Step 5: Stocks, flows, and consumption
+## Step 5: Stocks, flows, and a one-shot choice
 
 Read each state's update as a discrete **stock balance**,
 `new = old + inflow − outflow`:
@@ -214,7 +262,7 @@ Read each state's update as a discrete **stock balance**,
   the pot, it stays there until poured.
 - A **flow** is *transient*: recomputed from scratch each step, so it is
   on only while its trigger is. Actions are flows — `make` fires while
-  you are ready, not forever.
+  the choice fires it, not forever.
 - A **readout** like `L` recomputes too: it reflects current value
   rather than accumulating it.
 
@@ -223,49 +271,54 @@ stock remember cannot be written in the model string — the engine
 supplies it when you mark a node a stock. Everything else *is* writable:
 production is an ordinary inflow term, and **consumption is an outflow
 term with a negative coefficient**, e.g. `use * s2:TurnOn` with
-`use = -1` ("turning on uses up the ready state"). The situation gains
+`use = -1` ("turning on uses up the set-up rig"). The situation gains
 those consumption arcs:
 
 ```{r situation-tf}
 situation_tf <- "
-  s1     ~ use * s1:make
-  s2     ~ 1 * s1:make     + use * s2:TurnOn
+  s2     ~ 1 * make        + use * s2:TurnOn
   HCoPot ~ 1 * s2:TurnOn   + use * HCoPot:Pour
   HCoCup ~ 1 * HCoPot:Pour + use * HCoCup:Sip
   HCo    ~ 1 * HCoCup:Sip
   L      ~ 1 * HCo
 "
-plan_tf <- "
-  make   ~ 1 * s1
-  TurnOn ~ 1 * s2
-  Pour   ~ 1 * HCoPot
-  Sip    ~ 1 * HCoCup
-"
-model_tf  <- paste(situation_tf, plan_tf, sep = "\n")
+model_tf  <- paste(situation_tf, full, sep = "\n")
 params_tf <- c(use = -1)
 ```
 
-We do not hand-list which nodes latch. The split is structural — the
-situation's left-hand sides are the **object states** (stocks) and the
-plan's are the **actions** (flows) — so passing `actions =` lets
-`runF()` derive the stock set automatically: actions and the `L` readout
-recompute, everything else latches.
+The **choice point** is a flow too — and a special one. A decision is an
+event, not a level: once the agent commits and fires the first action,
+the choice is **spent**. It does not persist the way "being ready"
+would, and it is not consumed later by a downstream stage; it simply
+**depletes on activation**. Because `choice` never appears on a
+left-hand side — nothing in the field *produces* a decision — we mark it
+a flow so the engine treats it as a **one-shot pulse**: seeded at the
+start, read once by the action it triggers, then emptied.
 
 ```{r run-tf}
 traj_tf <- runF(model_tf, params_tf, s_0,
                 actions = c("make", "TurnOn", "Pour", "Sip"),
+                flows   = "choice",
                 mode = "sync", steps = 12)
 round(traj_tf, 2)
 ```
 
-This is a single **token** flowing down the line. Each object state is
-produced, persists for a step, then is consumed by the next stage and
-returns to `0`; each action fires as a brief pulse and dies once the
-state that triggered it is spent. Only the terminal `HCo` and its
-readout `L` stay on — you keep the coffee. Compare with the sweep, which
-collapsed all of this into the single question "is the outcome
-afforded?"; here we see the affordance being *realised*, one consumed
-resource at a time.
+We do not hand-list which object states latch. The split is structural —
+the situation's left-hand sides are the **object states** (stocks) and
+the plan's are the **actions** (flows) — so passing `actions =` lets
+`runF()` derive the stock set automatically: actions and the `L` readout
+recompute, everything else latches. `flows = "choice"` adds the one
+exogenous node that should fire once and deplete rather than persist.
+
+This is a single **token** flowing down the line, kicked off by the
+choice point. The circle lights once at `t = 0` and is dark by `t = 1` —
+the decision, made and spent. Each object state is then produced,
+persists for a step, then is consumed by the next stage and returns to
+`0`; each action fires as a brief pulse and dies once the state that
+triggered it is spent. Only the terminal `HCo` and its readout `L` stay
+on — you keep the coffee. Compare with the sweep, which collapsed all of
+this into the single question "is the outcome afforded?"; here we see the
+affordance being *realised*, one consumed resource at a time.
 
 ### The same wave as a heatmap
 
@@ -274,9 +327,9 @@ The diagonal structure reads cleanly as a stage × time tile plot:
 ```{r wave, eval=has_ggplot, fig.alt="Tile plot of state value by process stage and time step, showing a diagonal wave that lights each stage briefly before it is consumed."}
 library(ggplot2)
 
-stage_order  <- c("s1","make","s2","TurnOn","HCoPot",
+stage_order  <- c("choice","make","s2","TurnOn","HCoPot",
                   "Pour","HCoCup","Sip","HCo","L")
-stage_labels <- c(s1="ready", make="make", s2="rig set", TurnOn="turn on",
+stage_labels <- c(choice="choice", make="make", s2="rig set", TurnOn="turn on",
                   HCoPot="coffee in pot", Pour="pour", HCoCup="coffee in cup",
                   Sip="sip", HCo="have coffee", L="L")
 
@@ -298,31 +351,33 @@ ggplot(long, aes(step, stage, fill = value)) +
   theme(panel.grid = element_blank(), legend.position = "right")
 ```
 
-The lit cells march up and to the right, each stage glowing for a step
-or two before its successor consumes it — the visual signature of a
-process that uses its inputs up as it proceeds.
+The lit cells march up and to the right: the choice point flashes once at
+the bottom-left, then each stage glows for a step or two before its
+successor consumes it — the visual signature of a process that uses its
+inputs up as it proceeds.
 
 ## Step 6: Watch the token climb
 
 [`plotField()`](../reference/plotField.html) draws the field at one
-state as a node-link diagram: **object** stocks are diamonds, **action**
-flows are right-facing triangles, and the terminal **likelihood** node
-is a left-facing triangle. Each node is shaded by its current value
-(white at `0`, blue at `1`), and an edge is drawn for every currently
-afforded force. Passing `plan = plan_tf` colours the plan's forces
-**gold**, distinct from the situation's **grey**.
+state as a node-link diagram: the **choice point** is a circle,
+**object** stocks are diamonds, **action** flows are right-facing
+triangles, and the terminal **likelihood** node is a left-facing
+triangle. Each node is shaded by its current value (white at `0`, blue at
+`1`), and an edge is drawn for every currently afforded force. Passing
+`plan = full` colours the plan's forces **gold**, distinct from the
+situation's **grey**.
 
 ```{r layout}
 layout <- data.frame(
-  name  = c("s1","make","s2","TurnOn","HCoPot",
+  name  = c("choice","make","s2","TurnOn","HCoPot",
             "Pour","HCoCup","Sip","HCo","L"),
   x     = c(0,    2,     3,   5,       6,
             8,     9,      11,   12,   14),
   y     = c(0,    0,     2,   2,       4,
             4,     6,      6,    8,    8),
-  shape = c("diamond","rtTri","diamond","rtTri","diamond",
+  shape = c("circle","rtTri","diamond","rtTri","diamond",
             "rtTri","diamond","rtTri","diamond","lfTri"),
-  label = c("ready","make","rig\nset","turn on","coffee\nin pot",
+  label = c("choice","make","rig\nset","turn on","coffee\nin pot",
             "pour","coffee\nin cup","sip","have\ncoffee","L"),
   stringsAsFactors = FALSE
 )
@@ -330,14 +385,14 @@ layout <- data.frame(
 
 Stepping `plotField()` across the trajectory and stitching the frames
 with [`plotsAsWidget()`](../reference/plotsAsWidget.html) animates the
-token. Use **← Back** / **Forward →** to watch each diamond fill as its
-stage is reached and empty again as the next stage consumes it, the lit
-node climbing the staircase:
+token. Use **← Back** / **Forward →** to watch the choice point flash and
+empty, then each diamond fill as its stage is reached and empty again as
+the next stage consumes it, the lit node climbing the staircase:
 
-```{r field-widget, eval=has_ggplot, fig.alt="Interactive staircase field diagram stepping through the coffee simulation; a single lit node climbs the staircase as each stage is reached and then consumed."}
+```{r field-widget, eval=has_ggplot, fig.alt="Interactive staircase field diagram stepping through the coffee simulation; the choice point fires once at the foot of the staircase, then a single lit node climbs as each stage is reached and then consumed."}
 frames <- lapply(0:12, function(t) {
   plotField(model_tf, params_tf, traj_tf[paste0("t=", t), ], layout,
-            plan = plan_tf, title = paste("t =", t))
+            plan = full, title = paste("t =", t))
 })
 
 plotsAsWidget(
@@ -369,20 +424,24 @@ stage hands its token on and empties, so nothing piles up.
 
 ## Takeaway
 
-One field, run two ways. The **sweep** answers the affordance question
-in a single resolution — *given this situation and plan, is the outcome
-reachable?* — with `L` as the verdict. The **sync** run with stocks and
-flows answers the process question — *how does it unfold, and what gets
-used up along the way?* — showing a token move down the chain as each
-resource is produced, held, and consumed.
+One field, three uses. The **sweep** answers the affordance question for
+a single plan in one resolution — *given this situation and plan, is the
+outcome reachable?* — with `L` as the verdict.
+[`chooseF()`](../reference/chooseF.html) turns that into a **choice**:
+appraise every candidate plan the same way and keep the one whose `L` is
+highest, which is all a **choice / chance node** is — an argmax over what
+each response affords. And the **sync** run with stocks and flows shows
+the chosen plan *unfold* — a token moving down the chain as each resource
+is produced, held, and consumed.
 
-The division of labour stays explicit throughout: the **plan** (gold)
-holds standing intentions keyed on states, the **situation** (grey)
-decides whether a fired action produces anything, and the **stock /
-flow** typing decides what persists. You can intend to turn the machine
-on from the very first step, yet nothing brews until the rig is set up —
-and once it has brewed, the ready state is spent and that intention has
-nothing left to act on.
+The division of labour stays explicit throughout: the **want** is a
+property of the situation (the strong `f1_HCo.L` force), the **choice
+point** (circle) weighs responses against it, the **plan** (gold) holds
+standing intentions keyed on states, the **situation** (grey) decides
+whether a fired action produces anything, and the **stock / flow** typing
+decides what persists. A plan that skips pouring affords no coffee, so it
+is never chosen; and once the chosen plan runs, the choice that launched
+it is spent on the very first move.
 
 This is the deductive use of a functional field. The inductive
 direction — recovering the situation's coefficients from data — is the

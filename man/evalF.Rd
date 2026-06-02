@@ -4,7 +4,14 @@
 \alias{evalF}
 \title{Evaluate One Step of a Functional Field}
 \usage{
-evalF(model, params, s_t, stocks = character(0), mode = c("sweep", "sync"))
+evalF(
+  model,
+  params,
+  s_t,
+  stocks = character(0),
+  flows = character(0),
+  mode = c("sweep", "sync")
+)
 }
 \arguments{
 \item{model}{A `lavaan`-syntax model string. Only regression rows
@@ -19,6 +26,11 @@ evalF(model, params, s_t, stocks = character(0), mode = c("sweep", "sync"))
 their value forward). Names not on a left-hand side are ignored.
 Default `character(0)` --- every node recomputes (memoryless),
 matching the field's afforded-equilibrium behaviour.}
+
+\item{flows}{Character vector of **exogenous** node names (those never
+on a left-hand side) to treat as one-shot pulses: seeded, read, then
+zeroed each step instead of carried forward. Endogenous nodes already
+recompute and are unaffected. Default `character(0)`. See Details.}
 
 \item{mode}{Propagation mode: `"sweep"` (default, topological,
 whole-chain) or `"sync"` (one edge per step). See Details.}
@@ -82,8 +94,15 @@ action nodes, and `vignette("coffee_field_model", package =
 "funfield")` for a worked stock/flow example.
 
 Nodes that never appear on the left of `~` (exogenous nodes, typically
-persistent context) are always carried forward unchanged, which is
-itself stock-like behaviour and needs no declaration.
+persistent context) are by default carried forward unchanged, which is
+itself stock-like behaviour. Naming such a node in `flows` overrides
+that default and makes it a **one-shot pulse**: it is seeded by `s_t`,
+read by its consumers this step, and then zeroed, so it is "on" only at
+the moment it fires and then depletes. This is the transient dual of
+the carried-forward default, and is how a **choice / chance node** that
+fires once and is spent is expressed (it triggers the first action and
+then empties, rather than persisting as a stock). `flows` has no effect
+on endogenous nodes, which already recompute unless listed in `stocks`.
 }
 \seealso{
 [runF()] for the iteration driver (which derives `stocks`

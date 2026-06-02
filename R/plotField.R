@@ -5,6 +5,8 @@
 ## ---------------------------------------------------------------------
 
 ## Polygon corners for a shape whose bounding box is the +/- s square.
+## A circle (choice / chance node) is approximated by a fine polygon of
+## radius s.
 .field_polygon <- function(shape, s) {
   switch(
     shape,
@@ -12,6 +14,10 @@
     diamond = list(px = c( 0,  1, 0, -1) * s, py = c(-1,  0, 1,  0) * s),
     lfTri   = list(px = c(-1,  1,  1) * s,    py = c( 0,  1, -1) * s),
     rtTri   = list(px = c( 1, -1, -1) * s,    py = c( 0,  1, -1) * s),
+    circle  = {
+      th <- seq(0, 2 * pi, length.out = 49L)[-49L]
+      list(px = cos(th) * s, py = sin(th) * s)
+    },
     stop("Unknown shape: ", shape)
   )
 }
@@ -20,6 +26,8 @@
 .field_exit <- function(shape, s, ux, uy) {
   if (shape == "square") {
     s / max(abs(ux), abs(uy), 1e-9)
+  } else if (shape == "circle") {
+    s
   } else if (shape == "diamond") {
     s / max(abs(ux) + abs(uy), 1e-9)
   } else if (shape == "lfTri") {
@@ -116,8 +124,11 @@
 #' @param s Named numeric vector: the state at which to draw the field.
 #' @param layout A data frame describing node placement, with columns
 #'   `name` (matching the model's variables), `x`, `y`, and `shape` (one
-#'   of `"square"`, `"diamond"`, `"rtTri"`, `"lfTri"`). An optional
-#'   `label` column supplies display text (defaults to `name`).
+#'   of `"square"`, `"diamond"`, `"rtTri"`, `"lfTri"`, `"circle"`). By
+#'   convention objects are diamonds, actions right-facing triangles, the
+#'   likelihood readout a left-facing triangle, and a choice / chance node
+#'   a circle. An optional `label` column supplies display text (defaults
+#'   to `name`).
 #' @param plan Optional `lavaan`-syntax sub-model string. Edges whose
 #'   source -> target identity appears in `plan` are drawn in
 #'   `plan_color`. Typically the action-plan half of a stitched model.
@@ -193,7 +204,7 @@ plotField <- function(model, params, s, layout,
   if (!is.data.frame(layout) || !all(req %in% names(layout)))
     stop("`layout` must be a data frame with columns: ",
          paste(req, collapse = ", "), ".")
-  ok_shapes <- c("square", "diamond", "rtTri", "lfTri")
+  ok_shapes <- c("square", "diamond", "rtTri", "lfTri", "circle")
   bad <- setdiff(unique(layout$shape), ok_shapes)
   if (length(bad))
     stop("Unknown shape(s): ", paste(bad, collapse = ", "),

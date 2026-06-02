@@ -55,8 +55,15 @@
 #' "funfield")` for a worked stock/flow example.
 #'
 #' Nodes that never appear on the left of `~` (exogenous nodes, typically
-#' persistent context) are always carried forward unchanged, which is
-#' itself stock-like behaviour and needs no declaration.
+#' persistent context) are by default carried forward unchanged, which is
+#' itself stock-like behaviour. Naming such a node in `flows` overrides
+#' that default and makes it a **one-shot pulse**: it is seeded by `s_t`,
+#' read by its consumers this step, and then zeroed, so it is "on" only at
+#' the moment it fires and then depletes. This is the transient dual of
+#' the carried-forward default, and is how a **choice / chance node** that
+#' fires once and is spent is expressed (it triggers the first action and
+#' then empties, rather than persisting as a stock). `flows` has no effect
+#' on endogenous nodes, which already recompute unless listed in `stocks`.
 #'
 #' @param model A `lavaan`-syntax model string. Only regression rows
 #'   (`~`) are interpreted; other operators are ignored.
@@ -67,6 +74,10 @@
 #'   their value forward). Names not on a left-hand side are ignored.
 #'   Default `character(0)` --- every node recomputes (memoryless),
 #'   matching the field's afforded-equilibrium behaviour.
+#' @param flows Character vector of **exogenous** node names (those never
+#'   on a left-hand side) to treat as one-shot pulses: seeded, read, then
+#'   zeroed each step instead of carried forward. Endogenous nodes already
+#'   recompute and are unaffected. Default `character(0)`. See Details.
 #' @param mode Propagation mode: `"sweep"` (default, topological,
 #'   whole-chain) or `"sync"` (one edge per step). See Details.
 #'
@@ -78,6 +89,7 @@
 #'
 #' @export
 evalF <- function(model, params, s_t, stocks = character(0),
+                  flows = character(0),
                   mode = c("sweep", "sync")) {
 
   mode <- match.arg(mode)
@@ -127,13 +139,17 @@ evalF <- function(model, params, s_t, stocks = character(0),
 
   targets      <- unique(pt$lhs)
   flow_targets <- setdiff(targets, stocks)        # latching nodes keep s_t[Y]
+  ## Exogenous nodes flagged as flows are one-shot pulses: zeroed after the
+  ## step rather than carried forward. They are never on a LHS, so nothing
+  ## re-feeds them and they survive only at their seed value.
+  exo_flows    <- intersect(setdiff(names(s_t), targets), flows)
 
   coef_i <- function(i) if (labelled[i]) params[[pt$label[i]]] else pt$ustart[i]
 
   if (mode == "sync") {
     ## One edge per step: read every right-hand side from the old state.
     s_next <- s_t
-    s_next[flow_targets] <- 0                     # stocks retain their value
+    s_next[c(flow_targets, exo_flows)] <- 0       # stocks retain their value
     for (i in seq_len(nrow(pt))) {
       s_next[pt$lhs[i]] <- s_next[pt$lhs[i]] +
         coef_i(i) * prod(s_t[rhs_vars[[i]]])
@@ -175,5 +191,8 @@ evalF <- function(model, params, s_t, stocks = character(0),
     for (i in rows) val <- val + coef_i(i) * prod(s[rhs_vars[[i]]])
     s[tg] <- val
   }
+  ## One-shot exogenous flows have now been read by their consumers; empty
+  ## them so they do not persist into the next step's seed.
+  if (length(exo_flows)) s[exo_flows] <- 0
   s
 }

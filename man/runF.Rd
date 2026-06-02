@@ -36,7 +36,10 @@ readouts. Default `"L"`.}
 \item{stocks, flows}{Optional character vectors to force individual
 nodes to latch (`stocks`) or recompute (`flows`). Override the
 auto-derivation; without `actions` they set the stock set explicitly.
-A node in both is an error. Default `NULL`.}
+A node in both is an error. Default `NULL`. An **exogenous** node
+(never on a left-hand side) named in `flows` becomes a one-shot pulse
+--- seeded then zeroed rather than carried forward, the way a choice /
+chance node fires once and is spent; see [evalF()].}
 
 \item{mode}{Propagation mode passed to [evalF()]: `"sweep"` (default)
 or `"sync"`. See Details.}

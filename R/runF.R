@@ -96,7 +96,10 @@
 #' @param stocks,flows Optional character vectors to force individual
 #'   nodes to latch (`stocks`) or recompute (`flows`). Override the
 #'   auto-derivation; without `actions` they set the stock set explicitly.
-#'   A node in both is an error. Default `NULL`.
+#'   A node in both is an error. Default `NULL`. An **exogenous** node
+#'   (never on a left-hand side) named in `flows` becomes a one-shot pulse
+#'   --- seeded then zeroed rather than carried forward, the way a choice /
+#'   chance node fires once and is spent; see [evalF()].
 #' @param mode Propagation mode passed to [evalF()]: `"sweep"` (default)
 #'   or `"sync"`. See Details.
 #' @param steps Integer number of propagation steps. Default 4.
@@ -141,9 +144,15 @@ runF <- function(model, params, s_0,
                        dimnames = list(paste0("t=", 0:steps), names(s_0)))
   trajectory[1L, ] <- s_0
 
+  ## Exogenous nodes flagged as flows fire once and deplete; pass them to
+  ## evalF, which zeroes them after each step (endogenous nodes are handled
+  ## by `stock_set`). Coerce the optional `flows` to a character vector.
+  flow_set <- if (is.null(flows)) character(0) else flows
+
   s <- s_0
   for (t in seq_len(steps)) {
-    s <- evalF(model, params, s, stocks = stock_set, mode = mode)
+    s <- evalF(model, params, s, stocks = stock_set, flows = flow_set,
+               mode = mode)
 
     if (warn_bounds) {
       bad <- names(s)[abs(s) > bound]
