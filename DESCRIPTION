@@ -30,6 +30,7 @@ Imports:
     fancyr,
     ggplot2,
     ggtext,
+    scales,
     rlang,
     grid
 Suggests:

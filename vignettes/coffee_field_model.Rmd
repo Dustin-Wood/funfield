@@ -5,272 +5,323 @@ vignette: >
   %\VignetteIndexEntry{Coffee Field Model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+editor_options:
+  markdown:
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse  = TRUE,
   comment   = "#>",
-  fig.width = 9,
-  fig.height = 5
+  fig.width = 7,
+  fig.height = 4
 )
-has_qgraph <- requireNamespace("qgraph", quietly = TRUE)
+has_ggplot <- requireNamespace("ggplot2", quietly = TRUE)
 ```
 
-## What Is a Functional Field?
+## What is a functional field?
 
-A **functional field** is a model of how situational forces propagate through
-an environment to produce action outcomes.  At each moment the field specifies
-which forces are *afforded* — i.e., which causal pathways are open given the
-current state of the situation.  Forces spread step-by-step through the network:
-disturbances at time *t* are transmitted through the field matrix to produce
-new disturbances at time *t + 1*, which then accumulate into the situation.
+A **functional field** is a model of how situational forces propagate
+through an environment to produce action outcomes. At each moment the
+field specifies which forces are *afforded* — which causal pathways are
+open given the current state of the situation. Forces spread
+step-by-step: a disturbance at time *t* is transmitted through the field
+to produce new state at time *t + 1*, which then opens (or closes) the
+pathways available at *t + 2*.
 
-This vignette walks through a concrete example — making a cup of drip coffee —
-to show how a four-step action sequence becomes causally connected through a
-field model.  The key insight is **causal gating**: later steps are only
-*afforded* once earlier steps have changed the situation.  A plan adds
-intentional impulses that drive the sequence forward, but the outcome of each
-step is what opens up the next pathway.
+The same field `F` supports two complementary workflows. **Induction**
+runs data → `F`: you fit the field's coefficients from observed
+behaviour with `pathXMY()` and friends. **Deduction** runs `F` →
+behaviour: you treat the coefficients as a working theory and *simulate*
+forward to see what a plan produces. This vignette is about the second
+direction. For the notation it uses throughout — the `F` / `F_t` field
+objects and the `fZ_X.Y` parameter schema — see
+`vignette("notation", package = "funfield")`.
 
----
+The worked example is making a cup of drip coffee: a four-step action
+sequence that becomes causally connected through a field. The key idea
+is **causal gating** — a later step only has an effect once an earlier
+step has changed the situation. The plan supplies the *intention* to act
+at each stage, but the situation controls whether acting does anything.
 
-## Step 1: Define the Layout
+## The Markov step
 
-The layout is a character matrix where each non-zero cell encodes one node as
-`"type_name"`.  See `?prepField` for the full list of type codes; the ones used
-here are:
+A functional field iterates
 
-| Code | Meaning |
-|------|---------|
-| `a`  | Appraisal (left-facing triangle) |
-| `o`  | Object — binary present / absent (diamond) |
-| `d`  | Do / decision action (right-facing triangle) |
+\[
+F_t = F(s_t), \qquad s_{t+1} = s_t \cdot F_t,
+\]
 
-The "4 step DC to mouth" layout uses a **staircase** arrangement: each
-action–outcome pair steps one row up and two columns to the right.  This
-diagonal flow naturally represents the sequential, irreversible character of
-the process — you cannot sip until you have poured, pour until it has brewed,
-etc.  The motivational prerequisites (`Want(Co).p`, `H(Ings).p`) and the
-terminal utility appraisal (`U.p`) are placed in the rightmost column.
+where `s_t` is the situational **state** (a named vector of node values)
+and `F_t` is the field evaluated at that state. Two helpers run this
+loop:
 
-```{r layout}
+- [`evalF()`](../reference/evalF.html) takes one step: given the field
+  (as a `lavaan` model string), its parameter values, and the current
+  `s_t`, it returns `s_{t+1}`.
+- [`runF()`](../reference/runF.html) drives the iteration for a fixed
+  number of steps and returns the full trajectory. (It can also inject
+  externally scheduled **actions**, but here we let the plan drive
+  itself — see Step 2.)
+
+We build the field in two halves that `lavaan` lets us stitch together
+by simple concatenation: the **situation** — the affordance structure of
+the world, which exists whether or not anyone acts — and the **action
+plan** — a set of conditional intentions the agent layers on top.
+
+## Step 1: The situation
+
+Each stage of the coffee process is an **afforded force**: a path that
+contributes nothing until its prerequisite state variable is on. In the
+`fZ_X.Y` schema an afforded force is a term with a moderator but no
+baseline — `fZ_X.Y * X:Z` — so the `X → Y` force is zero whenever
+`s[Z] = 0` and switches on once `s[Z]` flips positive.
+
+The four gated stages, plus a terminal utility force:
+
+| Force | Afforded by | Reads as |
+|---|---|---|
+| `make → s2`        | `s1`     | setting up the rig works once you're ready to make coffee |
+| `TurnOn → HCoPot`  | `s2`     | turning it on brews into the pot once the rig is ready |
+| `Pour → HCoCup`    | `HCoPot` | pouring fills the cup once there's coffee in the pot |
+| `Sip → HCo`        | `HCoCup` | sipping yields "having coffee" once it's in the cup |
+| `HCo → L`          | —        | having coffee produces likelihood / value (baseline) |
+
+The terminal node is **`L`** — likelihood. In ESJT data `L` is the rated
+likelihood of taking an action, and here it plays the role an economist
+would give *subjective expected utility*: the field assumes a person
+takes the action they appraise most positively — the one they see, at
+some level, as carrying the highest utility. Reading `L` off the
+settled field is therefore reading off which action the agent is
+predicted to choose.
+
+Node names are lavaan-safe (letters, digits, `_` only); the `.` inside
+each parameter label is the source/target separator. We need not type
+those labels by hand: [`labelF()`](../reference/labelF.html) derives the
+`fZ_X.Y` label for each term and captures any coefficient we fix inline
+into a matching `params` vector. The labelling is **order-dependent** and
+reads straight off the right-hand side — `Y ~ Z:X` becomes `fZ_X.Y` — so
+each interaction is written **condition first, action last**: the gating
+state, then the action it affords. We fix a force of `1` everywhere, so
+the wave propagates without attenuation (smaller values would damp it as
+it travels down the chain). Passing `actions =` lets `labelF()` check
+that no action has slipped into a condition slot:
+
+```{r situation}
 library(funfield)
 
-coffee_layout <- matrix(0, nrow = 5, ncol = 15)
+situation <- labelF("
+  s2     ~ 1 * s1:make
+  HCoPot ~ 1 * s2:TurnOn
+  HCoCup ~ 1 * HCoPot:Pour
+  HCo    ~ 1 * HCoCup:Sip
+  L      ~ 1 * HCo
+", actions = c("make", "TurnOn", "Pour", "Sip"))
 
-# --- Staircase: bottom-left to top-right ---
-coffee_layout[5,  1] <- "o_s1"              # combined readiness state
-coffee_layout[5,  3] <- "d_make(s2).p"      # action: set up the drip coffeemaker
-coffee_layout[4,  4] <- "o_s2"              # coffeemaker is set up and ready
-coffee_layout[4,  6] <- "d_turn(ON.DC).p"   # action: turn on the drip coffeemaker
-coffee_layout[3,  7] <- "o_H(Co).Pot"       # coffee has brewed into the pot
-coffee_layout[3,  9] <- "d_pour(Pot,Cup).p" # action: pour from pot into cup
-coffee_layout[2, 10] <- "o_H(Co).Cup"       # coffee is in the cup
-coffee_layout[2, 12] <- "d_sip(Cup).p"      # action: sip from the cup
-coffee_layout[1, 13] <- "o_H(Co).p"         # having / enjoyed the coffee
+cat(situation$model)
+situation$params
+```
 
-# --- Right column: motivational inputs and terminal utility ---
-coffee_layout[1, 15] <- "a_U.p"             # appraisal: utility / satisfaction
-coffee_layout[4, 15] <- "o_Want(Co).p"      # wanting coffee
-coffee_layout[5, 15] <- "o_H(Ings).p"       # having the necessary ingredients
+`labelF()` returns the relabelled `model` string and its `params`. Each
+interaction reads condition → action: `s2:TurnOn` is the force from the
+action `TurnOn` to `HCoPot`, afforded by the state `s2`, and labelled
+`fs2_TurnOn.HCoPot`. The lone baseline term `L ~ HCo` has no condition
+and becomes `f1_HCo.L` — always active once `HCo` is present. Nothing
+here actually *fires* an action — the situation says only what each
+action *would* produce, given the right prerequisites. The firing is the
+plan's job.
 
-fprops <- prepField(coffee_layout)
+## Step 2: The action plan
 
-# Full English display labels (internal names → readable text)
-coffee_labels <- c(
-  "s1"              = "Ready to\nmake coffee",
-  "make(s2).p"      = "Set up\ncoffeemaker",
-  "s2"              = "Coffeemaker\nready",
-  "turn(ON.DC).p"   = "Turn on\ncoffeemaker",
-  "H(Co).Pot"       = "Coffee\nin pot",
-  "pour(Pot,Cup).p" = "Pour into\ncup",
-  "H(Co).Cup"       = "Coffee\nin cup",
-  "sip(Cup).p"      = "Sip from\ncup",
-  "H(Co).p"         = "Have\ncoffee",
-  "U.p"             = "Satisfied",
-  "Want(Co).p"      = "Want\ncoffee",
-  "H(Ings).p"       = "Have\ningredients"
+A **conditional action plan** says *when* to act: fire each action once
+its prerequisite situational state is achieved — "set up the rig once
+I'm ready, turn it on once the rig is set, pour once it's brewed, sip
+once it's poured." Each rule is a force from a *state* to an *action*,
+which we run through `labelF()` the same way:
+
+```{r plan}
+plan <- labelF("
+  make   ~ 1 * s1
+  TurnOn ~ 1 * s2
+  Pour   ~ 1 * HCoPot
+  Sip    ~ 1 * HCoCup
+")
+
+cat(plan$model)
+```
+
+Two things to notice. First, these forces point the *opposite* way from
+the situation's: the situation runs action → outcome, the plan runs
+state → action. Second, fixing each trigger at `1` is a structural
+commitment — "act, fully, once the prerequisite holds" — rather than a
+force to be estimated from data; what distinguishes a plan force from a
+situation force in what follows is not its value but its colour (gold,
+below).
+
+Because both halves are plain `lavaan` model strings, we stitch the
+field together — joining with a newline so the two blocks stay on
+separate lines — and combine their parameter vectors:
+
+```{r stitch}
+model  <- paste(situation$model, plan$model, sep = "\n")
+params <- c(situation$params, plan$params)
+```
+
+The plan replaces the externally scheduled `actions` list used in
+earlier versions of this vignette: instead of telling the simulation
+*at which step* to act, we tell it *under what conditions* to act, and
+let the dynamics work out the timing.
+
+## Step 3: Run the simulation
+
+The state starts with the agent **ready to make coffee** (`s1 = 1`) and
+everything else off. With the plan now inside the field, `runF()` needs
+no `actions` argument — it just propagates. Each stage now takes *two*
+hops (state → action, then action → outcome), so the chain needs about
+twice as many steps to settle as the externally-scheduled version did.
+
+```{r run}
+s_0 <- c(s1 = 1, make = 0, s2 = 0, TurnOn = 0, HCoPot = 0,
+         Pour = 0, HCoCup = 0, Sip = 0, HCo = 0, L = 0)
+
+traj <- runF(model, params, s_0, steps = 10)
+round(traj, 2)
+```
+
+Read the trajectory as a wave climbing one node per step, alternating
+between an action firing and the outcome it affords:
+
+| Step | What fires | Driven by |
+|---|---|---|
+| 1 | `make`   | plan: ready (`s1`) → make |
+| 2 | `s2`     | situation: make → rig ready |
+| 3 | `TurnOn` | plan: rig ready (`s2`) → turn on |
+| 4 | `HCoPot` | situation: turn on → coffee in pot |
+| … | …        | … |
+| 9 | `L`      | situation: have coffee → likelihood |
+
+The final state is identical to the scheduled version's — every node
+ends at `1` — but it is reached by the plan triggering itself off the
+states the situation produces, rather than by an external schedule. The
+gating still does the real work: `TurnOn`'s plan rule is keyed on `s2`,
+so even though the intention to turn on is present from the start, it
+fires nothing until the rig is actually set up.
+
+## Step 4: Visualise the field as a staircase
+
+`plotField()` draws the field at a single state as a node-link diagram.
+Following the field-diagram convention, **object** nodes (the situational
+states) are diamonds, **action** nodes are right-facing triangles, and
+the terminal **likelihood** node is a left-facing triangle. Each node is
+shaded by its current value — white at `0`, blue at `1` — and an arrow is
+drawn for every force that is currently *afforded*: the resolved field
+coefficient `params[label] * s[gate]` collapses an afforded force
+`1 · X:Z` to `0` (gate shut, no edge) or `1` (gate open, edge present)
+once the level of the gating state `Z` is known.
+
+Passing `plan = plan` colours the forces the action plan contributes in
+**gold**, distinct from the situation's own forces in grey — a standing
+convention for "forces added by a conditional action plan." Laid out as a
+staircase, the two interleave: gold edges are the *horizontal* steps
+(a state handing off to the action it triggers) and grey edges are the
+*diagonal* steps (an action producing its outcome).
+
+The node spacing is chosen so the two kinds of arrow stay close in
+length and the staircase climbs steeply enough to fill a roughly square
+frame rather than a long thin strip: gold state → action steps span two
+horizontal units, and grey action → outcome steps span one horizontal
+and two vertical units:
+
+```{r layout}
+layout <- data.frame(
+  name  = c("s1","make","s2","TurnOn","HCoPot",
+            "Pour","HCoCup","Sip","HCo","L"),
+  x     = c(0,    2,     3,   5,       6,
+            8,     9,      11,   12,   14),
+  y     = c(0,    0,     2,   2,       4,
+            4,     6,      6,    8,    8),
+  shape = c("diamond","rtTri","diamond","rtTri","diamond",
+            "rtTri","diamond","rtTri","diamond","lfTri"),
+  label = c("ready","make","rig\nset","turn on","coffee\nin pot",
+            "pour","coffee\nin cup","sip","have\ncoffee","L"),
+  stringsAsFactors = FALSE
 )
 ```
 
-`prepField()` strips the type prefix and returns `fprops`, a list that bundles
-the processed layout, node names, shapes, sizes, and an empty field matrix
-(`fprops$fmat`) ready to be filled with paths.
+Stepping `plotField()` across the rows of the trajectory and stitching
+the frames with `plotsAsWidget()` gives an interactive back/forward
+animation. Use **← Back** / **Forward →** to watch forces appear as each
+outcome is attained and nodes turn blue as state propagates up the
+staircase:
 
-You can optionally inspect or adjust the layout interactively:
+```{r field-widget, eval=has_ggplot, fig.alt="Interactive staircase field diagram stepping through the coffee simulation."}
+frames <- lapply(0:10, function(t) {
+  plotField(model, params, traj[paste0("t=", t), ], layout,
+            plan = plan$model, title = paste("t =", t))
+})
 
-```{r editor, eval=FALSE}
-# Opens a drag-and-drop editor — not run during vignette build
-fieldEditor(coffee_layout)
-```
-
----
-
-## Step 2: Define the Field Function
-
-`ff()` computes the force-transmission matrix `ft` from the *current*
-situation vector `s`.  Two kinds of paths populate `ft`:
-
-1. **Afforded paths** — only present when a prerequisite situation node is
-   active.  For example, the path `make(s2).p → s2` is only afforded while
-   `s["s1"] > 0`.  If the prerequisite is absent, the path weight is zero and
-   no force flows — the gate is closed.
-
-2. **Planned paths** — the agent's goal-directed intention to act at each
-   state.  These are supplied by the `plan` argument and added on top of
-   afforded paths.
-
-```{r ff}
-ff <- function(s, plan = DoNothing) {
-  ft <- fprops$fmat   # start with the zero matrix (names already set)
-
-  # --- Afforded paths (gated by situation state) ---
-
-  # Gate 1: s1 present → setting up the coffeemaker produces s2
-  if (s["s1"] > 0) {
-    ft["make(s2).p", "s2"] <- 0.9
-  }
-
-  # Gate 2: coffeemaker ready (s2) → turning it on brews coffee into the pot
-  if (s["s2"] > 0) {
-    ft["turn(ON.DC).p", "H(Co).Pot"] <- 0.9
-  }
-
-  # Gate 3: coffee in the pot → pouring fills the cup
-  if (s["H(Co).Pot"] > 0) {
-    ft["pour(Pot,Cup).p", "H(Co).Cup"] <- 0.9
-  }
-
-  # Gate 4: coffee in the cup → sipping produces the "have coffee" state
-  if (s["H(Co).Cup"] > 0) {
-    ft["sip(Cup).p", "H(Co).p"] <- 0.9
-  }
-
-  # Terminal: having coffee produces utility
-  if (s["H(Co).p"] > 0) {
-    ft["H(Co).p", "U.p"] <- 0.9
-  }
-
-  # --- Plan forces (intentional action impulses) ---
-  # plan() returns a matrix with 1s where the agent intends to act.
-  # Adding these forces lets disturbances from situation nodes drive
-  # the corresponding action nodes forward.
-  ft <- ft + plan(ft)
-
-  list(ft = ft)
-}
-```
-
-### Why causal gating works here
-
-At time step 1 the situation is `[s1=1, Want(Co).p=1, H(Ings).p=1, ...]`.
-Because `s["s2"] = 0`, the gate for `turn(ON.DC).p → H(Co).Pot` is closed:
-that path has weight zero and no force flows through it.  Even though the agent
-plans to turn on the coffeemaker, the outcome of doing so is not yet causally
-possible — the coffeemaker has not been set up yet.  Only once `s2` becomes
-positive (the coffeemaker is ready) does that gate open, and force can
-propagate to the next stage.
-
----
-
-## Step 3: Define Plans
-
-A **plan** is a function that accepts a field matrix and returns a same-shaped
-matrix marking which paths the agent *intends* to use (coded as 1).
-`DoNothing` returns all zeros; `do4step` adds one planned impulse per step,
-connecting each situation outcome to its corresponding next action.
-
-```{r plans}
-DoNothing <- function(x) { x * 0 }
-
-do4step <- function(x) {
-  x[] <- 0
-  x["s1",        "make(s2).p"]      <- 1  # in s1: set up the coffeemaker
-  x["s2",        "turn(ON.DC).p"]   <- 1  # ready: turn it on
-  x["H(Co).Pot", "pour(Pot,Cup).p"] <- 1  # brewed: pour into cup
-  x["H(Co).Cup", "sip(Cup).p"]      <- 1  # in cup: sip
-  x
-}
-```
-
----
-
-## Step 4: Set Up the Initial Situation and Run the Simulation
-
-The initial situation `s` is all zeros.  The *action* (second argument to
-`expOutcomesFF`) sets the starting disturbances: the agent wants coffee
-(`Want(Co).p`), has the ingredients (`H(Ings).p`), and the combined readiness
-state `s1` is present.
-
-```{r simulate}
-# Initial situation: everything at zero
-s <- setNames(rep(0, length(fprops$vnames)), as.vector(fprops$vnames))
-
-# Run the simulation with the four-step plan
-sitlog <- expOutcomesFF(
-  s,
-  i      = c("s1", "Want(Co).p", "H(Ings).p"),
-  ffield = ff,
-  plan   = do4step
-)
-
-# Quick look at the situation matrix (rows = time steps, cols = nodes)
-round(sitlog$sit[1:9, ], 2)
-```
-
----
-
-## Step 5: Visualize with `fieldSequenceWidget()`
-
-`fieldSequenceWidget()` renders each time step as a high-resolution image and
-wraps them in an interactive widget with **&#8592; Back** and **Forward &#8594;**
-buttons, so you can step through the simulation one frame at a time.  Images
-are rendered at 2× the display size for sharpness on retina screens.
-
-Here we select the four key steps — the moments just *after* each new gate
-opens:
-
-```{r widget, eval=has_qgraph}
-fieldSequenceWidget(
-  sitlog, fprops,
-  steps       = c(1, 3, 5, 7),
-  node_labels = coffee_labels,
-  titles = c(
-    "Step 1: Gate 1 open \u2014 set up coffeemaker",
-    "Step 3: Gate 2 open \u2014 turn on; coffee brews into pot",
-    "Step 5: Gate 3 open \u2014 pour pot into cup",
-    "Step 7: Gate 4 open \u2014 sip; coffee acquired"
-  )
+plotsAsWidget(
+  frames,
+  panel_titles = paste("Step", 0:10),
+  width = 9, height = 6
 )
 ```
 
-To step through every simulated time step, omit `steps` entirely:
+At `t = 0` the entire plan is already laid out in gold — the agent holds
+all four conditional intentions from the start — but only `make → rig
+set` (afforded because the agent begins *ready*, `s1 = 1`) and the
+baseline `have coffee → L` are live among the grey situation forces. As
+the wave climbs, each newly-attained object opens the next situation
+force, a fresh grey arrow appears one stage up, and nodes turn blue as
+the action they gate finally fires.
 
-```{r widget_all, eval=has_qgraph}
-fieldSequenceWidget(sitlog, fprops, node_labels = coffee_labels)
+### The same wave as a heatmap
+
+The diagonal structure also reads cleanly as a stage × time tile plot — a
+compact way to see all stages and all steps at once:
+
+```{r wave, eval=has_ggplot, fig.alt="Tile plot of state value by process stage and time step, showing a diagonal wave."}
+library(ggplot2)
+
+stage_order  <- layout$name
+stage_labels <- setNames(gsub("\n", " ", layout$label), layout$name)
+
+long <- data.frame(
+  step  = rep(0:10, times = length(stage_order)),
+  stage = factor(rep(stage_order, each = nrow(traj)),
+                 levels = rev(stage_order)),
+  value = as.vector(traj[, stage_order])
+)
+
+ggplot(long, aes(step, stage, fill = value)) +
+  geom_tile(colour = "white", linewidth = 0.6) +
+  scale_fill_gradient(low = "white", high = "#1572da", limits = c(0, 1)) +
+  scale_x_continuous(breaks = 0:10, expand = c(0, 0)) +
+  scale_y_discrete(labels = stage_labels) +
+  labs(x = "time step", y = NULL, fill = "state",
+       title = "The coffee field's wave of afforded forces") +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid = element_blank(),
+        legend.position = "right")
 ```
 
----
+## Takeaway
 
-## Interpretation
+Sipping is not merely *last* in time — it is only *causally possible*
+once coffee is in the cup, which requires having poured, which requires
+having brewed, which requires setting up the machine. Splitting the field
+into a **situation** and a **conditional action plan** makes the division
+of labour explicit: the plan (gold) holds standing intentions keyed on
+states, but the situation's **afforded forces** (grey) decide whether a
+fired action produces anything. The agent can intend to turn the machine
+on from the very first step, yet nothing brews until the rig is actually
+set up — the gate keyed on `s2` stays shut until then.
 
-Each plot shows the *active* field at that moment.  Edges appear only where
-the affordance gate is open (the prerequisite situation node is positive) and,
-for planned actions, an intentional impulse is also present:
-
-| Step | Gate opens when...    | Path that becomes active |
-|------|-----------------------|--------------------------|
-| 1    | `s1` present          | `s1 → make(s2).p → s2` |
-| 3    | `s2` present          | `s2 → turn(ON.DC).p → H(Co).Pot` |
-| 5    | `H(Co).Pot` present   | `H(Co).Pot → pour(Pot,Cup).p → H(Co).Cup` |
-| 7    | `H(Co).Cup` present   | `H(Co).Cup → sip(Cup).p → H(Co).p` |
-| 9+   | `H(Co).p` present     | `H(Co).p → U.p` (terminal utility) |
-
-**Key takeaway:** The staircase layout makes the sequential dependency
-tangible.  Sipping is not merely *last* in time — it is only *causally
-possible* once coffee is in the cup, which requires having poured from the
-pot, which requires having brewed, which requires setting up the machine.
-The plan supplies the motivational impulses at each stage, but the affordance
-structure of the situation controls which actions can have downstream effects
-at any given moment.
+This is the deductive use of a functional field: given a theory of the
+world (the situation's `fZ_X.Y` coefficients) and a plan (the conditional
+triggers), simulate forward and read off what the plan produces. The
+inductive direction — recovering those situation coefficients from data —
+is the subject of the `pathXMY` vignettes
+(`vignette("speeding_pathXMY", package = "funfield")` and its
+companions).

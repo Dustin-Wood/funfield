@@ -1,0 +1,289 @@
+---
+title: "Notation: F, F_t, and the fZ_X.Y schema"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Notation: F, F_t, and the fZ_X.Y schema}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>"
+)
+```
+
+This vignette pins down the notation used by every other piece of the
+package: how a functional field is written, how its parameters are
+labelled, and how those labels map onto `lavaan` model strings. It is
+short on prose and long on conventions — the goal is a fixed target
+that other vignettes and helpers can refer back to without re-deriving.
+
+## Two objects with the same letter
+
+A **functional field** appears in two forms:
+
+- **`F`** — the *time-invariant* field. A square matrix of equations,
+  indexed `F[X, Y]` = the force *from* source `X` *to* target `Y`. Each
+  cell holds an expression in the situational state `s`; in practice
+  those expressions are simple linear combinations of state variables,
+  but in principle they can be arbitrary.
+
+- **`F_t = F(s_t)`** — the *time-varying* field. The numerical 2-matrix
+  obtained by evaluating each cell of `F` at the current state `s_t`.
+
+The Markov step has two sub-steps, both keyed on `s_t`:
+
+\[
+F_t   = F(s_t) \qquad
+s_{t+1} = s_t \cdot F_t.
+\]
+
+`F` is fixed; `F_t` changes from step to step because `s_t` does.
+Actions enter the loop by perturbing `s_t` (`s_t[i] \leftarrow s_t[i] + \delta`).
+Iteration continues until the field stops producing change, at which
+point a designated **selection signal** `L_s` (typically rated
+likelihood in ESJT data) is read off.
+
+The source-then-target indexing (`F[X, Y]`) is deliberate and
+contrasts with the standard SEM `B[Y, X]` convention. Anywhere a
+coefficient is extracted from `lavaan` and exposed as an `F`-cell, it
+is transposed at the boundary.
+
+## The parameter schema
+
+Every estimable parameter in `F` carries a label of the form
+
+\[
+\boxed{\texttt{fZ\_X.Y}}
+\]
+
+Read as: the **f**-convention coefficient on the force from `X` to
+`Y`, under moderator `Z`. The schema is universal — every parameter
+fits this template — and is regular in two ways:
+
+1. The **baseline** (unmoderated) coefficient is the special case
+   `Z = 1`, written `f1_X.Y`. It is the "interaction of `X` with the
+   constant 1" — i.e., the part of the force that fires regardless of
+   the situation. We keep the `1` explicit; there is no bare
+   `f_X.Y`.
+2. Multiple moderators on the same cell are written as multiple
+   `fZ_X.Y` terms with different `Z`. There is no built-in limit on
+   how many a cell can carry.
+
+The separators are load-bearing: `_` separates the moderator from the
+path, and `.` separates source from target within the path. Both `_`
+and `.` are valid R identifier characters, so `lavaan` parses the
+labels intact (verified against lavaan 0.6-21).
+
+### Reading a cell
+
+A cell `F[X, Y]` with a baseline term and one Z-moderation expands as
+
+\[
+F[X, Y] = f1\_X.Y \;+\; fZ\_X.Y \cdot s[Z].
+\]
+
+Evaluated at `s_t`:
+
+\[
+F_t[X, Y] = f1\_X.Y \;+\; fZ\_X.Y \cdot s_t[Z].
+\]
+
+Read into the propagation step: the contribution of source `X` to
+target `Y` at time `t` is `s_t[X] · F_t[X, Y]`. So `Y`'s update,
+summing over all sources, is
+
+\[
+s_{t+1}[Y] \;=\; \sum_X s_t[X] \cdot F_t[X, Y].
+\]
+
+## Lavaan-syntax mapping
+
+A cell `F[X, Y]` with a baseline term and a `Z`-moderation term
+becomes one row in a `lavaan` model:
+
+```
+Y ~ f1_X.Y * X + fZ_X.Y * Z:X
+```
+
+The target sits on the left of `~` (lavaan's regression convention);
+the source sits on the right; the moderator enters as the leading
+member of a `Z:X` interaction. The interaction is written **condition
+first, action last** so its order matches the label: `Z:X` ↔ `fZ_X.Y`.
+This is load-bearing for `labelF()`, which auto-generates the labels by
+reading the final right-hand variable as the source/action and any
+leading ones as the condition. The parameter labels record the
+F-convention semantics regardless of `lavaan`'s left/right orientation.
+
+A small worked check — the model parses cleanly and the labels
+survive `lavaanify()`:
+
+```{r lavaanify-check}
+library(lavaan)
+mod <- "Y ~ f1_X.Y * X + fZ_X.Y * Z:X"
+pt  <- lavaanify(mod, fixed.x = FALSE)
+pt[pt$op == "~", c("lhs", "op", "rhs", "label")]
+```
+
+A cell with *only* a Z-moderation term and no baseline is an
+**afforded force**: the source `X` contributes nothing to `Y` when
+`s[Z] = 0`, and the force becomes available once `s[Z]` flips on. This
+is how the redesigned coffee vignette expresses
+prerequisites-must-hold actions:
+
+```
+HCoPot ~ fS2_TurnOn.HCoPot * s2:TurnOn
+```
+
+The `TurnOn → HCoPot` force is zero until `s2` is flipped on by an
+earlier action. The Markov iteration handles the rest.
+
+## Situation, action plan, and fixed coefficients
+
+The forces above describe the **situation** — the affordance structure
+of the world, independent of any agent. Layered on top is an **action
+plan**: conditional commitments of the form "fire action `A` once state
+`Z` is achieved", written as state → action forces:
+
+```
+make   ~ 1 * s1
+TurnOn ~ 1 * s2
+```
+
+Two notational points. First, plan forces run *opposite* to situation
+forces — state → action, where the situation runs action → outcome.
+Second, the coefficient is **fixed** (`1 * s1`, lavaan's
+fixed-coefficient syntax) rather than carrying an `fZ_X.Y` label: a plan
+trigger is a structural commitment, not a quantity estimated from data,
+so it lives outside the schema and needs no `params` entry. `evalF()`
+values a fixed term straight from its coefficient.
+
+Because both halves are plain `lavaan` strings, the field is assembled
+by concatenation — `paste(situation, plan)` — and run as one model. By
+visualization convention the plan's forces are drawn in **gold**
+(`plotField(..., plan = plan)`), marking the forces a conditional action
+plan adds on top of the situation. Splitting the field this way takes
+about twice as many iterations to settle (each stage is now two hops,
+state → action → outcome), but reaches the same fixed point as injecting
+the actions on an external schedule.
+
+## The F1 / FZ matrix overlay
+
+A field's parameters can be reorganized into a stack of per-moderator
+matrices:
+
+- `F1`: cell `(i, j) = f1_i.j` — the baseline force matrix.
+- `FZ`: cell `(i, j) = fZ_i.j` — the contribution to `F` that is
+  proportional to `s[Z]`.
+- `FZ'`, `FZ''`, ... — one matrix per additional moderator.
+
+Each matrix is itself an indexable view onto the underlying parameter
+table. Visualization overlays them — for example, render `F1` as the
+black edges that are always active, and `FZ` as colored edges that
+strengthen with `s[Z]`. The three-panel decomposition figures in the
+speeding `pathXMY` vignette are an early hand-built instance of this;
+generalising the data side via `pathXMY_to_F()` lets the same
+visualization machinery render whole fields rather than single
+triangles.
+
+The matrix view is also the convenient handoff to the runtime: a step
+`s_{t+1} = s_t \cdot F_t` decomposes as
+
+\[
+F_t \;=\; F_1 \;+\; \sum_Z s_t[Z] \cdot F_Z,
+\]
+
+so `F_t` is a state-weighted sum of the overlay matrices. This is
+exactly the form `evalF()` consumes.
+
+## What the schema does *not* impose
+
+The label convention is purely a naming discipline. It does not by
+itself commit any cell to a particular functional form:
+
+- A cell can be a **constant** (`f1_X.Y` only) — a topological edge,
+  fit by an ordinary path coefficient.
+- A cell can be **state-linear** (`f1_X.Y` + one or more `fZ_X.Y`
+  terms) — a moderated edge, fit by regression with interactions.
+- A cell can be an **afforded force** (one `fZ_X.Y` term, no
+  `f1_X.Y`) — fires only when `s[Z] > 0`. The structural-masking
+  trick the coffee vignette relies on.
+- A cell can carry **multiple moderators** simultaneously by stacking
+  `fZ_X.Y` terms; the linear-combination interpretation extends.
+
+Nonlinearities like `s[a] \cdot s[b]` gates appear as `a:b:X`
+interaction terms in the lavaan-syntax mapping (conditions first,
+action last), with a label of the form `fab_X.Y` (compound moderator).
+The package treats compound moderators as one logical "Z" — the
+matrix-overlay view holds an extra `F_{ab}` matrix; nothing else
+changes.
+
+## `f1_X.Y` as a placeholder
+
+Read strictly, every cell of `F` is afforded: there are no truly
+unconditional forces. When `f1_X.Y` appears in a model, it captures
+the X → Y force *under whatever conditions held during the relevant
+data or theory* — without naming those conditions. The "1" is a
+shorthand for "a state variable that happens to be true throughout
+the data we have." So a `f1_X.Y` term is best read as a frank
+acknowledgement that a force is present in these conditions, and
+that the conditions that gate it have not yet been identified.
+
+A mature representation of a process replaces every `f1_X.Y` with
+one or more `fZ_X.Y` for the `Z`'s that determine when the force
+fires — and which, in principle, can be intervened on to interrupt
+it. The schema admits `f1_X.Y` as a convenience (forcing full
+conditional specification at every iteration would stall any working
+model), but the conceptual direction of progress is to push every
+`f1` toward an `fZ` decomposition over time. A discovered "main
+effect" is, on this reading, a moderation effect waiting for its
+moderator to be named.
+
+## Node-name conventions
+
+Names that appear on either side of `~`, or inside an `X:Z`
+interaction, must be lavaan-safe: letters, digits, and `_` only. No
+parens, no `.`, no other punctuation. The `.` is reserved as the
+source/target separator inside parameter labels.
+
+This is a change from the original `coffee_field_model` vignette,
+which used names like `H(Co).Pot` and `make(s2).p`. The redesigned
+vignette renames these to `HCoPot` and `make_s2`. The pretty
+display labels (with parens and dots) remain available for
+visualization — `prepField()` and the plotting helpers carry a
+separate display-label map.
+
+## The two roles a field can play
+
+The same `F` lives at the centre of two complementary workflows:
+
+| Role | Direction | Tool | Parameters |
+|---|---|---|---|
+| **Induction** — learn the world from observed behaviour | Data → `F` | `pathXMY()` and friends | Fit, uncertain, carry SEs |
+| **Deduction** — use a working theory of the world to plan | `F` → behaviour | `runF()`, `chooseAction()`, the redesigned coffee vignette | Hand-set, treated as known |
+
+Both directions use the same model syntax and the same parameter
+schema. The bridge between them — turning a `pathXMY` fit into a
+runnable field — is `pathXMY_to_F()`.
+
+## Migration from the legacy `B1_MX` / `BZ_MX` labels
+
+Existing `pathXMY()` output (the `tidy_loop` and `tidy_joint` tables)
+uses labels of the form `B1_MX`, `BZ_MX`, `B1_YM`, `BZ_YM`. The
+F-convention equivalents reverse the source/target order and use the
+new separator:
+
+| Legacy label | F-schema label | Reads as |
+|---|---|---|
+| `B1_MX`  | `f1_X.M` | baseline X → M force |
+| `BZ_MX`  | `fZ_X.M` | Z-moderation of X → M |
+| `B1_YM`  | `f1_M.Y` | baseline M → Y force |
+| `BZ_YM`  | `fZ_M.Y` | Z-moderation of M → Y |
+| `B1_YX`  | `f1_X.Y` | direct X → Y (controlling for M) |
+| `BZ_YX`  | `fZ_X.Y` | Z-moderation of direct X → Y |
+
+`pathXMY_to_F()` (see its own help page) returns the tidy table
+relabelled in the F-schema, as a parallel view alongside the existing
+`tidy_loop` / `tidy_joint`.
