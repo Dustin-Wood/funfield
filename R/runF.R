@@ -1,53 +1,127 @@
+#' Resolve the Set of Latching (Stock) Nodes
+#'
+#' Internal helper. Given the endogenous targets of a field, work out
+#' which ones latch, following the priority in [runF()]'s documentation:
+#' an **auto** rule keyed on the action set, an **explicit** `stocks=` /
+#' `flows=` set, or **memoryless** (nothing latches) when no hint is
+#' given. Returns a character vector of node names to latch.
+#'
+#' @param targets Character vector of endogenous nodes (model LHS).
+#' @param actions,readouts,stocks,flows See [runF()].
+#' @return Character vector (subset of `targets`) of nodes that latch.
+#' @keywords internal
+#' @noRd
+.resolveStocks <- function(targets, actions = NULL, readouts = "L",
+                           stocks = NULL, flows = NULL) {
+
+  if (!is.null(stocks) && !is.null(flows)) {
+    clash <- intersect(stocks, flows)
+    if (length(clash)) {
+      stop("Nodes listed as both `stocks` and `flows`: ",
+           paste(clash, collapse = ", "), ".")
+    }
+  }
+
+  if (!is.null(actions)) {                         # AUTO mode
+    flow0  <- intersect(union(actions, readouts), targets)
+    stock0 <- setdiff(targets, flow0)
+    res    <- setdiff(union(stock0, intersect(stocks, targets)), flows)
+  } else if (!is.null(stocks)) {                   # EXPLICIT (stocks)
+    res <- intersect(stocks, targets)
+  } else if (!is.null(flows)) {                    # EXPLICIT (flows)
+    res <- setdiff(targets, flows)
+  } else {                                         # MEMORYLESS (default)
+    res <- character(0)
+  }
+  res
+}
+
 #' Iterate a Functional Field Forward
 #'
 #' @description
-#' Drives the Markov iteration `s_(t+1) = s_t %*% F_t` for a fixed
-#' number of steps, optionally applying scheduled action perturbations
-#' to the state at the start of each step. Returns the full trajectory
-#' of states.
+#' Drives the field iteration for a fixed number of steps and returns the
+#' full trajectory of states, calling [evalF()] once per step. Supports
+#' both propagation modes and gives the field memory by latching a set of
+#' **stock** nodes --- which it can derive automatically from the action
+#' nodes, so the situation/plan structure of the model *is* the interface.
 #'
 #' @details
-#' At each step `t` in `1:steps`, the function:
-#' 1. Applies any actions scheduled for step `t` --- each named state
-#'    variable is set to its scheduled value (default `1`) *before*
-#'    propagation.
-#' 2. Calls [evalF()] to compute `s_(t+1)` from the post-action `s_t`.
-#' 3. Optionally clamps the result to `[-1, 1]`.
+#' **Choosing a mode.** `mode = "sweep"` (default) resolves the whole
+#' causal chain each step --- read off the settled outcome (e.g. the
+#' likelihood node `L`) for "what does this plan ultimately afford?".
+#' `mode = "sync"` advances one edge per step and is required for cyclic
+#' / dynamical fields, including stock-and-flow consumption pipelines (a
+#' consumed state and the action that consumes it form a cycle, which
+#' `"sweep"` rejects).
 #'
-#' The `actions` argument is a list whose names are step numbers (as
-#' character strings, e.g. `"1"`, `"2"`) and whose values are either:
-#' * a character vector of state-variable names to set to `1`, or
-#' * a named numeric vector specifying the value to set each variable to.
+#' **When to specify stocks.** A *stock* latches (remembers its value);
+#' a *flow* is recomputed from the current state each step. Which to use
+#' is governed, in priority order, by:
+#' \enumerate{
+#'   \item **Auto** --- pass `actions` (the action nodes, the same set you
+#'     name in [labelF()]). Every other endogenous node becomes a stock,
+#'     except `readouts` (the likelihood / appraisal nodes, default `L`),
+#'     which recompute. In the canonical situation/plan model this makes
+#'     the situation's object states latch and the plan's actions fire as
+#'     transient flows. Fine-tune individual nodes with `stocks` / `flows`.
+#'   \item **Explicit** --- pass `stocks` (or `flows`) and no `actions`;
+#'     exactly those nodes latch (or all but `flows` do). The low-level
+#'     escape hatch for non-canonical fields.
+#'   \item **Memoryless** --- pass none of the three (the default). Nothing
+#'     latches; every node recomputes. This is the field's
+#'     afforded-equilibrium behaviour and the right choice for a model
+#'     written *without* consumption terms. (Latching an
+#'     inflow-only model makes its stocks accumulate without bound ---
+#'     see the bounds warning below.)
+#' }
+#' Marking a node as both a stock and a flow is an error.
 #'
-#' Variables that never appear on the LHS of a `~` in `model` (exogenous
-#' nodes, typically actions or persistent context) are carried forward
-#' by `evalF()` unchanged --- once an action is set to `1` it stays at
-#' `1` for the rest of the run unless clamping or a later equation
-#' overwrites it.
+#' **Bounds.** No clamping is performed. Functional-field state is
+#' expected to stay within `[-bound, bound]` (default `[-1, 1]`) when the
+#' model is well specified; a value outside it signals a specification
+#' error (e.g. a latched stock with inflow but no consumption, or forces
+#' that compound past 1) rather than something to silently truncate. By
+#' default `runF()` warns, naming the offending nodes and step, and
+#' returns the true (un-clamped) values so the overshoot is visible.
 #'
-#' @param model A `lavaan`-syntax model string with `fZ_X.Y`-labelled
-#'   parameters.
+#' @param model A `lavaan`-syntax model string with `fZ_X.Y`-labelled or
+#'   fixed (`1 * X`) parameters.
 #' @param params Named numeric vector mapping parameter labels to values.
 #' @param s_0 Named numeric vector of initial state values.
-#' @param actions Optional list of action schedules. Names are step
-#'   numbers (character); values are character or named numeric vectors.
-#'   See Details. Default empty list (no scheduled actions; perturb
-#'   `s_0` directly instead).
-#' @param steps Integer number of propagation steps. Default 4 (matches
-#'   the four-stage coffee example).
-#' @param clamp Logical. When `TRUE` (default), clamp state values to
-#'   `[-1, 1]` after each propagation step.
+#' @param actions Optional character vector of action-node names. Supplied
+#'   to derive the stock set automatically (see Details). Default `NULL`.
+#' @param readouts Character vector of nodes that recompute rather than
+#'   latch even under auto-derivation --- the likelihood / appraisal
+#'   readouts. Default `"L"`.
+#' @param stocks,flows Optional character vectors to force individual
+#'   nodes to latch (`stocks`) or recompute (`flows`). Override the
+#'   auto-derivation; without `actions` they set the stock set explicitly.
+#'   A node in both is an error. Default `NULL`.
+#' @param mode Propagation mode passed to [evalF()]: `"sweep"` (default)
+#'   or `"sync"`. See Details.
+#' @param steps Integer number of propagation steps. Default 4.
+#' @param warn_bounds Logical; when `TRUE` (default) warn if any state
+#'   value exceeds `bound` in magnitude after a step. See Details.
+#' @param bound Numeric magnitude bound for the warning. Default 1.
 #'
-#' @return A numeric matrix with `steps + 1` rows (indexed `t=0` through
-#'   `t=steps`) and one column per state variable. Row `t=0` is `s_0`
-#'   *before* any actions are applied; subsequent rows are post-action,
-#'   post-propagation states.
+#' @return A numeric matrix with `steps + 1` rows (`t=0` through
+#'   `t=steps`) and one column per state variable. Row `t=0` is `s_0`.
 #'
-#' @seealso [evalF()] for the single-step propagator.
+#' @seealso [evalF()] for the single-step propagator, [labelF()] for
+#'   building the model and naming the actions.
 #'
 #' @export
-runF <- function(model, params, s_0, actions = list(), steps = 4L,
-                 clamp = TRUE) {
+runF <- function(model, params, s_0,
+                 actions     = NULL,
+                 readouts    = "L",
+                 stocks      = NULL,
+                 flows       = NULL,
+                 mode        = c("sweep", "sync"),
+                 steps       = 4L,
+                 warn_bounds = TRUE,
+                 bound       = 1) {
+
+  mode <- match.arg(mode)
 
   if (is.null(names(s_0)) || any(names(s_0) == "")) {
     stop("`s_0` must be a fully named numeric vector.")
@@ -57,40 +131,28 @@ runF <- function(model, params, s_0, actions = list(), steps = 4L,
     stop("`steps` must be a single non-negative integer.")
   }
 
+  ## Derive the latching set once from the model's endogenous targets.
+  pt      <- lavaan::lavaanify(model, fixed.x = FALSE)
+  targets <- unique(pt$lhs[pt$op == "~"])
+  stock_set <- .resolveStocks(targets, actions = actions, readouts = readouts,
+                              stocks = stocks, flows = flows)
+
   trajectory <- matrix(NA_real_, nrow = steps + 1L, ncol = length(s_0),
                        dimnames = list(paste0("t=", 0:steps), names(s_0)))
   trajectory[1L, ] <- s_0
 
   s <- s_0
   for (t in seq_len(steps)) {
+    s <- evalF(model, params, s, stocks = stock_set, mode = mode)
 
-    sched <- actions[[as.character(t)]]
-    if (!is.null(sched)) {
-      if (is.character(sched)) {
-        missing_vars <- setdiff(sched, names(s))
-        if (length(missing_vars)) {
-          stop("Action variables not in state: ",
-               paste(missing_vars, collapse = ", "))
-        }
-        s[sched] <- 1
-      } else if (is.numeric(sched) && !is.null(names(sched))) {
-        missing_vars <- setdiff(names(sched), names(s))
-        if (length(missing_vars)) {
-          stop("Action variables not in state: ",
-               paste(missing_vars, collapse = ", "))
-        }
-        s[names(sched)] <- sched
-      } else {
-        stop("Each `actions` entry must be a character vector or a ",
-             "named numeric vector.")
+    if (warn_bounds) {
+      bad <- names(s)[abs(s) > bound]
+      if (length(bad)) {
+        warning("runF: |state| > ", bound, " at t = ", t,
+                " (possible model misspecification): ",
+                paste0(bad, "=", round(s[bad], 3), collapse = ", "),
+                call. = FALSE)
       }
-    }
-
-    s <- evalF(model, params, s)
-
-    if (clamp) {
-      s[s >  1] <-  1
-      s[s < -1] <- -1
     }
 
     trajectory[t + 1L, ] <- s

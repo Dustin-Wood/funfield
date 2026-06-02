@@ -185,7 +185,7 @@ twice as many steps to settle as the externally-scheduled version did.
 s_0 <- c(s1 = 1, make = 0, s2 = 0, TurnOn = 0, HCoPot = 0,
          Pour = 0, HCoCup = 0, Sip = 0, HCo = 0, L = 0)
 
-traj <- runF(model, params, s_0, steps = 10)
+traj <- runF(model, params, s_0, steps = 10, mode = "sync")
 round(traj, 2)
 ```
 
