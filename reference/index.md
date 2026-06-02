@@ -34,7 +34,7 @@
 - [`esjtFromQualtrics()`](https://dustin-wood.github.io/funfield/reference/esjtFromQualtrics.md)
   : Build an ESJT/EXSJT dataset from raw Qualtrics data
 - [`evalF()`](https://dustin-wood.github.io/funfield/reference/evalF.md)
-  : Evaluate One Markov Step of a Functional Field
+  : Evaluate One Step of a Functional Field
 - [`expEffects.voi()`](https://dustin-wood.github.io/funfield/reference/expEffects.voi.md)
   : Expected Effects of Variable-of-Interest
 - [`expOutcomes()`](https://dustin-wood.github.io/funfield/reference/expOutcomes.md)

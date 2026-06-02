@@ -88,7 +88,7 @@ devtools::install_github("Dustin-Wood/funfield")
 - [`esjtFromQualtrics()`](https://dustin-wood.github.io/funfield/reference/esjtFromQualtrics.md)
   : Build an ESJT/EXSJT dataset from raw Qualtrics data
 - [`evalF()`](https://dustin-wood.github.io/funfield/reference/evalF.md)
-  : Evaluate One Markov Step of a Functional Field
+  : Evaluate One Step of a Functional Field
 - [`expEffects.voi()`](https://dustin-wood.github.io/funfield/reference/expEffects.voi.md)
   : Expected Effects of Variable-of-Interest
 - [`expOutcomes()`](https://dustin-wood.github.io/funfield/reference/expOutcomes.md)
@@ -188,8 +188,8 @@ devtools::install_github("Dustin-Wood/funfield")
 
 ### All vignettes
 
-- [Coffee Field Model: Sequential Action
-  Planning](https://dustin-wood.github.io/funfield/articles/coffee_field_model.md):
+- [Coffee Field Model: Affordances and a Process in
+  Time](https://dustin-wood.github.io/funfield/articles/coffee_field_model.md):
 - [Moderated mediation with \`pathXMY()\`: the coworker assertiveness
   ESJT](https://dustin-wood.github.io/funfield/articles/coworker_pathXMY.md):
 - [Notation: F, F_t, and the fZ_X.Y
