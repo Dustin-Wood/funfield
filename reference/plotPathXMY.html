@@ -28,7 +28,7 @@ Edges are solid for positive paths and dashed for
     background. Arrowheads are clipped to the node perimeter via
     shape-aware intersection (L-infinity for squares, edge
     intersection for the triangles). Edge labels carry the
-    b1 + bZ(Z) decomposition.
+    f1 + fZ(Z) decomposition.
 Moderator (Z) coloring. Anything that is purely a
     bZ coefficient renders in limegreen. In the default decomposed
     label, only the trailing bZ(Z) fragment is green (the b1
@@ -36,7 +36,7 @@ Moderator (Z) coloring. Anything that is purely a
     Z-overlay view (Z_overlay = TRUE), the entire label and
     the edge are green, since the edge is a bZ coefficient.
     A Z-collapsed view (Z_value supplied) renders normally:
-    the label there is a single total slope b1 + bZ * Z_value,
+    the label there is a single total slope f1 + fZ * Z_value,
     not a bZ coefficient on its own.
 
 
@@ -59,7 +59,7 @@ from controls which fit drives the diagram:
 &quot;joint&quot;: the joint multi-mediator simultaneous-fit
     picture – each mediator's slopes are the partial slopes net of
     the other mediators, and the X to Y arrow is the single global
-    B1_YX_joint direct path after controlling for all M.
+    f1_XY_joint direct path after controlling for all M.
 
 
 Passing Z_overlay = TRUE renders the same layout but with
@@ -69,9 +69,9 @@ the normative field. Nodes are drawn white in that view since
 expected scores have no meaning for a per-unit-Z slope.
 Passing route = &quot;expectation&quot; or &quot;valuation&quot; renders
 a per-route view of the moderation. The expectation route
-shows BZ_MX on the X-to-M arm (green) and B1_YM on the
+shows fZ_XM on the X-to-M arm (green) and f1_MY on the
 M-to-Y arm (black); the valuation route flips the arms
-(B1_MX on the left, BZ_YM on the right). The visual
+(f1_XM on the left, fZ_MY on the right). The visual
 grammar of the new coloring scheme makes the two route components of
 the moderation decomposition read directly: if both arms of a
 mediator carry visible weight in one of the two graphs, that
@@ -107,7 +107,7 @@ Edges are solid for positive paths and dashed for
     background. Arrowheads are clipped to the node perimeter via
     shape-aware intersection (L-infinity for squares, edge
     intersection for the triangles). Edge labels carry the
-    b1 + bZ(Z) decomposition.
+    f1 + fZ(Z) decomposition.
 Moderator (Z) coloring. Anything that is purely a
     bZ coefficient renders in limegreen. In the default decomposed
     label, only the trailing bZ(Z) fragment is green (the b1
@@ -115,7 +115,7 @@ Moderator (Z) coloring. Anything that is purely a
     Z-overlay view (Z_overlay = TRUE), the entire label and
     the edge are green, since the edge is a bZ coefficient.
     A Z-collapsed view (Z_value supplied) renders normally:
-    the label there is a single total slope b1 + bZ * Z_value,
+    the label there is a single total slope f1 + fZ * Z_value,
     not a bZ coefficient on its own.
 
 
@@ -138,7 +138,7 @@ from controls which fit drives the diagram:
 &quot;joint&quot;: the joint multi-mediator simultaneous-fit
     picture – each mediator's slopes are the partial slopes net of
     the other mediators, and the X to Y arrow is the single global
-    B1_YX_joint direct path after controlling for all M.
+    f1_XY_joint direct path after controlling for all M.
 
 
 Passing Z_overlay = TRUE renders the same layout but with
@@ -148,9 +148,9 @@ the normative field. Nodes are drawn white in that view since
 expected scores have no meaning for a per-unit-Z slope.
 Passing route = &quot;expectation&quot; or &quot;valuation&quot; renders
 a per-route view of the moderation. The expectation route
-shows BZ_MX on the X-to-M arm (green) and B1_YM on the
+shows fZ_XM on the X-to-M arm (green) and f1_MY on the
 M-to-Y arm (black); the valuation route flips the arms
-(B1_MX on the left, BZ_YM on the right). The visual
+(f1_XM on the left, fZ_MY on the right). The visual
 grammar of the new coloring scheme makes the two route components of
 the moderation decomposition read directly: if both arms of a
 mediator carry visible weight in one of the two graphs, that
@@ -227,7 +227,7 @@ funfield visualization conventions:</p>
     background. Arrowheads are clipped to the node perimeter via
     shape-aware intersection (L-infinity for squares, edge
     intersection for the triangles). Edge labels carry the
-    <code>b1 + bZ(Z)</code> decomposition.</p></li>
+    <code>f1 + fZ(Z)</code> decomposition.</p></li>
 <li><p><strong>Moderator (Z) coloring.</strong> Anything that is purely a
     bZ coefficient renders in limegreen. In the default decomposed
     label, only the trailing <code>bZ(Z)</code> fragment is green (the b1
@@ -235,7 +235,7 @@ funfield visualization conventions:</p>
     Z-overlay view (<code>Z_overlay = TRUE</code>), the entire label and
     the edge are green, since the edge <em>is</em> a bZ coefficient.
     A Z-collapsed view (<code>Z_value</code> supplied) renders normally:
-    the label there is a single total slope <code>b1 + bZ * Z_value</code>,
+    the label there is a single total slope <code>f1 + fZ * Z_value</code>,
     not a bZ coefficient on its own.</p></li>
 </ul><p>Two view modes:</p><ul><li><p><strong>Triangle</strong> (single mediator) – X at bottom-left, M at
     top, Y at bottom-right.</p></li>
@@ -252,7 +252,7 @@ funfield visualization conventions:</p>
 <li><p><code>"joint"</code>: the joint multi-mediator simultaneous-fit
     picture – each mediator's slopes are the partial slopes net of
     the other mediators, and the X to Y arrow is the single global
-    <code>B1_YX_joint</code> direct path after controlling for all M.</p></li>
+    <code>f1_XY_joint</code> direct path after controlling for all M.</p></li>
 </ul><p>Passing <code>Z_overlay = TRUE</code> renders the same layout but with
 each B1 coefficient swapped for its BZ counterpart – a clean view
 of the moderator's per-unit effect on path weights, isolated from
@@ -260,9 +260,9 @@ the normative field. Nodes are drawn white in that view since
 expected scores have no meaning for a per-unit-Z slope.</p>
 <p>Passing <code>route = "expectation"</code> or <code>"valuation"</code> renders
 a per-route view of the moderation. The <em>expectation route</em>
-shows <code>BZ_MX</code> on the X-to-M arm (green) and <code>B1_YM</code> on the
+shows <code>fZ_XM</code> on the X-to-M arm (green) and <code>f1_MY</code> on the
 M-to-Y arm (black); the <em>valuation route</em> flips the arms
-(<code>B1_MX</code> on the left, <code>BZ_YM</code> on the right). The visual
+(<code>f1_XM</code> on the left, <code>fZ_MY</code> on the right). The visual
 grammar of the new coloring scheme makes the two route components of
 the moderation decomposition read directly: if both arms of a
 mediator carry visible weight in one of the two graphs, that
@@ -367,10 +367,10 @@ that maps to maximum color intensity. Default <code>1</code> (the
 <dt id="arg-z-value">Z_value<a class="anchor" aria-label="anchor" href="#arg-z-value"></a></dt>
 <dd><p>Optional numeric scalar. If supplied, the diagram is
 rendered <em>conditional on Z at this value</em> – every coefficient
-becomes the effective slope at that Z (<code>b1 + bZ * Z_value</code>),
+becomes the effective slope at that Z (<code>f1 + fZ * Z_value</code>),
 node colors reflect expected scores at that Z, and edge labels show
 the single effective coefficient rather than the
-<code>b1 + bZ(Z)</code> decomposition. See also
+<code>f1 + fZ(Z)</code> decomposition. See also
 <code><a href="plotPathXMY_ZLH.html">plotPathXMY_ZLH</a></code> for a paired low/high view.</p></dd>
 
 
@@ -386,10 +386,10 @@ with <code>Z_value</code> and <code>route</code>.</p></dd>
 <dt id="arg-route">route<a class="anchor" aria-label="anchor" href="#arg-route"></a></dt>
 <dd><p>One of <code>"none"</code> (default), <code>"expectation"</code>, or
 <code>"valuation"</code>. Selects a per-route moderation view rather than
-the decomposed default. <code>"expectation"</code> puts <code>BZ_MX</code> on
-the X-to-M arm (green) and <code>B1_YM</code> on the M-to-Y arm (black);
-<code>"valuation"</code> flips them (<code>B1_MX</code> green-less left,
-<code>BZ_YM</code> green right). No direct X-to-Y arrow is drawn since
+the decomposed default. <code>"expectation"</code> puts <code>fZ_XM</code> on
+the X-to-M arm (green) and <code>f1_MY</code> on the M-to-Y arm (black);
+<code>"valuation"</code> flips them (<code>f1_XM</code> green-less left,
+<code>fZ_MY</code> green right). No direct X-to-Y arrow is drawn since
 the route concept is about the indirect path through M. Mutually
 exclusive with <code>Z_value</code> and <code>Z_overlay</code>.</p></dd>
 

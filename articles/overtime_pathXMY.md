@@ -185,12 +185,12 @@ for (v in L1cols) {
 norm <- pathXMY(dat, X = "Overtime", Y = "Likelihood", M = mediators)
 ```
 
-### Expectation paths (B1_MX): what does agreeing to overtime produce?
+### Expectation paths (F1\[X,M\]): what does agreeing to overtime produce?
 
 ``` r
 
 knitr::kable(
-  subset(norm$tidy_loop, param == "B1_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(norm$tidy_loop, param == "f1_XM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Expectation paths (Overtime -> M)"
 )
@@ -217,12 +217,12 @@ expected to reduce `OutsideRelationships` (−0.16) and the likelihood of
 being `Punished` by the company (−0.16). Smaller positive expectations
 attach to `CompanyHealth`, `Finances`, and `Appropriate`.
 
-### Valuation paths (B1_YM): which expectations drive action likelihood?
+### Valuation paths (F1\[M,Y\]): which expectations drive action likelihood?
 
 ``` r
 
 knitr::kable(
-  subset(norm$tidy_loop, param == "B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(norm$tidy_loop, param == "f1_MY")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Valuation paths (M -> Likelihood)"
 )
@@ -250,12 +250,12 @@ suppress likelihood. The valuation pattern is intuitive: financial,
 evaluative, and relational gains pull respondents toward the action;
 expected fatigue and punishment push them away.
 
-### Indirect effects (B1_MX × B1_YM)
+### Indirect effects (F1\[X,M\]·F1\[M,Y\])
 
 ``` r
 
 knitr::kable(
-  subset(norm$tidy_loop, param == "B1_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(norm$tidy_loop, param == "f1_XM * f1_MY")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
   caption = "Indirect effects through each mediator"
 )
@@ -296,88 +296,159 @@ dat <- merge(dat, cot[, c("p","paid")], by = "p")
 
 mod_s <- pathXMY(dat, X = "Overtime", Y = "Likelihood",
                  M = mediators, Z = "paid", Z.within = FALSE)
+dec_paid <- pathXMY_decompose(dat, X = "Overtime", Y = "Likelihood",
+                              M = mediators, Z = "paid", Z.within = FALSE)
 ```
 
-### Does pay status moderate the expectation arm?
+### Can we identify reasons that paying for overtime increases the likelihood of agreeing to work overtime?
+
+Pay status’s effect on the overall agreement decision routes through
+*which* expected outcomes get shifted (the **expectation arm**,
+`FZ[X,M]`) and through *how* each expected outcome is weighted on the
+choice (the **valuation arm**, `FZ[M,Y]`). The pretty pairtable lays the
+two arms side by side:
 
 ``` r
 
-knitr::kable(
-  subset(mod_s$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
-  digits = 3,
-  caption = "Moderation of expectation paths by pay status (BZ_MX)"
+group_kable(
+  pathXMY_pairtable(mod_s, c("fZ_XM", "fZ_MY")),
+  groups = c(" " = 1,
+             "Pay-status moderation: expectation arm (FZ[X,M])" = 4,
+             "Pay-status moderation: valuation arm (FZ[M,Y])"   = 4),
+  col_labels = c("Mediator", "est", "se", "z", "p",
+                             "est", "se", "z", "p")
 )
 ```
 
-|     | mediator             |    est |    se |      z | pvalue |
-|:----|:---------------------|-------:|------:|-------:|-------:|
-| 2   | RelationshipQuality  |  0.036 | 0.017 |  2.067 |  0.039 |
-| 11  | EmployerValuation    |  0.053 | 0.018 |  2.921 |  0.003 |
-| 20  | OutsideRelationships |  0.047 | 0.021 |  2.254 |  0.024 |
-| 29  | Drained              | -0.015 | 0.020 | -0.751 |  0.453 |
-| 38  | CompanyHealth        |  0.025 | 0.015 |  1.717 |  0.086 |
-| 47  | Finances             |  0.121 | 0.015 |  8.039 |  0.000 |
-| 56  | Appropriate          |  0.141 | 0.022 |  6.295 |  0.000 |
-| 65  | RaisePromotion       |  0.034 | 0.014 |  2.457 |  0.014 |
-| 74  | Punished             | -0.020 | 0.015 | -1.355 |  0.175 |
+|  | Pay-status moderation: expectation arm (FZ\[X,M\]) |  |  |  | Pay-status moderation: valuation arm (FZ\[M,Y\]) |  |  |  |
+|----|----|----|----|----|----|----|----|----|
+| Mediator | est | se | z | p | est | se | z | p |
+| RelationshipQuality | .036 | .017 | 2.067 | .039 | .017 | .091 | .188 | .851 |
+| EmployerValuation | .053 | .018 | 2.921 | .003 | -.101 | .085 | -1.178 | .239 |
+| OutsideRelationships | .047 | .021 | 2.254 | .024 | -.127 | .073 | -1.736 | .083 |
+| Drained | -.015 | .020 | -.751 | .453 | .190 | .082 | 2.315 | .021 |
+| CompanyHealth | .025 | .015 | 1.717 | .086 | -.108 | .103 | -1.054 | .292 |
+| Finances | .121 | .015 | 8.039 | .000 | -.163 | .100 | -1.623 | .105 |
+| Appropriate | .141 | .022 | 6.295 | .000 | -.033 | .054 | -.612 | .540 |
+| RaisePromotion | .034 | .014 | 2.457 | .014 | -.047 | .117 | -.404 | .686 |
+| Punished | -.020 | .015 | -1.355 | .175 | -.196 | .111 | -1.761 | .078 |
 
-Moderation of expectation paths by pay status (BZ_MX) {.table}
+On the **expectation arm**, six of the nine outcomes are significantly
+moderated. The largest shifts are in `Appropriate` (+0.141, *p* \< .001)
+and `Finances` (+0.121, *p* \< .001) — agreeing to paid overtime feels
+both more role-appropriate and genuinely produces more money, by a large
+margin. Smaller but significant positive shifts attach to
+`EmployerValuation`, `OutsideRelationships`, `RelationshipQuality`, and
+`RaisePromotion`. The cost-side outcomes — `Drained`, `Punished`,
+`CompanyHealth` — are untouched: pay status doesn’t change how depleting
+or risky people expect overtime to be, it shifts the *upside* of the
+action.
 
-Six of the nine expectation paths are significantly moderated by pay
-status. When the company offers overtime pay, agreeing to overtime is
-expected to produce substantially more `Finances` benefit (+0.121) and
-to be substantially more `Appropriate` (+0.141), with smaller positive
-shifts in `EmployerValuation`, `RaisePromotion`, `RelationshipQuality`,
-and (less obviously) `OutsideRelationships`. Pay status does not change
-expected `Drained`, `Punished`, or `CompanyHealth` shifts — the cost
-side of the ledger is unchanged.
+On the **valuation arm**, only one path reaches *p* \< .05: `Drained`
+(+0.190, *p* = .02). The positive sign means the average negative weight
+that fatigue carries on the agreement decision (`F1[M,Y]` ≈ −0.33) is
+*less* negative when overtime is paid — being tired matters less to the
+choice when there’s money on the table. Two cost paths near-miss
+significance in the same direction (`Punished`, *p* = .08;
+`OutsideRelationships`, *p* = .08). As in the speeding fits, the
+valuation-arm standard errors run roughly 5× the expectation-arm SEs (a
+design-variance asymmetry: `X` has guaranteed within-person variation,
+the mediators don’t always follow), so magnitude-equivalent effects on
+the right side are held to a weaker statistical claim than on the left.
 
-### Does that carry through to the indirect effect?
+#### Z-overlay field
+
+The same coefficients as a **Z-overlay field** — the normative layout,
+but with every `F1` swapped for its `FZ` counterpart. Each edge is the
+per-unit-`paid` change in that path’s weight; near-zero coefficients
+fade to light gray. Because `paid` is binary and z-standardized inside
+[`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md),
+each edge is half the no-pay → pay swing in the corresponding F1.
 
 ``` r
 
-knitr::kable(
-  subset(mod_s$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
-  digits = 3,
-  caption = "Moderation of indirect effects by pay status (BZ_MX x B1_YM)"
-)
+plotPathXMY(mod_s,
+            X_label = "Overtime", Y_label = "Likelihood",
+            Z_label = "paid", X_shape = "rtTri",
+            Z_overlay = TRUE,
+            scale_max = 0.3,
+            title = "Z overlay: how pay status shifts path weights")
 ```
 
-|     | mediator             |   est |    se |     z | pvalue |
-|:----|:---------------------|------:|------:|------:|-------:|
-| 8   | RelationshipQuality  | 0.016 | 0.008 | 1.914 |  0.056 |
-| 17  | EmployerValuation    | 0.022 | 0.009 | 2.486 |  0.013 |
-| 26  | OutsideRelationships | 0.012 | 0.006 | 1.894 |  0.058 |
-| 35  | Drained              | 0.004 | 0.005 | 0.737 |  0.461 |
-| 44  | CompanyHealth        | 0.009 | 0.006 | 1.550 |  0.121 |
-| 53  | Finances             | 0.054 | 0.014 | 3.909 |  0.000 |
-| 62  | Appropriate          | 0.099 | 0.016 | 6.137 |  0.000 |
-| 71  | RaisePromotion       | 0.016 | 0.007 | 2.260 |  0.024 |
-| 80  | Punished             | 0.005 | 0.004 | 1.090 |  0.276 |
+![](overtime_pathXMY_files/figure-html/plot-overlay-paid-1.png)
 
-Moderation of indirect effects by pay status (BZ_MX x B1_YM) {.table}
+Visually the asymmetry is obvious: the strongest moderation sits on the
+left half of the diagram (expectation arms into `Appropriate` and
+`Finances`), with most of the right half (valuation arms out of the
+mediators) faded out.
 
-When the action is paid, the indirect pull toward agreeing strengthens
-through `Finances` and `Appropriate` (its two strongest valuation paths)
-and through several smaller pathways. The increased appeal of paid
-overtime comes from a sharper expected payoff on both financial and
-appropriateness grounds, not from a shrinking of expected costs.
+#### Do those shifts create reasons to agree?
+
+The expectation arm and the valuation arm only become *reasons* when
+paired with their counterpart on the other side. An expectancy shift
+through `Appropriate` is only a reason if `Appropriate` carries weight
+on `Likelihood`; a valuation shift on `Drained` is only a reason if
+overtime actually moves `Drained`.
+[`plotPathXMY_routes()`](https://dustin-wood.github.io/funfield/reference/plotPathXMY_routes.md)
+shows the two products directly: the **expectation route** pairs each
+green `FZ[X,M](paid)` shift with the surviving black average `F1[M,Y]`;
+the **valuation route** pairs each black average `F1[X,M]` with each
+green `FZ[M,Y](paid)`. Both panels are read left-to-right: any complete
+chain where both arms are visibly thick is a candidate reason that
+paying shifts agreement.
+
+``` r
+
+plotPathXMY_routes(dec_paid,
+                   X_label = "Overtime", Y_label = "Likelihood",
+                   Z_label = "paid", X_shape = "rtTri",
+                   scale_max = 0.5)
+```
+
+![](overtime_pathXMY_files/figure-html/plot-routes-paid-1.png)
+
+The **expectation route** does most of the work. The strongest reason
+runs through `Appropriate` (+0.099, *p* \< .001) — agreeing to *paid*
+overtime feels appropriate to a degree that agreeing to unpaid overtime
+does not, and appropriateness in turn strongly drives the action. The
+second-largest reason is `Finances` (+0.054, *p* \< .001): paid overtime
+is expected to actually produce financial gain (it’s the definition of
+the condition), and financial gain weighs heavily on the choice. Smaller
+but real expectation-route reasons run through `EmployerValuation`
+(+0.022, *p* = .01) and `RaisePromotion` (+0.016, *p* = .02), with
+`RelationshipQuality` and `OutsideRelationships` borderline.
+
+The **valuation route** contributes one significant reason: `Drained`
+(+0.060, *p* = .02). Overtime is reliably expected to produce fatigue
+(`F1[X,M](Drained)` ≈ +0.32 normatively); when that fatigue’s *weight*
+on the decision shrinks under paid conditions, that shrinkage acts as a
+route toward agreement even though the underlying expectation didn’t
+change. `Punished` and `OutsideRelationships` carry borderline
+valuation-route reasons in the same direction (when paid, the threat of
+punishment and the threat to outside relationships matter slightly less
+to the choice).
+
+The composite picture: paying for overtime increases agreement mostly by
+changing what respondents *expect* the action to produce — primarily
+that it is appropriate to agree, and that agreement will actually be
+financially rewarding — and secondarily by softening the *weight* placed
+on the one cost the action reliably produces (fatigue). The upsides get
+amplified and one of the downsides gets discounted; the rest of the cost
+ledger stays as it was.
 
 ### Decomposition and field view
 
 ``` r
 
-dec_paid <- pathXMY_decompose(dat, X = "Overtime", Y = "Likelihood",
-                              M = mediators, Z = "paid", Z.within = FALSE)
 knitr::kable(dec_paid$total, digits = 3,
-             caption = "Total moderation BZ_YX[1] for pay status")
+             caption = "Total moderation FZ*[X,Y] for pay status")
 ```
 
 |   est |    se |      z | pvalue | ci.lower | ci.upper |
 |------:|------:|-------:|-------:|---------:|---------:|
 | 0.343 | 0.029 | 11.852 |      0 |    0.286 |    0.399 |
 
-Total moderation BZ_YX\[1\] for pay status {.table}
+Total moderation FZ\*\[X,Y\] for pay status {.table}
 
 ``` r
 
@@ -398,7 +469,7 @@ arrow** is the residual direct path from the *joint* multi-mediator fit
 nine mediators simultaneously. See the speeding vignette for an extended
 discussion of why the loop coefficients (not the per-mediator joint
 ones) are the right tool for inference about a single mediator’s role,
-and why `BZ_YX_joint` is best treated as a system-level diagnostic
+and why the joint `FZ[X,Y]` is best treated as a system-level diagnostic
 (Wood, Adanu, & Harms, 2025).
 
 ``` r
@@ -452,9 +523,9 @@ mod_p <- pathXMY(dat2, X = "Overtime", Y = "Likelihood",
 ``` r
 
 knitr::kable(
-  subset(mod_p$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "fZ_XM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of expectation paths by vTime (BZ_MX)"
+  caption = "Moderation of expectation paths by vTime (FZ[X,M])"
 )
 ```
 
@@ -470,7 +541,7 @@ knitr::kable(
 | 65  | RaisePromotion       |  0.036 | 0.015 |  2.327 |  0.020 |
 | 74  | Punished             |  0.009 | 0.018 |  0.529 |  0.597 |
 
-Moderation of expectation paths by vTime (BZ_MX) {.table}
+Moderation of expectation paths by vTime (FZ\[X,M\]) {.table}
 
 Respondents who report valuing their time more expect agreeing to
 overtime to produce *larger* gains in `EmployerValuation`,
@@ -484,9 +555,9 @@ reputationally.
 ``` r
 
 knitr::kable(
-  subset(mod_p$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "fZ_XM * f1_MY")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of indirect effects by vTime (BZ_MX x B1_YM)"
+  caption = "Moderation of indirect effects by vTime (FZ[X,M]·F1[M,Y])"
 )
 ```
 
@@ -502,7 +573,7 @@ knitr::kable(
 | 71  | RaisePromotion       |  0.024 | 0.012 |  2.053 |  0.040 |
 | 80  | Punished             | -0.003 | 0.006 | -0.547 |  0.584 |
 
-Moderation of indirect effects by vTime (BZ_MX x B1_YM) {.table}
+Moderation of indirect effects by vTime (FZ\[X,M\]·F1\[M,Y\]) {.table}
 
 The corresponding indirect-path moderation is in the same direction for
 the same mediators, though only the largest ones reach significance
@@ -515,14 +586,14 @@ after the multiplication by the valuation weights.
 dec_vt <- pathXMY_decompose(dat2, X = "Overtime", Y = "Likelihood",
                             M = mediators, Z = "vTime", Z.within = FALSE)
 knitr::kable(dec_vt$total, digits = 3,
-             caption = "Total moderation BZ_YX[1] for vTime")
+             caption = "Total moderation FZ*[X,Y] for vTime")
 ```
 
 |    est |    se |      z | pvalue | ci.lower | ci.upper |
 |-------:|------:|-------:|-------:|---------:|---------:|
 | -0.036 | 0.035 | -1.027 |  0.304 |   -0.104 |    0.032 |
 
-Total moderation BZ_YX\[1\] for vTime {.table}
+Total moderation FZ\*\[X,Y\] for vTime {.table}
 
 ``` r
 
@@ -561,6 +632,177 @@ The vTime moderation is subtle but consistent: as time-valuing rises,
 the `Overtime -> Finances` edge slightly thickens (people who value time
 more expect a larger financial return from agreeing). The other paths in
 the triangle are essentially fixed.
+
+## Quickly screening for moderator candidates
+
+`vTime` was a single guess about which trait might shift the overtime
+decision. The traits table holds 30 self-report items plus age, and the
+situation block adds six experimentally varied factors — most untouched
+so far. Fitting a separate
+[`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
+for each one would be expensive, but a shortcut falls out of the
+structure of the total moderation itself: the no-mediator `FZ*[X,Y]`
+from a fit with a between-person candidate `Z` is algebraically
+equivalent (up to an SD-of-slope constant that cancels) to the Pearson
+correlation between `Z` and each person’s within-person
+`Overtime → Likelihood` slope.
+[`screenModerators()`](https://dustin-wood.github.io/funfield/reference/screenModerators.md)
+packages this shortcut and reports the estimate on the `FZ` scale; see
+the speeding vignette for the derivation and the discussion of how its
+*p*-value relates to the cluster-robust *p* from
+[`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md).
+
+### Trait screen
+
+``` r
+
+screen <- screenModerators(psi    = dat,
+                           X      = "Overtime",
+                           Y      = "Likelihood",
+                           M      = mediators,
+                           traits = overtimeESJT$traits)
+#> screenModerators: skipping non-numeric trait columns: employment, education, income, ethnicity, gender
+
+labels <- overtimeESJT$codebook$trait_items[, c("var","label")]
+screen <- merge(screen, labels,
+                by.x = "trait", by.y = "var", all.x = TRUE, sort = FALSE)
+
+screen_yx <- subset(screen, target == "YX")
+screen_yx <- screen_yx[order(-abs(screen_yx$beta)), ]
+knitr::kable(head(screen_yx, 15)[, c("trait","r","beta","p","label")],
+             digits = 3, row.names = FALSE,
+             caption = paste0("Top 15 traits ranked by the within-person ",
+                              "Overtime effect on Likelihood: a fast screen ",
+                              "for total-moderation candidates."))
+```
+
+| trait | r | beta | p | label |
+|:---|---:|---:|---:|:---|
+| SR_18 | 0.236 | 0.146 | 0.000 | I am compassionate, have a soft heart. |
+| SR_01 | 0.210 | 0.130 | 0.000 | I try to follow the rules. |
+| SR_20 | 0.189 | 0.117 | 0.001 | I assume the best about people. |
+| SR_10 | 0.130 | 0.080 | 0.022 | I would be upset if I were unemployed. |
+| age | 0.121 | 0.075 | 0.034 | NA |
+| SR_27 | 0.112 | 0.070 | 0.048 | I am fascinated by art, music, or literature. |
+| SR_23 | 0.112 | 0.069 | 0.049 | I am reliable, can always be counted on. |
+| SR_14 | 0.110 | 0.068 | 0.053 | I am helpful and unselfish with others. |
+| SR_09 | 0.110 | 0.068 | 0.053 | I take commitments I have made to people seriously. |
+| SR_19 | -0.108 | -0.067 | 0.056 | I am sometimes rude to others. |
+| SR_11 | -0.095 | -0.059 | 0.095 | I tend to be lazy. |
+| SR_05 | -0.087 | -0.054 | 0.124 | I love dangerous situations. |
+| SR_02 | 0.078 | 0.048 | 0.172 | I try hard to maintain good relationships with others. |
+| SR_30 | -0.071 | -0.044 | 0.213 | I regularly drive far over the speed limit when driving. |
+| SR_21 | -0.066 | -0.041 | 0.245 | I tend to be disorganized. |
+
+Top 15 traits ranked by the within-person Overtime effect on Likelihood:
+a fast screen for total-moderation candidates. {.table}
+
+The top of the trait list is unusually coherent. The strongest
+single-item moderator is *“I am compassionate, have a soft heart”*
+(`SR_18`, *r* = .24, *p* \< .001), followed by *“I try to follow the
+rules”* (`SR_01`), *“I assume the best about people”* (`SR_20`), *“I
+would be upset if I were unemployed”* (`SR_10`), age, *“I am fascinated
+by art, music, or literature”* (`SR_27`), *“I am reliable, can always be
+counted on”* (`SR_23`), *“I am helpful and unselfish with others”*
+(`SR_14`), and *“I take commitments I have made to people seriously”*
+(`SR_09`). The lone item with a negative sign in the top fifteen is *“I
+am sometimes rude to others”* (`SR_19`) — the opposite end of the same
+agreeable continuum.
+
+Read together, this is a pro-social / conscientious / agreeable cluster:
+respondents who agree to work overtime in this scenario are not, item by
+item, distinguished by valuing their time or by ambition for the raise —
+they are distinguished by self-descriptions oriented toward duty,
+dependability, and care for the people who would be affected. `vTime`
+(`SR_12`) itself sits well outside the top fifteen (*r* = −.06, *p* =
+.31), which makes the choice of `vTime` as a moderator above a genuinely
+cold-pick illustration rather than an *a priori* favorite.
+
+### Situational factor screen
+
+The six randomly varied situational factors slot into the same
+[`screenModerators()`](https://dustin-wood.github.io/funfield/reference/screenModerators.md)
+call once they are recoded to 0/1 indicators — the `traits` argument
+accepts any per-person frame:
+
+``` r
+
+cond <- overtimeESJT$cond
+sit_num <- data.frame(
+  p              = cond$p,
+  paid           = as.numeric(cond$cashReward ==
+                              "the company will pay you overtime (above your normal pay rate) to work on the project"),
+  boss           = as.numeric(cond$CoType == "Your boss"),
+  friday         = as.numeric(cond$weekday == "Friday evening"),
+  priorPlans     = as.numeric(cond$priorPlans ==
+                              "have previously made plans to meet with friends"),
+  difficult      = as.numeric(cond$workDifficulty == "difficult"),
+  helpfulProject = as.numeric(cond$projectImpact ==
+                              "is clear that completing this project will be very helpful to the company")
+)
+
+screen_sit <- screenModerators(psi = dat, X = "Overtime", Y = "Likelihood",
+                                M = mediators, traits = sit_num)
+screen_sit_yx <- subset(screen_sit, target == "YX")
+screen_sit_yx <- screen_sit_yx[order(-abs(screen_sit_yx$beta)), ]
+knitr::kable(screen_sit_yx[, c("trait","r","beta","p","n")],
+             digits = 3, row.names = FALSE,
+             caption = "Situational factors ranked by their moderation of Overtime -> Likelihood")
+```
+
+| trait          |      r |   beta |     p |   n |
+|:---------------|-------:|-------:|------:|----:|
+| paid           |  0.554 |  0.343 | 0.000 | 317 |
+| priorPlans     | -0.237 | -0.147 | 0.000 | 317 |
+| difficult      | -0.123 | -0.076 | 0.028 | 317 |
+| helpfulProject |  0.103 |  0.063 | 0.068 | 317 |
+| boss           |  0.067 |  0.041 | 0.235 | 317 |
+| friday         |  0.013 |  0.008 | 0.821 | 317 |
+
+Situational factors ranked by their moderation of Overtime -\>
+Likelihood {.table}
+
+Pay status dominates the situational list — and the combined list.
+Toggling from unpaid to paid overtime shifts the within-person
+`Overtime → Likelihood` slope by **+.34**, more than twice the strongest
+trait moderator. Having previously made plans with friends pulls the
+slope down by .15 (*p* \< .001), and a “difficult” framing of the work
+pulls it down by a further .08 (*p* = .03). The remaining three
+situational factors — whether it is the boss or a coworker doing the
+asking, whether it is a Friday or Wednesday evening, and whether the
+project’s helpfulness to the company is clear — do not reach
+significance on their own.
+
+### Largest FZ\[X,Y\] moderators, combined ranking
+
+Putting the two screens together names the variables that should carry
+the largest `FZ[X,Y]` coefficients in a full
+[`pathXMY_decompose()`](https://dustin-wood.github.io/funfield/reference/pathXMY_decompose.md)
+fit on this dataset:
+
+| Rank | Variable                                  | Type        |     β |
+|-----:|-------------------------------------------|-------------|------:|
+|    1 | overtime is paid                          | situation   | +.343 |
+|    2 | *“I am compassionate, have a soft heart”* | trait       | +.146 |
+|    3 | prior plans with friends                  | situation   | −.147 |
+|    4 | *“I try to follow the rules”*             | trait       | +.130 |
+|    5 | *“I assume the best about people”*        | trait       | +.117 |
+|    6 | *“I would be upset if I were unemployed”* | trait       | +.080 |
+|    7 | work described as difficult               | situation   | −.076 |
+|    8 | age                                       | demographic | +.075 |
+
+The dominant single moderator is the experimentally manipulated pay
+indicator — a satisfying result, in that the scenario was *designed* to
+surface it. The trait moderators that fall out of the screen aren’t the
+candidates a researcher might guess from the overtime-as-investment
+framing (`vTime`, ambition, ratings of one’s leadership) but a tight
+cluster of agreeable / conscientious / pro-social self-descriptions.
+That cluster is a natural next target for a per-trait
+[`pathXMY_decompose()`](https://dustin-wood.github.io/funfield/reference/pathXMY_decompose.md)
+— each item rephrases the same underlying disposition, so the field
+decompositions should look similar across them and the exercise becomes
+one of identifying which mediators carry that shared moderation rather
+than which item to model first.
 
 ## Cross-scenario linkage
 

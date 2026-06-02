@@ -3,14 +3,14 @@
 mediator x parameter) into a wide form that places two or more named
 parameters next to each other, keyed by mediator. This is the natural
 layout for reading an expectation path beside its companion valuation
-path — B1_MX next to B1_YM for the normative model, or
-the two moderation arms BZ_MX next to BZ_YM — in a single
+path — f1_XM next to f1_MY for the normative model, or
+the two moderation arms fZ_XM next to fZ_MY — in a single
 table, without the mediator column repeating."><meta property="og:description" content="Reshapes a pathXMY tidy table from long form (one row per
 mediator x parameter) into a wide form that places two or more named
 parameters next to each other, keyed by mediator. This is the natural
 layout for reading an expectation path beside its companion valuation
-path — B1_MX next to B1_YM for the normative model, or
-the two moderation arms BZ_MX next to BZ_YM — in a single
+path — f1_XM next to f1_MY for the normative model, or
+the two moderation arms fZ_XM next to fZ_MY — in a single
 table, without the mediator column repeating."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -57,8 +57,8 @@ table, without the mediator column repeating."></head><body>
 mediator x parameter) into a wide form that places two or more named
 parameters next to each other, keyed by mediator. This is the natural
 layout for reading an expectation path beside its companion valuation
-path — <code>B1_MX</code> next to <code>B1_YM</code> for the normative model, or
-the two moderation arms <code>BZ_MX</code> next to <code>BZ_YM</code> — in a single
+path — <code>f1_XM</code> next to <code>f1_MY</code> for the normative model, or
+the two moderation arms <code>fZ_XM</code> next to <code>fZ_MY</code> — in a single
 table, without the <code>mediator</code> column repeating.</p>
     </div>
 
@@ -86,8 +86,8 @@ requested <code>cols</code> (e.g. <code>x$tidy_loop</code>).</p></dd>
 <dt id="arg-params">params<a class="anchor" aria-label="anchor" href="#arg-params"></a></dt>
 <dd><p>Character vector (length &gt;= 2) of parameter labels to place
 side by side, in display order. Labels follow the XMY convention used by
-<code><a href="pathXMY.html">pathXMY()</a></code>: e.g. <code>"B1_MX"</code>, <code>"B1_YM"</code>, <code>"BZ_MX"</code>,
-<code>"BZ_YM"</code>.</p></dd>
+<code><a href="pathXMY.html">pathXMY()</a></code>: e.g. <code>"f1_XM"</code>, <code>"f1_MY"</code>, <code>"fZ_XM"</code>,
+<code>"fZ_MY"</code>.</p></dd>
 
 
 <dt id="arg-from">from<a class="anchor" aria-label="anchor" href="#arg-from"></a></dt>
@@ -112,10 +112,10 @@ for the first parameter.</p></dd>
     <p>A data frame with one row per mediator: a leading <code>mediator</code>
   column followed by one block of <code>cols</code> per parameter. Block columns
   are named <code>&lt;param&gt;.&lt;col&gt;</code> (runs of non-alphanumeric characters in
-  <code>param</code> collapsed to <code>"_"</code>), so <code>c("B1_MX", "B1_YM")</code>
-  yields <code>B1_MX.est</code>, <code>B1_MX.se</code>, <code>...</code>, <code>B1_YM.est</code>,
-  <code>B1_YM.se</code>, <code>...</code>. Rows with a missing (<code>NA</code>) mediator
-  — the global <code>B*_YX</code> direct paths — are dropped, since the
+  <code>param</code> collapsed to <code>"_"</code>), so <code>c("f1_XM", "f1_MY")</code>
+  yields <code>f1_XM.est</code>, <code>f1_XM.se</code>, <code>...</code>, <code>f1_MY.est</code>,
+  <code>f1_MY.se</code>, <code>...</code>. Rows with a missing (<code>NA</code>) mediator
+  — the global <code>f*_XY</code> direct paths — are dropped, since the
   table is keyed by mediator.</p>
     </div>
     <div class="section level2">
@@ -132,12 +132,12 @@ for the first parameter.</p></dd>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="pathXMY.html">pathXMY</a></span><span class="op">(</span><span class="va">speedingESJT</span><span class="op">$</span><span class="va">PSI</span>, X <span class="op">=</span> <span class="st">"Speed"</span>, Y <span class="op">=</span> <span class="st">"Likelihood"</span>,</span></span>
 <span class="r-in"><span>               M <span class="op">=</span> <span class="va">mediators</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co">## expectation paths beside valuation paths</span></span></span>
-<span class="r-in"><span><span class="fu">pathXMY_pairtable</span><span class="op">(</span><span class="va">res</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B1_MX"</span>, <span class="st">"B1_YM"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">pathXMY_pairtable</span><span class="op">(</span><span class="va">res</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"f1_XM"</span>, <span class="st">"f1_MY"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## the two moderation arms beside each other (model fit with a Z)</span></span></span>
 <span class="r-in"><span><span class="va">modp</span> <span class="op">&lt;-</span> <span class="fu"><a href="pathXMY.html">pathXMY</a></span><span class="op">(</span><span class="va">speedingESJT</span><span class="op">$</span><span class="va">PSI</span>, X <span class="op">=</span> <span class="st">"Speed"</span>, Y <span class="op">=</span> <span class="st">"Likelihood"</span>,</span></span>
 <span class="r-in"><span>                M <span class="op">=</span> <span class="va">mediators</span>, Z <span class="op">=</span> <span class="st">"someTrait"</span>, Z.within <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">pathXMY_pairtable</span><span class="op">(</span><span class="va">modp</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BZ_MX"</span>, <span class="st">"BZ_YM"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">pathXMY_pairtable</span><span class="op">(</span><span class="va">modp</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fZ_XM"</span>, <span class="st">"fZ_MY"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

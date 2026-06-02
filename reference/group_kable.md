@@ -4,8 +4,8 @@ Renders a wide data frame — typically the output of
 [`pathXMY_pairtable`](https://dustin-wood.github.io/funfield/reference/pathXMY_pairtable.md)
 — as a self-contained HTML table in which the columns are gathered under
 spanning group headers. Each group after the first is set off by a
-divider rule, so two parameter blocks placed side by side (e.g. `B1_MX`
-beside `B1_YM`) read as distinct, titled panels rather than one
+divider rule, so two parameter blocks placed side by side (e.g. `f1_XM`
+beside `f1_MY`) read as distinct, titled panels rather than one
 undifferentiated block of numbers.
 
 Intended for use inside R Markdown / knitr HTML documents (the package
@@ -84,12 +84,12 @@ mediators <- c("Crash","Injured","Ticket","MoneyCost","OnTime",
                "IntQuality","FunDrive","Appropriate")
 res <- pathXMY(speedingESJT$PSI, X = "Speed", Y = "Likelihood",
                M = mediators)
-tab <- pathXMY_pairtable(res, c("B1_MX", "B1_YM"))
+tab <- pathXMY_pairtable(res, c("f1_XM", "f1_MY"))
 group_kable(
   tab,
   groups = c(" " = 1,
-             "Expectation paths (B1_MX)" = 4,
-             "Valuation paths (B1_YM)"   = 4),
+             "Expectation paths (F1[X,M])" = 4,
+             "Valuation paths (F1[M,Y])"   = 4),
   col_labels = c("Mediator", "est", "se", "z", "p",
                              "est", "se", "z", "p"))
 } # }

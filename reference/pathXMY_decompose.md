@@ -3,14 +3,14 @@
 For a moderator `Z` acting on the link from `X` to `Y`, two models are
 commonly of interest:
 
-- Model \[1\]:
+- Total model:
 
-  The direct moderation \\Y = b^1\_{YX} X + b^Z\_{YX} X \cdot Z +
-  \dots\\. `BZ_YX[1]` indexes the *total* moderation effect — how much
-  \\Z\\ shifts the action-outcome link, without reference to any
-  mediator.
+  The direct moderation \\Y = F_1\[X,Y\] X + F_Z\[X,Y\] X \cdot Z +
+  \dots\\. The total `fZ_XY` (\\F_Z^{\*}\[X,Y\]\\) indexes the *total*
+  moderation effect — how much \\Z\\ shifts the action-outcome link,
+  without reference to any mediator.
 
-- Model \[2\]:
+- Mediated model:
 
   The full mediated model \\X \to M \to Y\\ with \\Z\\ moderating all
   three paths.
@@ -18,27 +18,27 @@ commonly of interest:
 These are related by the algebraic identity (applied to one mediator at
 a time, in linear regression with cluster-robust SEs):
 
-\$\$b^Z\_{YX}\[1\] = b^Z\_{MX} \cdot b^1\_{YM} + b^1\_{MX} \cdot
-b^Z\_{YM} + b^Z\_{YX}\[2\]\$\$
+\$\$F_Z^{\*}\[X,Y\] = F_Z\[X,M\] \cdot F_1\[M,Y\] + F_1\[X,M\] \cdot
+F_Z\[M,Y\] + F_Z\[X,Y\]\$\$
 
-- Term 1, `BZ_MX * B1_YM`: moderation that flows through \\Z\\ changing
+- Term 1, `fZ_XM * f1_MY`: moderation that flows through \\Z\\ changing
   the *expectation* of \\M\\ given \\X\\. This is what
   [`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
   highlights by default.
 
-- Term 2, `B1_MX * BZ_YM`: moderation that flows through \\Z\\ changing
+- Term 2, `f1_XM * fZ_MY`: moderation that flows through \\Z\\ changing
   the *valuation* of \\M\\ as a driver of \\Y\\, while leaving
   expectations untouched.
 
-- Term 3, `BZ_YX[2]`: direct \\Z\\-moderation of the \\X \to Y\\ link
-  that does *not* route through this mediator.
+- Term 3, residual `fZ_XY`: direct \\Z\\-moderation of the \\X \to Y\\
+  link that does *not* route through this mediator.
 
-Identifying which term carries most of `BZ_YX[1]` for a given mediator
-answers a different psychological question than
+Identifying which term carries most of the total `fZ_XY` for a given
+mediator answers a different psychological question than
 [`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
 alone. A person-trait moderator may leave expectations untouched
-(`BZ_MX` near zero) yet substantially shift valuation (`BZ_YM` large) —
-invisible in the `BZ_MX` table but central to understanding why the
+(`fZ_XM` near zero) yet substantially shift valuation (`fZ_MY` large) —
+invisible in the `fZ_XM` table but central to understanding why the
 trait moderates action.
 
 ## Usage
@@ -68,21 +68,22 @@ A list with three elements:
 
 - total:
 
-  One-row data frame with the no-mediator (Model \[1\]) estimates:
-  `est`, `se`, `z`, `pvalue` for `BZ_YX[1]`.
+  One-row data frame with the no-mediator (total-model) estimates:
+  `est`, `se`, `z`, `pvalue` for the total `fZ_XY`
+  (\\F_Z^{\*}\[X,Y\]\\).
 
 - components:
 
   Long tidy data frame, one row per (mediator, term). Terms:
-  `"BZ_MX * B1_YM"` (expectation moderation), `"B1_MX * BZ_YM"`
-  (valuation moderation), `"BZ_YX (direct)"` (residual direct
+  `"fZ_XM * f1_MY"` (expectation moderation), `"f1_XM * fZ_MY"`
+  (valuation moderation), `"fZ_XY (direct)"` (residual direct
   moderation), and `"sum (1+2+3)"` (their algebraic sum; should
-  approximate `BZ_YX[1]` for each single-mediator fit). The first three
-  rows carry full SE/z/p columns; the sum row has `est` only.
+  approximate the total `fZ_XY` for each single-mediator fit). The first
+  three rows carry full SE/z/p columns; the sum row has `est` only.
 
 - fits:
 
-  A list with `$direct` (Model \[1\]) and `$full` (the multi-mediator
+  A list with `$direct` (total model) and `$full` (the multi-mediator
   [`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
   object).
 

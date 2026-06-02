@@ -44,7 +44,7 @@ plotPathXMY_widget_routes(
 - panel_titles:
 
   Optional length-2 character vector. If `NULL`, titles are
-  auto-generated from `Z_label`.
+  auto-generated from `Z_label` in the F-schema display form.
 
 - width, height:
 

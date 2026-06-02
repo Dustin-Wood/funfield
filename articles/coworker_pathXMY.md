@@ -168,90 +168,92 @@ respondent is to take it, averaging across people and conditions?
 norm <- pathXMY(dat, X = "ExpDisapproval", Y = "Likelihood", M = mediators)
 
 ## Loop pass: one X -> M -> Y regression PER MEDIATOR, fit independently.
-## Each B1_YM row is the slope of Likelihood on that mediator controlling
+## Each f1_MY row is the slope of Likelihood on that mediator controlling
 ## only for ExpDisapproval (no other mediators in the equation).
-norm$tidy_loop
-#>          mediator         param          est         se           z       pvalue     ci.lower    ci.upper
-#> 1     Appropriate         B1_MX  0.098477007 0.02186970   4.5028972 6.703330e-06  0.055613185  0.14134083
-#> 2     Appropriate         B1_YX -0.015362912 0.01569909  -0.9785860 3.277846e-01 -0.046132568  0.01540674
-#> 3     Appropriate         B1_YM  0.824923985 0.01692269  48.7466222 0.000000e+00  0.791756122  0.85809185
-#> 4     Appropriate B1_MX * B1_YM  0.081236045 0.01838178   4.4193779 9.898540e-06  0.045208413  0.11726368
-#> 5        MajorArg         B1_MX  0.787150673 0.01697812  46.3626425 0.000000e+00  0.753874162  0.82042718
-#> 6        MajorArg         B1_YX  0.535054781 0.04109056  13.0213546 0.000000e+00  0.454518759  0.61559080
-#> 7        MajorArg         B1_YM -0.596050622 0.03872116 -15.3934099 0.000000e+00 -0.671942692 -0.52015855
-#> 8        MajorArg B1_MX * B1_YM -0.469181648 0.03433678 -13.6641122 0.000000e+00 -0.536480505 -0.40188279
-#> 9   GoodRelationP         B1_MX -0.642909951 0.02161870 -29.7386007 0.000000e+00 -0.685281829 -0.60053807
-#> 10  GoodRelationP         B1_YX  0.457886454 0.03202991  14.2955885 0.000000e+00  0.395108979  0.52066393
-#> 11  GoodRelationP         B1_YM  0.609748411 0.03433025  17.7612561 0.000000e+00  0.542462352  0.67703447
-#> 12  GoodRelationP B1_MX * B1_YM -0.392013321 0.02720818 -14.4079217 0.000000e+00 -0.445340374 -0.33868627
-#> 13       Punished         B1_MX  0.012568387 0.01933786   0.6499367 5.157331e-01 -0.025333128  0.05046990
-#> 14       Punished         B1_YX  0.075640770 0.02096430   3.6080759 3.084762e-04  0.034551506  0.11673003
-#> 15       Punished         B1_YM -0.777159169 0.02700175 -28.7818077 0.000000e+00 -0.830081626 -0.72423671
-#> 16       Punished B1_MX * B1_YM -0.009767637 0.01494738  -0.6534680 5.134546e-01 -0.039063971  0.01952870
-#> 17    CompleteJob         B1_MX  0.047390211 0.01640594   2.8886004 3.869605e-03  0.015235155  0.07954527
-#> 18    CompleteJob         B1_YX  0.029232314 0.02125619   1.3752377 1.690578e-01 -0.012429054  0.07089368
-#> 19    CompleteJob         B1_YM  0.773172742 0.03069234  25.1910664 0.000000e+00  0.713016863  0.83332862
-#> 20    CompleteJob B1_MX * B1_YM  0.036640820 0.01261961   2.9034835 3.690364e-03  0.011906845  0.06137479
-#> 21     P_Punished         B1_MX  0.268076298 0.01482554  18.0820637 0.000000e+00  0.239018780  0.29713382
-#> 22     P_Punished         B1_YX  0.118341328 0.02793098   4.2369206 2.266062e-05  0.063597620  0.17308504
-#> 23     P_Punished         B1_YM -0.195721125 0.04510414  -4.3393166 1.429265e-05 -0.284123606 -0.10731864
-#> 24     P_Punished B1_MX * B1_YM -0.052468195 0.01211298  -4.3315683 1.480510e-05 -0.076209197 -0.02872719
-#> 25 CompanySuccess         B1_MX  0.037409434 0.01480606   2.5266298 1.151628e-02  0.008390088  0.06642878
-#> 26 CompanySuccess         B1_YX  0.030486931 0.02062691   1.4780175 1.394031e-01 -0.009941065  0.07091493
-#> 27 CompanySuccess         B1_YM  0.945916531 0.02854602  33.1365441 0.000000e+00  0.889967355  1.00186571
-#> 28 CompanySuccess B1_MX * B1_YM  0.035386202 0.01412570   2.5050930 1.224192e-02  0.007700331  0.06307207
+## pathXMY_to_F() renders the terse f-keys as bracket display labels.
+pathXMY_to_F(norm$tidy_loop)
+#>          mediator           param          est         se           z       pvalue     ci.lower    ci.upper
+#> 1     Appropriate         F1[X,M]  0.098477007 0.02186970   4.5028972 6.703330e-06  0.055613185  0.14134083
+#> 2     Appropriate         F1[X,Y] -0.015362912 0.01569909  -0.9785860 3.277846e-01 -0.046132568  0.01540674
+#> 3     Appropriate         F1[M,Y]  0.824923985 0.01692269  48.7466222 0.000000e+00  0.791756122  0.85809185
+#> 4     Appropriate F1[X,M]·F1[M,Y]  0.081236045 0.01838178   4.4193779 9.898540e-06  0.045208413  0.11726368
+#> 5        MajorArg         F1[X,M]  0.787150673 0.01697812  46.3626425 0.000000e+00  0.753874162  0.82042718
+#> 6        MajorArg         F1[X,Y]  0.535054781 0.04109056  13.0213546 0.000000e+00  0.454518759  0.61559080
+#> 7        MajorArg         F1[M,Y] -0.596050622 0.03872116 -15.3934099 0.000000e+00 -0.671942692 -0.52015855
+#> 8        MajorArg F1[X,M]·F1[M,Y] -0.469181648 0.03433678 -13.6641122 0.000000e+00 -0.536480505 -0.40188279
+#> 9   GoodRelationP         F1[X,M] -0.642909951 0.02161870 -29.7386007 0.000000e+00 -0.685281829 -0.60053807
+#> 10  GoodRelationP         F1[X,Y]  0.457886454 0.03202991  14.2955885 0.000000e+00  0.395108979  0.52066393
+#> 11  GoodRelationP         F1[M,Y]  0.609748411 0.03433025  17.7612561 0.000000e+00  0.542462352  0.67703447
+#> 12  GoodRelationP F1[X,M]·F1[M,Y] -0.392013321 0.02720818 -14.4079217 0.000000e+00 -0.445340374 -0.33868627
+#> 13       Punished         F1[X,M]  0.012568387 0.01933786   0.6499367 5.157331e-01 -0.025333128  0.05046990
+#> 14       Punished         F1[X,Y]  0.075640770 0.02096430   3.6080759 3.084762e-04  0.034551506  0.11673003
+#> 15       Punished         F1[M,Y] -0.777159169 0.02700175 -28.7818077 0.000000e+00 -0.830081626 -0.72423671
+#> 16       Punished F1[X,M]·F1[M,Y] -0.009767637 0.01494738  -0.6534680 5.134546e-01 -0.039063971  0.01952870
+#> 17    CompleteJob         F1[X,M]  0.047390211 0.01640594   2.8886004 3.869605e-03  0.015235155  0.07954527
+#> 18    CompleteJob         F1[X,Y]  0.029232314 0.02125619   1.3752377 1.690578e-01 -0.012429054  0.07089368
+#> 19    CompleteJob         F1[M,Y]  0.773172742 0.03069234  25.1910664 0.000000e+00  0.713016863  0.83332862
+#> 20    CompleteJob F1[X,M]·F1[M,Y]  0.036640820 0.01261961   2.9034835 3.690364e-03  0.011906845  0.06137479
+#> 21     P_Punished         F1[X,M]  0.268076298 0.01482554  18.0820637 0.000000e+00  0.239018780  0.29713382
+#> 22     P_Punished         F1[X,Y]  0.118341328 0.02793098   4.2369206 2.266062e-05  0.063597620  0.17308504
+#> 23     P_Punished         F1[M,Y] -0.195721125 0.04510414  -4.3393166 1.429265e-05 -0.284123606 -0.10731864
+#> 24     P_Punished F1[X,M]·F1[M,Y] -0.052468195 0.01211298  -4.3315683 1.480510e-05 -0.076209197 -0.02872719
+#> 25 CompanySuccess         F1[X,M]  0.037409434 0.01480606   2.5266298 1.151628e-02  0.008390088  0.06642878
+#> 26 CompanySuccess         F1[X,Y]  0.030486931 0.02062691   1.4780175 1.394031e-01 -0.009941065  0.07091493
+#> 27 CompanySuccess         F1[M,Y]  0.945916531 0.02854602  33.1365441 0.000000e+00  0.889967355  1.00186571
+#> 28 CompanySuccess F1[X,M]·F1[M,Y]  0.035386202 0.01412570   2.5050930 1.224192e-02  0.007700331  0.06307207
 
 ## Joint pass: a SINGLE simultaneous regression with all mediators together
-## in the Y equation. B1_YM_joint slopes are partial slopes net of the
-## other mediators -- not comparable to the loop B1_YM above.
-norm$tidy_joint
-#>          mediator       param         est         se           z       pvalue     ci.lower    ci.upper
-#> 1     Appropriate B1_MX_joint  0.09847701 0.02186970   4.5028972 6.703330e-06  0.055613185  0.14134083
-#> 2     Appropriate B1_YM_joint  0.62758885 0.02686725  23.3588763 0.000000e+00  0.574930002  0.68024770
-#> 3        MajorArg B1_MX_joint  0.78715067 0.01697812  46.3626425 0.000000e+00  0.753874162  0.82042718
-#> 4        MajorArg B1_YM_joint -0.14195035 0.03463590  -4.0983585 4.160906e-05 -0.209835480 -0.07406523
-#> 5   GoodRelationP B1_MX_joint -0.64290995 0.02161870 -29.7386007 0.000000e+00 -0.685281829 -0.60053807
-#> 6   GoodRelationP B1_YM_joint  0.09564202 0.03058433   3.1271576 1.765053e-03  0.035697835  0.15558621
-#> 7        Punished B1_MX_joint  0.01256839 0.01933786   0.6499367 5.157331e-01 -0.025333128  0.05046990
-#> 8        Punished B1_YM_joint -0.13676432 0.02715016  -5.0373296 4.720715e-07 -0.189977655 -0.08355098
-#> 9     CompleteJob B1_MX_joint  0.04739021 0.01640594   2.8886004 3.869605e-03  0.015235155  0.07954527
-#> 10    CompleteJob B1_YM_joint  0.07183973 0.02935467   2.4473021 1.439302e-02  0.014305647  0.12937382
-#> 11     P_Punished B1_MX_joint  0.26807630 0.01482554  18.0820637 0.000000e+00  0.239018780  0.29713382
-#> 12     P_Punished B1_YM_joint  0.11879209 0.02669457   4.4500470 8.585152e-06  0.066471695  0.17111249
-#> 13 CompanySuccess B1_MX_joint  0.03740943 0.01480606   2.5266298 1.151628e-02  0.008390088  0.06642878
-#> 14 CompanySuccess B1_YM_joint  0.14834233 0.03557323   4.1700546 3.045266e-05  0.078620071  0.21806458
-#> 15           <NA> B1_YX_joint  0.13821524 0.02461123   5.6159412 1.954952e-08  0.089978112  0.18645238
+## in the Y equation. The joint f1_MY slopes are partial slopes net of the
+## other mediators -- not comparable to the loop f1_MY above.
+pathXMY_to_F(norm$tidy_joint)
+#>          mediator   param         est         se           z       pvalue     ci.lower    ci.upper
+#> 1     Appropriate F1[X,M]  0.09847701 0.02186970   4.5028972 6.703330e-06  0.055613185  0.14134083
+#> 2     Appropriate F1[M,Y]  0.62758885 0.02686725  23.3588763 0.000000e+00  0.574930002  0.68024770
+#> 3        MajorArg F1[X,M]  0.78715067 0.01697812  46.3626425 0.000000e+00  0.753874162  0.82042718
+#> 4        MajorArg F1[M,Y] -0.14195035 0.03463590  -4.0983585 4.160906e-05 -0.209835480 -0.07406523
+#> 5   GoodRelationP F1[X,M] -0.64290995 0.02161870 -29.7386007 0.000000e+00 -0.685281829 -0.60053807
+#> 6   GoodRelationP F1[M,Y]  0.09564202 0.03058433   3.1271576 1.765053e-03  0.035697835  0.15558621
+#> 7        Punished F1[X,M]  0.01256839 0.01933786   0.6499367 5.157331e-01 -0.025333128  0.05046990
+#> 8        Punished F1[M,Y] -0.13676432 0.02715016  -5.0373296 4.720715e-07 -0.189977655 -0.08355098
+#> 9     CompleteJob F1[X,M]  0.04739021 0.01640594   2.8886004 3.869605e-03  0.015235155  0.07954527
+#> 10    CompleteJob F1[M,Y]  0.07183973 0.02935467   2.4473021 1.439302e-02  0.014305647  0.12937382
+#> 11     P_Punished F1[X,M]  0.26807630 0.01482554  18.0820637 0.000000e+00  0.239018780  0.29713382
+#> 12     P_Punished F1[M,Y]  0.11879209 0.02669457   4.4500470 8.585152e-06  0.066471695  0.17111249
+#> 13 CompanySuccess F1[X,M]  0.03740943 0.01480606   2.5266298 1.151628e-02  0.008390088  0.06642878
+#> 14 CompanySuccess F1[M,Y]  0.14834233 0.03557323   4.1700546 3.045266e-05  0.078620071  0.21806459
+#> 15           <NA> F1[X,Y]  0.13821524 0.02461123   5.6159412 1.954952e-08  0.089978112  0.18645238
 ```
 
-### Expectation paths (B1_MX): what co-occurs with expressing disapproval?
+### Expectation paths (F1\[X,M\]): what co-occurs with expressing disapproval?
 
 Actions that score higher on `ExpDisapproval` (i.e., actions that would
 constitute more direct expression of disapproval) are also seen as more
-likely to produce a major argument/confrontation (`MajorArg`, B1_MX ≈
-0.79) and less likely to maintain a good working relationship in the
-long run (`GoodRelationP`, B1_MX ≈ −0.64). They are also seen as more
-appropriate within the role (`Appropriate`, B1_MX \> 0) and more likely
-to result in the coworker being formally punished (`P_Punished`, B1_MX
-\> 0).
+likely to produce a major argument/confrontation (`MajorArg`, F1\[X,M\]
+≈ 0.79) and less likely to maintain a good working relationship in the
+long run (`GoodRelationP`, F1\[X,M\] ≈ −0.64). They are also seen as
+more appropriate within the role (`Appropriate`, F1\[X,M\] \> 0) and
+more likely to result in the coworker being formally punished
+(`P_Punished`, F1\[X,M\] \> 0).
 
-### Valuation paths (B1_YM): which outcomes drive action likelihood?
+### Valuation paths (F1\[M,Y\]): which outcomes drive action likelihood?
 
-Acting appropriately (`Appropriate`, B1_YM ≈ 0.82) and benefiting
-company success (`CompanySuccess`, B1_YM ≈ 0.95) are the strongest
+Acting appropriately (`Appropriate`, F1\[M,Y\] ≈ 0.82) and benefiting
+company success (`CompanySuccess`, F1\[M,Y\] ≈ 0.95) are the strongest
 positive drivers of whether a respondent says they would take an action.
-Being formally punished (`Punished`, B1_YM ≈ −0.78) and having a major
-argument (`MajorArg`, B1_YM ≈ −0.60) are the strongest suppressors.
+Being formally punished (`Punished`, F1\[M,Y\] ≈ −0.78) and having a
+major argument (`MajorArg`, F1\[M,Y\] ≈ −0.60) are the strongest
+suppressors.
 
-### Indirect effects (B1_MX × B1_YM)
+### Indirect effects (F1\[X,M\]·F1\[M,Y\])
 
 Indirect effects are significant for every mediator whose two component
 paths are both non-zero — the lone exception is `Punished`, whose
-expectation path (`B1_MX` ≈ 0.01) is essentially zero. The largest
-indirect paths are both negative: through `MajorArg` (B1_MX × B1_YM ≈
-−0.47) and `GoodRelationP` (≈ −0.39). Within a situation, the action
-that more strongly expresses disapproval is expected to provoke a major
-argument and to erode the working relationship, and both expectations
-pull strongly against taking it.
+expectation path (`F1[X,M]` ≈ 0.01) is essentially zero. The largest
+indirect paths are both negative: through `MajorArg`
+(F1\[X,M\]·F1\[M,Y\] ≈ −0.47) and `GoodRelationP` (≈ −0.39). Within a
+situation, the action that more strongly expresses disapproval is
+expected to provoke a major argument and to erode the working
+relationship, and both expectations pull strongly against taking it.
 
 ## Situation-level moderation: coworker rank
 
@@ -273,9 +275,9 @@ mod_s <- pathXMY(dat, X = "ExpDisapproval", Y = "Likelihood",
 ``` r
 
 knitr::kable(
-  subset(mod_s$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "fZ_XM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of expectation paths by manager rank (BZ_MX)"
+  caption = "Moderation of expectation paths by manager rank (FZ[X,M])"
 )
 ```
 
@@ -289,12 +291,12 @@ knitr::kable(
 | 47  | P_Punished     | -0.004 | 0.028 | -0.155 |  0.877 |
 | 56  | CompanySuccess | -0.134 | 0.040 | -3.313 |  0.001 |
 
-Moderation of expectation paths by manager rank (BZ_MX) {.table}
+Moderation of expectation paths by manager rank (FZ\[X,M\]) {.table}
 
 Six of the seven mediators show significant moderation. When the
 coworker holds a higher rank (manager condition), expressing disapproval
 is expected to be substantially *more* likely to result in formal
-punishment of oneself (`Punished`, BZ_MX \> 0): the power asymmetry
+punishment of oneself (`Punished`, FZ\[X,M\] \> 0): the power asymmetry
 increases the perceived personal cost. At the same time, expressing
 disapproval in a manager scenario is perceived as *less* likely to be
 seen as role-appropriate (`Appropriate`), less likely to help complete
@@ -308,9 +310,9 @@ when facing a higher-power colleague.
 ``` r
 
 knitr::kable(
-  subset(mod_s$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "fZ_XM * f1_MY")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of indirect effects by manager rank (BZ_MX × B1_YM)"
+  caption = "Moderation of indirect effects by manager rank (FZ[X,M]·F1[M,Y])"
 )
 ```
 
@@ -324,7 +326,8 @@ knitr::kable(
 | 53  | P_Punished     |  0.001 | 0.006 |  0.155 |  0.877 |
 | 62  | CompanySuccess | -0.125 | 0.037 | -3.365 |  0.001 |
 
-Moderation of indirect effects by manager rank (BZ_MX × B1_YM) {.table}
+Moderation of indirect effects by manager rank (FZ\[X,M\]·F1\[M,Y\])
+{.table}
 
 All significant expectation moderation translates into significant
 moderation of the indirect effect. The indirect path through `Punished`
@@ -336,11 +339,11 @@ disapproval through that path.
 ### Decomposition and field view
 
 [`pathXMY_decompose()`](https://dustin-wood.github.io/funfield/reference/pathXMY_decompose.md)
-partitions the total Z-moderation (`BZ_YX[1]`) into expectation routing
-(`BZ_MX × B1_YM`), valuation routing (`B1_MX × BZ_YM`), and a residual
-direct term. The static
+partitions the total Z-moderation (`FZ*[X,Y]`) into expectation routing
+(`FZ[X,M]·F1[M,Y]`), valuation routing (`F1[X,M]·FZ[M,Y]`), and a
+residual direct term. The static
 [`plotPathXMY()`](https://dustin-wood.github.io/funfield/reference/plotPathXMY.md)
-shows the full field with `b1 + bZ(Z)` edge labels; the toggleable
+shows the full field with `f1 + fZ(Z)` edge labels; the toggleable
 widget overlays the field at low / mid / high manager exposure.
 
 ``` r
@@ -348,14 +351,14 @@ widget overlays the field at low / mid / high manager exposure.
 dec_m <- pathXMY_decompose(dat, X = "ExpDisapproval", Y = "Likelihood",
                            M = mediators, Z = "manager", Z.within = TRUE)
 knitr::kable(dec_m$total, digits = 3,
-             caption = "Total moderation BZ_YX[1] for manager rank")
+             caption = "Total moderation FZ*[X,Y] for manager rank")
 ```
 
 |   est |    se |      z | pvalue | ci.lower | ci.upper |
 |------:|------:|-------:|-------:|---------:|---------:|
 | -0.28 | 0.063 | -4.443 |      0 |   -0.403 |   -0.156 |
 
-Total moderation BZ_YX\[1\] for manager rank {.table}
+Total moderation FZ\*\[X,Y\] for manager rank {.table}
 
 ``` r
 
@@ -375,8 +378,8 @@ arrow** is the residual direct path from the *joint* multi-mediator fit
 set of seven mediators simultaneously. See the speeding vignette for an
 extended discussion of why the loop coefficients (not the per-mediator
 joint ones) are the right tool for inference about a single mediator’s
-role, and why `BZ_YX_joint` is best treated as a system-level diagnostic
-(Wood, Adanu, & Harms, 2025).
+role, and why the joint `FZ[X,Y]` is best treated as a system-level
+diagnostic (Wood, Adanu, & Harms, 2025).
 
 ``` r
 
@@ -464,9 +467,9 @@ mod_ue <- pathXMY(dat3, X = "ExpDisapproval", Y = "Likelihood",
 ``` r
 
 knitr::kable(
-  subset(mod_ue$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_ue$tidy_loop, param == "fZ_XM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of expectation paths by perceived unethicality (BZ_MX)"
+  caption = "Moderation of expectation paths by perceived unethicality (FZ[X,M])"
 )
 ```
 
@@ -480,16 +483,16 @@ knitr::kable(
 | 47  | P_Punished     |  0.045 | 0.040 |   1.129 |  0.259 |
 | 56  | CompanySuccess |  0.799 | 0.047 |  17.101 |  0.000 |
 
-Moderation of expectation paths by perceived unethicality (BZ_MX)
+Moderation of expectation paths by perceived unethicality (FZ\[X,M\])
 {.table}
 
 Six of the seven mediators are significantly moderated (`P_Punished` is
 the exception), and the effects are substantially larger than those for
-coworker rank. The dominant pattern is through `Appropriate` (BZ_MX =
-1.45, z = 23.4): in situations perceived as more unethical than the
+coworker rank. The dominant pattern is through `Appropriate` (FZ\[X,M\]
+= 1.45, z = 23.4): in situations perceived as more unethical than the
 respondent’s personal average, expressing disapproval is expected to be
 dramatically *more* role-appropriate. The complementary picture holds
-for `Punished` (BZ_MX = −0.71): when the coworker’s behavior is
+for `Punished` (FZ\[X,M\] = −0.71): when the coworker’s behavior is
 perceived as unethical, the respondent expects *less* personal
 punishment for pushing back — the moral justification removes the sense
 of personal risk. `CompleteJob` (0.60) and `CompanySuccess` (0.80) also
@@ -506,9 +509,9 @@ asserting, perceived unethicality amplifies them.
 ``` r
 
 knitr::kable(
-  subset(mod_ue$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_ue$tidy_loop, param == "fZ_XM * f1_MY")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of indirect effects by perceived unethicality (BZ_MX × B1_YM)"
+  caption = "Moderation of indirect effects by perceived unethicality (FZ[X,M]·F1[M,Y])"
 )
 ```
 
@@ -522,8 +525,8 @@ knitr::kable(
 | 53  | P_Punished     | -0.013 | 0.011 | -1.110 |  0.267 |
 | 62  | CompanySuccess |  0.644 | 0.047 | 13.638 |  0.000 |
 
-Moderation of indirect effects by perceived unethicality (BZ_MX × B1_YM)
-{.table}
+Moderation of indirect effects by perceived unethicality
+(FZ\[X,M\]·F1\[M,Y\]) {.table}
 
 The moderated indirect effect through `Appropriate` (1.12) is the
 largest such coefficient in this entire vignette — larger than any
@@ -545,14 +548,14 @@ dec_ue <- pathXMY_decompose(dat3, X = "ExpDisapproval", Y = "Likelihood",
                             M = mediators, Z = "WasUnethical",
                             Z.within = TRUE)
 knitr::kable(dec_ue$total, digits = 3,
-             caption = "Total moderation BZ_YX[1] for WasUnethical")
+             caption = "Total moderation FZ*[X,Y] for WasUnethical")
 ```
 
 |   est |    se |      z | pvalue | ci.lower | ci.upper |
 |------:|------:|-------:|-------:|---------:|---------:|
 | 1.686 | 0.066 | 25.668 |      0 |    1.557 |    1.814 |
 
-Total moderation BZ_YX\[1\] for WasUnethical {.table}
+Total moderation FZ\*\[X,Y\] for WasUnethical {.table}
 
 ``` r
 
@@ -618,9 +621,9 @@ mod_p <- pathXMY(dat2, X = "ExpDisapproval", Y = "Likelihood",
 ``` r
 
 knitr::kable(
-  subset(mod_p$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "fZ_XM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of expectation paths by boldness (BZ_MX)"
+  caption = "Moderation of expectation paths by boldness (FZ[X,M])"
 )
 ```
 
@@ -634,16 +637,16 @@ knitr::kable(
 | 47  | P_Punished     | -0.010 | 0.015 | -0.668 |  0.504 |
 | 56  | CompanySuccess |  0.030 | 0.016 |  1.846 |  0.065 |
 
-Moderation of expectation paths by boldness (BZ_MX) {.table}
+Moderation of expectation paths by boldness (FZ\[X,M\]) {.table}
 
 ### Does that carry through to the indirect effect?
 
 ``` r
 
 knitr::kable(
-  subset(mod_p$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "fZ_XM * f1_MY")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of indirect effects by boldness (BZ_MX × B1_YM)"
+  caption = "Moderation of indirect effects by boldness (FZ[X,M]·F1[M,Y])"
 )
 ```
 
@@ -657,10 +660,11 @@ knitr::kable(
 | 53  | P_Punished     | 0.002 | 0.003 | 0.667 |  0.505 |
 | 62  | CompanySuccess | 0.030 | 0.016 | 1.848 |  0.065 |
 
-Moderation of indirect effects by boldness (BZ_MX × B1_YM) {.table}
+Moderation of indirect effects by boldness (FZ\[X,M\]·F1\[M,Y\])
+{.table}
 
 Person-level boldness shows modest moderation overall. The only
-significant effect is through `Appropriate` (BZ_MX \> 0, p \< .05):
+significant effect is through `Appropriate` (FZ\[X,M\] \> 0, p \< .05):
 bolder individuals expect that directly expressing disapproval will be
 *more* role-appropriate than less bold individuals do. This translates
 into a small but significant indirect effect: among bolder respondents,
@@ -680,14 +684,14 @@ dec_b <- pathXMY_decompose(dat2, X = "ExpDisapproval", Y = "Likelihood",
                            M = mediators, Z = "IIDL_bold",
                            Z.within = FALSE)
 knitr::kable(dec_b$total, digits = 3,
-             caption = "Total moderation BZ_YX[1] for IIDL_bold")
+             caption = "Total moderation FZ*[X,Y] for IIDL_bold")
 ```
 
 |   est |    se |     z | pvalue | ci.lower | ci.upper |
 |------:|------:|------:|-------:|---------:|---------:|
 | 0.046 | 0.026 | 1.746 |  0.081 |   -0.006 |    0.097 |
 
-Total moderation BZ_YX\[1\] for IIDL_bold {.table}
+Total moderation FZ\*\[X,Y\] for IIDL_bold {.table}
 
 ``` r
 

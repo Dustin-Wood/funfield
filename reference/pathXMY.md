@@ -151,24 +151,26 @@ A list with three elements:
   contains exactly one mediator. *These coefficients are not from a
   simultaneous regression and should not be read as partial effects net
   of the other mediators.* Columns: `mediator`, `param`, `est`, `se`,
-  `z`, `pvalue`, `ci.lower`, `ci.upper`. Parameter labels follow the XMY
-  convention: `B1_MX`, `BZ_MX`, `B1_YX`, `BZ_YX`, `B1_YM`, `BZ_YM`, plus
-  the indirect effects `B1_MX * B1_YM` (unmoderated only),
-  `BZ_MX * B1_YM` (\\= \beta^Z\_{MX} \cdot \beta^1\_{YM}\\), and
-  `B1_MX * BZ_YM` (\\= \beta^1\_{MX} \cdot \beta^Z\_{YM}\\). When
-  `M = NULL`, this slot holds the rows from the single Y-on-X direct
-  regression (`mediator = NA`).
+  `z`, `pvalue`, `ci.lower`, `ci.upper`. Parameter labels use the
+  F-schema source-target convention: `f1_XM`, `fZ_XM`, `f1_XY`, `fZ_XY`,
+  `f1_MY`, `fZ_MY`, plus the indirect effects `f1_XM * f1_MY`
+  (unmoderated only), `fZ_XM * f1_MY` (\\= F_Z\[X,M\] \cdot
+  F_1\[M,Y\]\\), and `f1_XM * fZ_MY` (\\= F_1\[X,M\] \cdot
+  F_Z\[M,Y\]\\). The display form `FZ[X,Y]` is produced by
+  [`pathXMY_to_F`](https://dustin-wood.github.io/funfield/reference/pathXMY_to_F.md).
+  When `M = NULL`, this slot holds the rows from the single Y-on-X
+  direct regression (`mediator = NA`).
 
 - tidy_joint:
 
   A tidy data frame from the **single simultaneous multi-mediator
   regression** in which all mediators appear together in the Y equation.
   `NULL` when `joint = FALSE` or `length(M) <= 1`. Per-mediator rows
-  (`B1_MX_joint`, `BZ_MX_joint`, `B1_YM_joint`, `BZ_YM_joint`) are
-  indexed by `mediator`; global rows (`B1_YX_joint`, `BZ_YX_joint`)
-  carry `mediator = NA`. The `B*_YM_joint` coefficients are partial
+  (`f1_XM_joint`, `fZ_XM_joint`, `f1_MY_joint`, `fZ_MY_joint`) are
+  indexed by `mediator`; global rows (`f1_XY_joint`, `fZ_XY_joint`)
+  carry `mediator = NA`. The `f*_MY_joint` coefficients are partial
   slopes net of the other mediators and are *not* comparable to the
-  single-mediator `B*_YM` values in `tidy_loop`.
+  single-mediator `f*_MY` values in `tidy_loop`.
 
 - fits:
 
@@ -195,10 +197,14 @@ situation-level moderator (`Z.within = TRUE`) is within-person deviated.
 of clusters \\G\\ is large. With \\G \< 50\\, results may be
 anti-conservative; consider `se = "boot"`.
 
-**Naming convention.** Parameters use the X-M-Y suffix convention from
-Wood, Harms, & Cho (2023): `B1_*` are main-effect coefficients, `BZ_*`
-are Z-moderated coefficients; `B*_MX` parameters regress M on X, `B*_YM`
-regress Y on M, `B*_YX` are the (direct) Y on X coefficients.
+**Naming convention.** Parameters use the F-schema source-target
+convention (see
+[`vignette("notation")`](https://dustin-wood.github.io/funfield/articles/notation.md)):
+`f1_*` are baseline coefficients, `fZ_*` are Z-moderated coefficients;
+`f*_XM` parameters regress M on X (the \\X \to M\\ force), `f*_MY`
+regress Y on M (\\M \to Y\\), `f*_XY` are the (direct) \\X \to Y\\
+coefficients. The two trailing letters read source then target, matching
+the matrix-cell display form `F[src,tgt]`.
 
 **Loop vs joint fits — two different regressions, two different
 tables.** With multiple mediators, `pathXMY()` produces two separate
@@ -207,23 +213,23 @@ questions and the coefficients are *not* interchangeable:
 
 - `$tidy_loop` comes from a "loop" pass: one independent X-M-Y model is
   fit *per mediator*, each with only that single mediator in the Y
-  equation. A row labeled `B1_YM` for mediator \\m_k\\ is the slope of Y
+  equation. A row labeled `f1_MY` for mediator \\m_k\\ is the slope of Y
   on \\m_k\\ controlling for X — nothing else. The loop pass is the
   inferential workhorse and supports the stable expectation-route
-  summary `BZ_MX * B1_YM`.
+  summary `fZ_XM * f1_MY`.
 
 - `$tidy_joint` comes from a single simultaneous regression where *all*
   mediators appear together in the Y equation. A row labeled
-  `B1_YM_joint` for mediator \\m_k\\ is the partial slope of Y on
+  `f1_MY_joint` for mediator \\m_k\\ is the partial slope of Y on
   \\m_k\\ *net of every other mediator in M*. These are not comparable
-  to the loop `B1_YM` values and will routinely differ in magnitude (and
+  to the loop `f1_MY` values and will routinely differ in magnitude (and
   sometimes sign) when mediators are correlated.
 
-`B1_YX_joint` and `BZ_YX_joint` are the most useful joint outputs: they
+`f1_XY_joint` and `fZ_XY_joint` are the most useful joint outputs: they
 index the residual direct \\X \to Y\\ (and its Z-moderation) after
 controlling for the entire mediator set, and serve as a diagnostic of
-whether the measured mediators absorb the total `BZ_YX` moderation.
-*Per-mediator* joint coefficients (especially `BZ_YM_joint`) are
+whether the measured mediators absorb the total `fZ_XY` moderation.
+*Per-mediator* joint coefficients (especially `fZ_MY_joint`) are
 typically less stable than their loop counterparts when mediators are
 numerous or correlated, because the M-by-Z product terms are highly
 collinear (Wood, Adanu, & Harms, 2025). For inference about a single

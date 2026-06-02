@@ -62,6 +62,20 @@ path, and `.` separates source from target within the path. Both `_` and
 `.` are valid R identifier characters, so `lavaan` parses the labels
 intact (verified against lavaan 0.6-21).
 
+**Generic single-letter slots drop the separator.** When the source and
+target are the one-letter schematic roles `X`, `M`, `Y` — as they always
+are on the *inductive* side, where
+[`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
+fits a generic `X → M → Y` template — the `.` is unnecessary and the
+keys are written without it: `f1_XM`, `fZ_MY`, `fZ_XY` (read the two
+trailing letters as source then target). The dotted form is reserved for
+*named* nodes, as on the *deductive* side (`fS2_TurnOn.HCoPot`), where
+multi-character names would otherwise run together. Both forms render to
+the same matrix-cell display, `F[src,tgt]` — `fZ_XM` and `FZ[X,M]` are
+the same parameter, one a lavaan-safe key, the other a reading aid (see
+[The F1 / FZ matrix overlay](#the-f1-fz-matrix-overlay) and
+[`pathXMY_to_F()`](https://dustin-wood.github.io/funfield/reference/pathXMY_to_F.md)).
+
 ### Reading a cell
 
 A cell `F[X, Y]` with a baseline term and one Z-moderation expands as
@@ -171,9 +185,10 @@ table. Visualization overlays them — for example, render `F1` as the
 black edges that are always active, and `FZ` as colored edges that
 strengthen with `s[Z]`. The three-panel decomposition figures in the
 speeding `pathXMY` vignette are an early hand-built instance of this;
-generalising the data side via `pathXMY_to_F()` lets the same
-visualization machinery render whole fields rather than single
-triangles.
+generalising the data side via
+[`pathXMY_to_F()`](https://dustin-wood.github.io/funfield/reference/pathXMY_to_F.md)
+lets the same visualization machinery render whole fields rather than
+single triangles.
 
 The matrix view is also the convenient handoff to the runtime: a step
 `s_{t+1} = s_t \cdot F_t` decomposes as
@@ -254,25 +269,37 @@ The same `F` lives at the centre of two complementary workflows:
 
 Both directions use the same model syntax and the same parameter schema.
 The bridge between them — turning a `pathXMY` fit into a runnable field
-— is `pathXMY_to_F()`.
+— is
+[`pathXMY_to_F()`](https://dustin-wood.github.io/funfield/reference/pathXMY_to_F.md).
 
 ## Migration from the legacy `B1_MX` / `BZ_MX` labels
 
-Existing
+Earlier versions of
 [`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
-output (the `tidy_loop` and `tidy_joint` tables) uses labels of the form
-`B1_MX`, `BZ_MX`, `B1_YM`, `BZ_YM`. The F-convention equivalents reverse
-the source/target order and use the new separator:
+labelled their `tidy_loop` / `tidy_joint` tables in the SEM-style
+`B1_MX` / `BZ_YX` convention (prefix `B`, scope digit, *target-source*
+suffix). The tables now key on the F-schema generic-slot form directly —
+prefix `f`, scope digit, *source-target* suffix, no separator
+(single-letter slots). The bracket column is the display form produced
+by
+[`pathXMY_to_F()`](https://dustin-wood.github.io/funfield/reference/pathXMY_to_F.md):
 
-| Legacy label | F-schema label | Reads as                         |
-|--------------|----------------|----------------------------------|
-| `B1_MX`      | `f1_X.M`       | baseline X → M force             |
-| `BZ_MX`      | `fZ_X.M`       | Z-moderation of X → M            |
-| `B1_YM`      | `f1_M.Y`       | baseline M → Y force             |
-| `BZ_YM`      | `fZ_M.Y`       | Z-moderation of M → Y            |
-| `B1_YX`      | `f1_X.Y`       | direct X → Y (controlling for M) |
-| `BZ_YX`      | `fZ_X.Y`       | Z-moderation of direct X → Y     |
+| Legacy label | F-schema key | Display   | Reads as                         |
+|--------------|--------------|-----------|----------------------------------|
+| `B1_MX`      | `f1_XM`      | `F1[X,M]` | baseline X → M force             |
+| `BZ_MX`      | `fZ_XM`      | `FZ[X,M]` | Z-moderation of X → M            |
+| `B1_YM`      | `f1_MY`      | `F1[M,Y]` | baseline M → Y force             |
+| `BZ_YM`      | `fZ_MY`      | `FZ[M,Y]` | Z-moderation of M → Y            |
+| `B1_YX`      | `f1_XY`      | `F1[X,Y]` | direct X → Y (controlling for M) |
+| `BZ_YX`      | `fZ_XY`      | `FZ[X,Y]` | Z-moderation of direct X → Y     |
 
-`pathXMY_to_F()` (see its own help page) returns the tidy table
-relabelled in the F-schema, as a parallel view alongside the existing
-`tidy_loop` / `tidy_joint`.
+The joint multi-mediator rows carry a `_joint` suffix (`f1_XY_joint`,
+`fZ_XY_joint`, …); the no-mediator *total* is written `f1_XY` with a `*`
+superscript in display, `F1*[X,Y]`.
+[`pathXMY_to_F()`](https://dustin-wood.github.io/funfield/reference/pathXMY_to_F.md)
+(see its own help page) renders any of these keys — singles, products
+(`fZ_XM * f1_MY` → `FZ[X,M]·F1[M,Y]`), and `_joint` / `_total` /
+`(direct)` variants — into the bracket display used throughout the
+`pathXMY` vignettes. The deductive engine keeps the dotted, named-node
+form `fZ_X.Y` (above); the two coincide once nodes are single-letter
+slots.

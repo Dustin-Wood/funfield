@@ -298,92 +298,93 @@ conditions?</p>
 <code class="sourceCode R"><span><span class="va">norm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pathXMY.html">pathXMY</a></span><span class="op">(</span><span class="va">dat</span>, X <span class="op">=</span> <span class="st">"ExpDisapproval"</span>, Y <span class="op">=</span> <span class="st">"Likelihood"</span>, M <span class="op">=</span> <span class="va">mediators</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co">## Loop pass: one X -&gt; M -&gt; Y regression PER MEDIATOR, fit independently.</span></span>
-<span><span class="co">## Each B1_YM row is the slope of Likelihood on that mediator controlling</span></span>
+<span><span class="co">## Each f1_MY row is the slope of Likelihood on that mediator controlling</span></span>
 <span><span class="co">## only for ExpDisapproval (no other mediators in the equation).</span></span>
-<span><span class="va">norm</span><span class="op">$</span><span class="va">tidy_loop</span></span>
-<span><span class="co">#&gt;          mediator         param          est         se           z       pvalue     ci.lower    ci.upper</span></span>
-<span><span class="co">#&gt; 1     Appropriate         B1_MX  0.098477007 0.02186970   4.5028972 6.703330e-06  0.055613185  0.14134083</span></span>
-<span><span class="co">#&gt; 2     Appropriate         B1_YX -0.015362912 0.01569909  -0.9785860 3.277846e-01 -0.046132568  0.01540674</span></span>
-<span><span class="co">#&gt; 3     Appropriate         B1_YM  0.824923985 0.01692269  48.7466222 0.000000e+00  0.791756122  0.85809185</span></span>
-<span><span class="co">#&gt; 4     Appropriate B1_MX * B1_YM  0.081236045 0.01838178   4.4193779 9.898540e-06  0.045208413  0.11726368</span></span>
-<span><span class="co">#&gt; 5        MajorArg         B1_MX  0.787150673 0.01697812  46.3626425 0.000000e+00  0.753874162  0.82042718</span></span>
-<span><span class="co">#&gt; 6        MajorArg         B1_YX  0.535054781 0.04109056  13.0213546 0.000000e+00  0.454518759  0.61559080</span></span>
-<span><span class="co">#&gt; 7        MajorArg         B1_YM -0.596050622 0.03872116 -15.3934099 0.000000e+00 -0.671942692 -0.52015855</span></span>
-<span><span class="co">#&gt; 8        MajorArg B1_MX * B1_YM -0.469181648 0.03433678 -13.6641122 0.000000e+00 -0.536480505 -0.40188279</span></span>
-<span><span class="co">#&gt; 9   GoodRelationP         B1_MX -0.642909951 0.02161870 -29.7386007 0.000000e+00 -0.685281829 -0.60053807</span></span>
-<span><span class="co">#&gt; 10  GoodRelationP         B1_YX  0.457886454 0.03202991  14.2955885 0.000000e+00  0.395108979  0.52066393</span></span>
-<span><span class="co">#&gt; 11  GoodRelationP         B1_YM  0.609748411 0.03433025  17.7612561 0.000000e+00  0.542462352  0.67703447</span></span>
-<span><span class="co">#&gt; 12  GoodRelationP B1_MX * B1_YM -0.392013321 0.02720818 -14.4079217 0.000000e+00 -0.445340374 -0.33868627</span></span>
-<span><span class="co">#&gt; 13       Punished         B1_MX  0.012568387 0.01933786   0.6499367 5.157331e-01 -0.025333128  0.05046990</span></span>
-<span><span class="co">#&gt; 14       Punished         B1_YX  0.075640770 0.02096430   3.6080759 3.084762e-04  0.034551506  0.11673003</span></span>
-<span><span class="co">#&gt; 15       Punished         B1_YM -0.777159169 0.02700175 -28.7818077 0.000000e+00 -0.830081626 -0.72423671</span></span>
-<span><span class="co">#&gt; 16       Punished B1_MX * B1_YM -0.009767637 0.01494738  -0.6534680 5.134546e-01 -0.039063971  0.01952870</span></span>
-<span><span class="co">#&gt; 17    CompleteJob         B1_MX  0.047390211 0.01640594   2.8886004 3.869605e-03  0.015235155  0.07954527</span></span>
-<span><span class="co">#&gt; 18    CompleteJob         B1_YX  0.029232314 0.02125619   1.3752377 1.690578e-01 -0.012429054  0.07089368</span></span>
-<span><span class="co">#&gt; 19    CompleteJob         B1_YM  0.773172742 0.03069234  25.1910664 0.000000e+00  0.713016863  0.83332862</span></span>
-<span><span class="co">#&gt; 20    CompleteJob B1_MX * B1_YM  0.036640820 0.01261961   2.9034835 3.690364e-03  0.011906845  0.06137479</span></span>
-<span><span class="co">#&gt; 21     P_Punished         B1_MX  0.268076298 0.01482554  18.0820637 0.000000e+00  0.239018780  0.29713382</span></span>
-<span><span class="co">#&gt; 22     P_Punished         B1_YX  0.118341328 0.02793098   4.2369206 2.266062e-05  0.063597620  0.17308504</span></span>
-<span><span class="co">#&gt; 23     P_Punished         B1_YM -0.195721125 0.04510414  -4.3393166 1.429265e-05 -0.284123606 -0.10731864</span></span>
-<span><span class="co">#&gt; 24     P_Punished B1_MX * B1_YM -0.052468195 0.01211298  -4.3315683 1.480510e-05 -0.076209197 -0.02872719</span></span>
-<span><span class="co">#&gt; 25 CompanySuccess         B1_MX  0.037409434 0.01480606   2.5266298 1.151628e-02  0.008390088  0.06642878</span></span>
-<span><span class="co">#&gt; 26 CompanySuccess         B1_YX  0.030486931 0.02062691   1.4780175 1.394031e-01 -0.009941065  0.07091493</span></span>
-<span><span class="co">#&gt; 27 CompanySuccess         B1_YM  0.945916531 0.02854602  33.1365441 0.000000e+00  0.889967355  1.00186571</span></span>
-<span><span class="co">#&gt; 28 CompanySuccess B1_MX * B1_YM  0.035386202 0.01412570   2.5050930 1.224192e-02  0.007700331  0.06307207</span></span>
+<span><span class="co">## pathXMY_to_F() renders the terse f-keys as bracket display labels.</span></span>
+<span><span class="fu"><a href="../reference/pathXMY_to_F.html">pathXMY_to_F</a></span><span class="op">(</span><span class="va">norm</span><span class="op">$</span><span class="va">tidy_loop</span><span class="op">)</span></span>
+<span><span class="co">#&gt;          mediator           param          est         se           z       pvalue     ci.lower    ci.upper</span></span>
+<span><span class="co">#&gt; 1     Appropriate         F1[X,M]  0.098477007 0.02186970   4.5028972 6.703330e-06  0.055613185  0.14134083</span></span>
+<span><span class="co">#&gt; 2     Appropriate         F1[X,Y] -0.015362912 0.01569909  -0.9785860 3.277846e-01 -0.046132568  0.01540674</span></span>
+<span><span class="co">#&gt; 3     Appropriate         F1[M,Y]  0.824923985 0.01692269  48.7466222 0.000000e+00  0.791756122  0.85809185</span></span>
+<span><span class="co">#&gt; 4     Appropriate F1[X,M]·F1[M,Y]  0.081236045 0.01838178   4.4193779 9.898540e-06  0.045208413  0.11726368</span></span>
+<span><span class="co">#&gt; 5        MajorArg         F1[X,M]  0.787150673 0.01697812  46.3626425 0.000000e+00  0.753874162  0.82042718</span></span>
+<span><span class="co">#&gt; 6        MajorArg         F1[X,Y]  0.535054781 0.04109056  13.0213546 0.000000e+00  0.454518759  0.61559080</span></span>
+<span><span class="co">#&gt; 7        MajorArg         F1[M,Y] -0.596050622 0.03872116 -15.3934099 0.000000e+00 -0.671942692 -0.52015855</span></span>
+<span><span class="co">#&gt; 8        MajorArg F1[X,M]·F1[M,Y] -0.469181648 0.03433678 -13.6641122 0.000000e+00 -0.536480505 -0.40188279</span></span>
+<span><span class="co">#&gt; 9   GoodRelationP         F1[X,M] -0.642909951 0.02161870 -29.7386007 0.000000e+00 -0.685281829 -0.60053807</span></span>
+<span><span class="co">#&gt; 10  GoodRelationP         F1[X,Y]  0.457886454 0.03202991  14.2955885 0.000000e+00  0.395108979  0.52066393</span></span>
+<span><span class="co">#&gt; 11  GoodRelationP         F1[M,Y]  0.609748411 0.03433025  17.7612561 0.000000e+00  0.542462352  0.67703447</span></span>
+<span><span class="co">#&gt; 12  GoodRelationP F1[X,M]·F1[M,Y] -0.392013321 0.02720818 -14.4079217 0.000000e+00 -0.445340374 -0.33868627</span></span>
+<span><span class="co">#&gt; 13       Punished         F1[X,M]  0.012568387 0.01933786   0.6499367 5.157331e-01 -0.025333128  0.05046990</span></span>
+<span><span class="co">#&gt; 14       Punished         F1[X,Y]  0.075640770 0.02096430   3.6080759 3.084762e-04  0.034551506  0.11673003</span></span>
+<span><span class="co">#&gt; 15       Punished         F1[M,Y] -0.777159169 0.02700175 -28.7818077 0.000000e+00 -0.830081626 -0.72423671</span></span>
+<span><span class="co">#&gt; 16       Punished F1[X,M]·F1[M,Y] -0.009767637 0.01494738  -0.6534680 5.134546e-01 -0.039063971  0.01952870</span></span>
+<span><span class="co">#&gt; 17    CompleteJob         F1[X,M]  0.047390211 0.01640594   2.8886004 3.869605e-03  0.015235155  0.07954527</span></span>
+<span><span class="co">#&gt; 18    CompleteJob         F1[X,Y]  0.029232314 0.02125619   1.3752377 1.690578e-01 -0.012429054  0.07089368</span></span>
+<span><span class="co">#&gt; 19    CompleteJob         F1[M,Y]  0.773172742 0.03069234  25.1910664 0.000000e+00  0.713016863  0.83332862</span></span>
+<span><span class="co">#&gt; 20    CompleteJob F1[X,M]·F1[M,Y]  0.036640820 0.01261961   2.9034835 3.690364e-03  0.011906845  0.06137479</span></span>
+<span><span class="co">#&gt; 21     P_Punished         F1[X,M]  0.268076298 0.01482554  18.0820637 0.000000e+00  0.239018780  0.29713382</span></span>
+<span><span class="co">#&gt; 22     P_Punished         F1[X,Y]  0.118341328 0.02793098   4.2369206 2.266062e-05  0.063597620  0.17308504</span></span>
+<span><span class="co">#&gt; 23     P_Punished         F1[M,Y] -0.195721125 0.04510414  -4.3393166 1.429265e-05 -0.284123606 -0.10731864</span></span>
+<span><span class="co">#&gt; 24     P_Punished F1[X,M]·F1[M,Y] -0.052468195 0.01211298  -4.3315683 1.480510e-05 -0.076209197 -0.02872719</span></span>
+<span><span class="co">#&gt; 25 CompanySuccess         F1[X,M]  0.037409434 0.01480606   2.5266298 1.151628e-02  0.008390088  0.06642878</span></span>
+<span><span class="co">#&gt; 26 CompanySuccess         F1[X,Y]  0.030486931 0.02062691   1.4780175 1.394031e-01 -0.009941065  0.07091493</span></span>
+<span><span class="co">#&gt; 27 CompanySuccess         F1[M,Y]  0.945916531 0.02854602  33.1365441 0.000000e+00  0.889967355  1.00186571</span></span>
+<span><span class="co">#&gt; 28 CompanySuccess F1[X,M]·F1[M,Y]  0.035386202 0.01412570   2.5050930 1.224192e-02  0.007700331  0.06307207</span></span>
 <span></span>
 <span><span class="co">## Joint pass: a SINGLE simultaneous regression with all mediators together</span></span>
-<span><span class="co">## in the Y equation. B1_YM_joint slopes are partial slopes net of the</span></span>
-<span><span class="co">## other mediators -- not comparable to the loop B1_YM above.</span></span>
-<span><span class="va">norm</span><span class="op">$</span><span class="va">tidy_joint</span></span>
-<span><span class="co">#&gt;          mediator       param         est         se           z       pvalue     ci.lower    ci.upper</span></span>
-<span><span class="co">#&gt; 1     Appropriate B1_MX_joint  0.09847701 0.02186970   4.5028972 6.703330e-06  0.055613185  0.14134083</span></span>
-<span><span class="co">#&gt; 2     Appropriate B1_YM_joint  0.62758885 0.02686725  23.3588763 0.000000e+00  0.574930002  0.68024770</span></span>
-<span><span class="co">#&gt; 3        MajorArg B1_MX_joint  0.78715067 0.01697812  46.3626425 0.000000e+00  0.753874162  0.82042718</span></span>
-<span><span class="co">#&gt; 4        MajorArg B1_YM_joint -0.14195035 0.03463590  -4.0983585 4.160906e-05 -0.209835480 -0.07406523</span></span>
-<span><span class="co">#&gt; 5   GoodRelationP B1_MX_joint -0.64290995 0.02161870 -29.7386007 0.000000e+00 -0.685281829 -0.60053807</span></span>
-<span><span class="co">#&gt; 6   GoodRelationP B1_YM_joint  0.09564202 0.03058433   3.1271576 1.765053e-03  0.035697835  0.15558621</span></span>
-<span><span class="co">#&gt; 7        Punished B1_MX_joint  0.01256839 0.01933786   0.6499367 5.157331e-01 -0.025333128  0.05046990</span></span>
-<span><span class="co">#&gt; 8        Punished B1_YM_joint -0.13676432 0.02715016  -5.0373296 4.720715e-07 -0.189977655 -0.08355098</span></span>
-<span><span class="co">#&gt; 9     CompleteJob B1_MX_joint  0.04739021 0.01640594   2.8886004 3.869605e-03  0.015235155  0.07954527</span></span>
-<span><span class="co">#&gt; 10    CompleteJob B1_YM_joint  0.07183973 0.02935467   2.4473021 1.439302e-02  0.014305647  0.12937382</span></span>
-<span><span class="co">#&gt; 11     P_Punished B1_MX_joint  0.26807630 0.01482554  18.0820637 0.000000e+00  0.239018780  0.29713382</span></span>
-<span><span class="co">#&gt; 12     P_Punished B1_YM_joint  0.11879209 0.02669457   4.4500470 8.585152e-06  0.066471695  0.17111249</span></span>
-<span><span class="co">#&gt; 13 CompanySuccess B1_MX_joint  0.03740943 0.01480606   2.5266298 1.151628e-02  0.008390088  0.06642878</span></span>
-<span><span class="co">#&gt; 14 CompanySuccess B1_YM_joint  0.14834233 0.03557323   4.1700546 3.045266e-05  0.078620071  0.21806458</span></span>
-<span><span class="co">#&gt; 15           &lt;NA&gt; B1_YX_joint  0.13821524 0.02461123   5.6159412 1.954952e-08  0.089978112  0.18645238</span></span></code></pre></div>
+<span><span class="co">## in the Y equation. The joint f1_MY slopes are partial slopes net of the</span></span>
+<span><span class="co">## other mediators -- not comparable to the loop f1_MY above.</span></span>
+<span><span class="fu"><a href="../reference/pathXMY_to_F.html">pathXMY_to_F</a></span><span class="op">(</span><span class="va">norm</span><span class="op">$</span><span class="va">tidy_joint</span><span class="op">)</span></span>
+<span><span class="co">#&gt;          mediator   param         est         se           z       pvalue     ci.lower    ci.upper</span></span>
+<span><span class="co">#&gt; 1     Appropriate F1[X,M]  0.09847701 0.02186970   4.5028972 6.703330e-06  0.055613185  0.14134083</span></span>
+<span><span class="co">#&gt; 2     Appropriate F1[M,Y]  0.62758885 0.02686725  23.3588763 0.000000e+00  0.574930002  0.68024770</span></span>
+<span><span class="co">#&gt; 3        MajorArg F1[X,M]  0.78715067 0.01697812  46.3626425 0.000000e+00  0.753874162  0.82042718</span></span>
+<span><span class="co">#&gt; 4        MajorArg F1[M,Y] -0.14195035 0.03463590  -4.0983585 4.160906e-05 -0.209835480 -0.07406523</span></span>
+<span><span class="co">#&gt; 5   GoodRelationP F1[X,M] -0.64290995 0.02161870 -29.7386007 0.000000e+00 -0.685281829 -0.60053807</span></span>
+<span><span class="co">#&gt; 6   GoodRelationP F1[M,Y]  0.09564202 0.03058433   3.1271576 1.765053e-03  0.035697835  0.15558621</span></span>
+<span><span class="co">#&gt; 7        Punished F1[X,M]  0.01256839 0.01933786   0.6499367 5.157331e-01 -0.025333128  0.05046990</span></span>
+<span><span class="co">#&gt; 8        Punished F1[M,Y] -0.13676432 0.02715016  -5.0373296 4.720715e-07 -0.189977655 -0.08355098</span></span>
+<span><span class="co">#&gt; 9     CompleteJob F1[X,M]  0.04739021 0.01640594   2.8886004 3.869605e-03  0.015235155  0.07954527</span></span>
+<span><span class="co">#&gt; 10    CompleteJob F1[M,Y]  0.07183973 0.02935467   2.4473021 1.439302e-02  0.014305647  0.12937382</span></span>
+<span><span class="co">#&gt; 11     P_Punished F1[X,M]  0.26807630 0.01482554  18.0820637 0.000000e+00  0.239018780  0.29713382</span></span>
+<span><span class="co">#&gt; 12     P_Punished F1[M,Y]  0.11879209 0.02669457   4.4500470 8.585152e-06  0.066471695  0.17111249</span></span>
+<span><span class="co">#&gt; 13 CompanySuccess F1[X,M]  0.03740943 0.01480606   2.5266298 1.151628e-02  0.008390088  0.06642878</span></span>
+<span><span class="co">#&gt; 14 CompanySuccess F1[M,Y]  0.14834233 0.03557323   4.1700546 3.045266e-05  0.078620071  0.21806459</span></span>
+<span><span class="co">#&gt; 15           &lt;NA&gt; F1[X,Y]  0.13821524 0.02461123   5.6159412 1.954952e-08  0.089978112  0.18645238</span></span></code></pre></div>
 <div class="section level3">
-<h3 id="expectation-paths-b1_mx-what-co-occurs-with-expressing-disapproval">Expectation paths (B1_MX): what co-occurs with expressing
-disapproval?<a class="anchor" aria-label="anchor" href="#expectation-paths-b1_mx-what-co-occurs-with-expressing-disapproval"></a>
+<h3 id="expectation-paths-f1xm-what-co-occurs-with-expressing-disapproval">Expectation paths (F1[X,M]): what co-occurs with expressing
+disapproval?<a class="anchor" aria-label="anchor" href="#expectation-paths-f1xm-what-co-occurs-with-expressing-disapproval"></a>
 </h3>
 <p>Actions that score higher on <code>ExpDisapproval</code> (i.e.,
 actions that would constitute more direct expression of disapproval) are
 also seen as more likely to produce a major argument/confrontation
-(<code>MajorArg</code>, B1_MX ≈ 0.79) and less likely to maintain a good
-working relationship in the long run (<code>GoodRelationP</code>, B1_MX
-≈ −0.64). They are also seen as more appropriate within the role
-(<code>Appropriate</code>, B1_MX &gt; 0) and more likely to result in
-the coworker being formally punished (<code>P_Punished</code>, B1_MX
+(<code>MajorArg</code>, F1[X,M] ≈ 0.79) and less likely to maintain a
+good working relationship in the long run (<code>GoodRelationP</code>,
+F1[X,M] ≈ −0.64). They are also seen as more appropriate within the role
+(<code>Appropriate</code>, F1[X,M] &gt; 0) and more likely to result in
+the coworker being formally punished (<code>P_Punished</code>, F1[X,M]
 &gt; 0).</p>
 </div>
 <div class="section level3">
-<h3 id="valuation-paths-b1_ym-which-outcomes-drive-action-likelihood">Valuation paths (B1_YM): which outcomes drive action
-likelihood?<a class="anchor" aria-label="anchor" href="#valuation-paths-b1_ym-which-outcomes-drive-action-likelihood"></a>
+<h3 id="valuation-paths-f1my-which-outcomes-drive-action-likelihood">Valuation paths (F1[M,Y]): which outcomes drive action
+likelihood?<a class="anchor" aria-label="anchor" href="#valuation-paths-f1my-which-outcomes-drive-action-likelihood"></a>
 </h3>
-<p>Acting appropriately (<code>Appropriate</code>, B1_YM ≈ 0.82) and
-benefiting company success (<code>CompanySuccess</code>, B1_YM ≈ 0.95)
+<p>Acting appropriately (<code>Appropriate</code>, F1[M,Y] ≈ 0.82) and
+benefiting company success (<code>CompanySuccess</code>, F1[M,Y] ≈ 0.95)
 are the strongest positive drivers of whether a respondent says they
 would take an action. Being formally punished (<code>Punished</code>,
-B1_YM ≈ −0.78) and having a major argument (<code>MajorArg</code>, B1_YM
-≈ −0.60) are the strongest suppressors.</p>
+F1[M,Y] ≈ −0.78) and having a major argument (<code>MajorArg</code>,
+F1[M,Y] ≈ −0.60) are the strongest suppressors.</p>
 </div>
 <div class="section level3">
-<h3 id="indirect-effects-b1_mx-b1_ym">Indirect effects (B1_MX × B1_YM)<a class="anchor" aria-label="anchor" href="#indirect-effects-b1_mx-b1_ym"></a>
+<h3 id="indirect-effects-f1xmf1my">Indirect effects (F1[X,M]·F1[M,Y])<a class="anchor" aria-label="anchor" href="#indirect-effects-f1xmf1my"></a>
 </h3>
 <p>Indirect effects are significant for every mediator whose two
 component paths are both non-zero — the lone exception is
-<code>Punished</code>, whose expectation path (<code>B1_MX</code> ≈
+<code>Punished</code>, whose expectation path (<code>F1[X,M]</code> ≈
 0.01) is essentially zero. The largest indirect paths are both negative:
-through <code>MajorArg</code> (B1_MX × B1_YM ≈ −0.47) and
+through <code>MajorArg</code> (F1[X,M]·F1[M,Y] ≈ −0.47) and
 <code>GoodRelationP</code> (≈ −0.39). Within a situation, the action
 that more strongly expresses disapproval is expected to provoke a major
 argument and to erode the working relationship, and both expectations
@@ -408,13 +409,13 @@ M)?<a class="anchor" aria-label="anchor" href="#does-manager-rank-moderate-the-e
 </h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_s</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"BZ_MX"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_s</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"fZ_XM"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
 <span>  digits <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  caption <span class="op">=</span> <span class="st">"Moderation of expectation paths by manager rank (BZ_MX)"</span></span>
+<span>  caption <span class="op">=</span> <span class="st">"Moderation of expectation paths by manager rank (FZ[X,M])"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table class="table">
 <caption>Moderation of expectation paths by manager rank
-(BZ_MX)</caption>
+(FZ[X,M])</caption>
 <thead><tr class="header">
 <th align="left"></th>
 <th align="left">mediator</th>
@@ -485,7 +486,7 @@ M)?<a class="anchor" aria-label="anchor" href="#does-manager-rank-moderate-the-e
 <p>Six of the seven mediators show significant moderation. When the
 coworker holds a higher rank (manager condition), expressing disapproval
 is expected to be substantially <em>more</em> likely to result in formal
-punishment of oneself (<code>Punished</code>, BZ_MX &gt; 0): the power
+punishment of oneself (<code>Punished</code>, FZ[X,M] &gt; 0): the power
 asymmetry increases the perceived personal cost. At the same time,
 expressing disapproval in a manager scenario is perceived as
 <em>less</em> likely to be seen as role-appropriate
@@ -500,13 +501,13 @@ of asserting shrink when facing a higher-power colleague.</p>
 </h3>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_s</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"BZ_MX * B1_YM"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_s</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"fZ_XM * f1_MY"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
 <span>  digits <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  caption <span class="op">=</span> <span class="st">"Moderation of indirect effects by manager rank (BZ_MX × B1_YM)"</span></span>
+<span>  caption <span class="op">=</span> <span class="st">"Moderation of indirect effects by manager rank (FZ[X,M]·F1[M,Y])"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Moderation of indirect effects by manager rank (BZ_MX ×
-B1_YM)</caption>
+<caption>Moderation of indirect effects by manager rank
+(FZ[X,M]·F1[M,Y])</caption>
 <thead><tr class="header">
 <th align="left"></th>
 <th align="left">mediator</th>
@@ -585,19 +586,19 @@ indirect pull toward expressing disapproval through that path.</p>
 <h3 id="decomposition-and-field-view">Decomposition and field view<a class="anchor" aria-label="anchor" href="#decomposition-and-field-view"></a>
 </h3>
 <p><code><a href="../reference/pathXMY_decompose.html">pathXMY_decompose()</a></code> partitions the total Z-moderation
-(<code>BZ_YX[1]</code>) into expectation routing
-(<code>BZ_MX × B1_YM</code>), valuation routing
-(<code>B1_MX × BZ_YM</code>), and a residual direct term. The static
+(<code>FZ*[X,Y]</code>) into expectation routing
+(<code>FZ[X,M]·F1[M,Y]</code>), valuation routing
+(<code>F1[X,M]·FZ[M,Y]</code>), and a residual direct term. The static
 <code><a href="../reference/plotPathXMY.html">plotPathXMY()</a></code> shows the full field with
-<code>b1 + bZ(Z)</code> edge labels; the toggleable widget overlays the
+<code>f1 + fZ(Z)</code> edge labels; the toggleable widget overlays the
 field at low / mid / high manager exposure.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dec_m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pathXMY_decompose.html">pathXMY_decompose</a></span><span class="op">(</span><span class="va">dat</span>, X <span class="op">=</span> <span class="st">"ExpDisapproval"</span>, Y <span class="op">=</span> <span class="st">"Likelihood"</span>,</span>
 <span>                           M <span class="op">=</span> <span class="va">mediators</span>, Z <span class="op">=</span> <span class="st">"manager"</span>, Z.within <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">dec_m</span><span class="op">$</span><span class="va">total</span>, digits <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>             caption <span class="op">=</span> <span class="st">"Total moderation BZ_YX[1] for manager rank"</span><span class="op">)</span></span></code></pre></div>
+<span>             caption <span class="op">=</span> <span class="st">"Total moderation FZ*[X,Y] for manager rank"</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Total moderation BZ_YX[1] for manager rank</caption>
+<caption>Total moderation FZ*[X,Y] for manager rank</caption>
 <thead><tr class="header">
 <th align="right">est</th>
 <th align="right">se</th>
@@ -630,9 +631,9 @@ the <em>joint</em> multi-mediator fit (added automatically by
 for the <em>full</em> set of seven mediators simultaneously. See the
 speeding vignette for an extended discussion of why the loop
 coefficients (not the per-mediator joint ones) are the right tool for
-inference about a single mediator’s role, and why
-<code>BZ_YX_joint</code> is best treated as a system-level diagnostic
-(Wood, Adanu, &amp; Harms, 2025).</p>
+inference about a single mediator’s role, and why the joint
+<code>FZ[X,Y]</code> is best treated as a system-level diagnostic (Wood,
+Adanu, &amp; Harms, 2025).</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotPathXMY_widget.html">plotPathXMY_widget</a></span><span class="op">(</span><span class="va">dec_m</span>,</span>
 <span>                   X_label <span class="op">=</span> <span class="st">"ExpDisapp"</span>, Y_label <span class="op">=</span> <span class="st">"Likelihood"</span>,</span>
@@ -726,13 +727,13 @@ would address this fully but is not yet implemented.</p>
 </h3>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_ue</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"BZ_MX"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_ue</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"fZ_XM"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
 <span>  digits <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  caption <span class="op">=</span> <span class="st">"Moderation of expectation paths by perceived unethicality (BZ_MX)"</span></span>
+<span>  caption <span class="op">=</span> <span class="st">"Moderation of expectation paths by perceived unethicality (FZ[X,M])"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table class="table">
 <caption>Moderation of expectation paths by perceived unethicality
-(BZ_MX)</caption>
+(FZ[X,M])</caption>
 <thead><tr class="header">
 <th align="left"></th>
 <th align="left">mediator</th>
@@ -803,11 +804,11 @@ would address this fully but is not yet implemented.</p>
 <p>Six of the seven mediators are significantly moderated
 (<code>P_Punished</code> is the exception), and the effects are
 substantially larger than those for coworker rank. The dominant pattern
-is through <code>Appropriate</code> (BZ_MX = 1.45, z = 23.4): in
+is through <code>Appropriate</code> (FZ[X,M] = 1.45, z = 23.4): in
 situations perceived as more unethical than the respondent’s personal
 average, expressing disapproval is expected to be dramatically
 <em>more</em> role-appropriate. The complementary picture holds for
-<code>Punished</code> (BZ_MX = −0.71): when the coworker’s behavior is
+<code>Punished</code> (FZ[X,M] = −0.71): when the coworker’s behavior is
 perceived as unethical, the respondent expects <em>less</em> personal
 punishment for pushing back — the moral justification removes the sense
 of personal risk. <code>CompleteJob</code> (0.60) and
@@ -823,13 +824,13 @@ asserting, perceived unethicality amplifies them.</p>
 </h3>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_ue</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"BZ_MX * B1_YM"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_ue</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"fZ_XM * f1_MY"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
 <span>  digits <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  caption <span class="op">=</span> <span class="st">"Moderation of indirect effects by perceived unethicality (BZ_MX × B1_YM)"</span></span>
+<span>  caption <span class="op">=</span> <span class="st">"Moderation of indirect effects by perceived unethicality (FZ[X,M]·F1[M,Y])"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Moderation of indirect effects by perceived unethicality (BZ_MX
-× B1_YM)</caption>
+<caption>Moderation of indirect effects by perceived unethicality
+(FZ[X,M]·F1[M,Y])</caption>
 <thead><tr class="header">
 <th align="left"></th>
 <th align="left">mediator</th>
@@ -917,9 +918,9 @@ likelihood substantially stronger.</p>
 <span>                            M <span class="op">=</span> <span class="va">mediators</span>, Z <span class="op">=</span> <span class="st">"WasUnethical"</span>,</span>
 <span>                            Z.within <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">dec_ue</span><span class="op">$</span><span class="va">total</span>, digits <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>             caption <span class="op">=</span> <span class="st">"Total moderation BZ_YX[1] for WasUnethical"</span><span class="op">)</span></span></code></pre></div>
+<span>             caption <span class="op">=</span> <span class="st">"Total moderation FZ*[X,Y] for WasUnethical"</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Total moderation BZ_YX[1] for WasUnethical</caption>
+<caption>Total moderation FZ*[X,Y] for WasUnethical</caption>
 <thead><tr class="header">
 <th align="right">est</th>
 <th align="right">se</th>
@@ -1008,12 +1009,12 @@ sample to the 206 participants who completed the IIDL measure.</p>
 </h3>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_p</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"BZ_MX"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_p</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"fZ_XM"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
 <span>  digits <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  caption <span class="op">=</span> <span class="st">"Moderation of expectation paths by boldness (BZ_MX)"</span></span>
+<span>  caption <span class="op">=</span> <span class="st">"Moderation of expectation paths by boldness (FZ[X,M])"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Moderation of expectation paths by boldness (BZ_MX)</caption>
+<caption>Moderation of expectation paths by boldness (FZ[X,M])</caption>
 <thead><tr class="header">
 <th align="left"></th>
 <th align="left">mediator</th>
@@ -1087,13 +1088,13 @@ sample to the 206 participants who completed the IIDL measure.</p>
 </h3>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_p</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"BZ_MX * B1_YM"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">mod_p</span><span class="op">$</span><span class="va">tidy_loop</span>, <span class="va">param</span> <span class="op">==</span> <span class="st">"fZ_XM * f1_MY"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mediator"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
 <span>  digits <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  caption <span class="op">=</span> <span class="st">"Moderation of indirect effects by boldness (BZ_MX × B1_YM)"</span></span>
+<span>  caption <span class="op">=</span> <span class="st">"Moderation of indirect effects by boldness (FZ[X,M]·F1[M,Y])"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Moderation of indirect effects by boldness (BZ_MX ×
-B1_YM)</caption>
+<caption>Moderation of indirect effects by boldness
+(FZ[X,M]·F1[M,Y])</caption>
 <thead><tr class="header">
 <th align="left"></th>
 <th align="left">mediator</th>
@@ -1162,8 +1163,8 @@ B1_YM)</caption>
 </tbody>
 </table>
 <p>Person-level boldness shows modest moderation overall. The only
-significant effect is through <code>Appropriate</code> (BZ_MX &gt; 0, p
-&lt; .05): bolder individuals expect that directly expressing
+significant effect is through <code>Appropriate</code> (FZ[X,M] &gt; 0,
+p &lt; .05): bolder individuals expect that directly expressing
 disapproval will be <em>more</em> role-appropriate than less bold
 individuals do. This translates into a small but significant indirect
 effect: among bolder respondents, expressing disapproval is somewhat
@@ -1183,9 +1184,9 @@ boldness.</p>
 <span>                           M <span class="op">=</span> <span class="va">mediators</span>, Z <span class="op">=</span> <span class="st">"IIDL_bold"</span>,</span>
 <span>                           Z.within <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">dec_b</span><span class="op">$</span><span class="va">total</span>, digits <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>             caption <span class="op">=</span> <span class="st">"Total moderation BZ_YX[1] for IIDL_bold"</span><span class="op">)</span></span></code></pre></div>
+<span>             caption <span class="op">=</span> <span class="st">"Total moderation FZ*[X,Y] for IIDL_bold"</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Total moderation BZ_YX[1] for IIDL_bold</caption>
+<caption>Total moderation FZ*[X,Y] for IIDL_bold</caption>
 <thead><tr class="header">
 <th align="right">est</th>
 <th align="right">se</th>

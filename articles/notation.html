@@ -135,6 +135,20 @@ moderator from the path, and <code>.</code> separates source from target
 within the path. Both <code>_</code> and <code>.</code> are valid R
 identifier characters, so <code>lavaan</code> parses the labels intact
 (verified against lavaan 0.6-21).</p>
+<p><strong>Generic single-letter slots drop the separator.</strong> When
+the source and target are the one-letter schematic roles <code>X</code>,
+<code>M</code>, <code>Y</code> — as they always are on the
+<em>inductive</em> side, where <code><a href="../reference/pathXMY.html">pathXMY()</a></code> fits a generic
+<code>X → M → Y</code> template — the <code>.</code> is unnecessary and
+the keys are written without it: <code>f1_XM</code>, <code>fZ_MY</code>,
+<code>fZ_XY</code> (read the two trailing letters as source then
+target). The dotted form is reserved for <em>named</em> nodes, as on the
+<em>deductive</em> side (<code>fS2_TurnOn.HCoPot</code>), where
+multi-character names would otherwise run together. Both forms render to
+the same matrix-cell display, <code>F[src,tgt]</code> —
+<code>fZ_XM</code> and <code>FZ[X,M]</code> are the same parameter, one
+a lavaan-safe key, the other a reading aid (see <a href="#the-f1-fz-matrix-overlay">The F1 / FZ matrix overlay</a> and
+<code><a href="../reference/pathXMY_to_F.html">pathXMY_to_F()</a></code>).</p>
 <div class="section level3">
 <h3 id="reading-a-cell">Reading a cell<a class="anchor" aria-label="anchor" href="#reading-a-cell"></a>
 </h3>
@@ -247,7 +261,7 @@ as the black edges that are always active, and <code>FZ</code> as
 colored edges that strengthen with <code>s[Z]</code>. The three-panel
 decomposition figures in the speeding <code>pathXMY</code> vignette are
 an early hand-built instance of this; generalising the data side via
-<code>pathXMY_to_F()</code> lets the same visualization machinery render
+<code><a href="../reference/pathXMY_to_F.html">pathXMY_to_F()</a></code> lets the same visualization machinery render
 whole fields rather than single triangles.</p>
 <p>The matrix view is also the convenient handoff to the runtime: a step
 <code>s_{t+1} = s_t \cdot F_t</code> decomposes as</p>
@@ -366,59 +380,77 @@ coffee vignette</td>
 </table>
 <p>Both directions use the same model syntax and the same parameter
 schema. The bridge between them — turning a <code>pathXMY</code> fit
-into a runnable field — is <code>pathXMY_to_F()</code>.</p>
+into a runnable field — is <code><a href="../reference/pathXMY_to_F.html">pathXMY_to_F()</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="migration-from-the-legacy-b1_mx-bz_mx-labels">Migration from the legacy <code>B1_MX</code> / <code>BZ_MX</code>
 labels<a class="anchor" aria-label="anchor" href="#migration-from-the-legacy-b1_mx-bz_mx-labels"></a>
 </h2>
-<p>Existing <code><a href="../reference/pathXMY.html">pathXMY()</a></code> output (the <code>tidy_loop</code>
-and <code>tidy_joint</code> tables) uses labels of the form
-<code>B1_MX</code>, <code>BZ_MX</code>, <code>B1_YM</code>,
-<code>BZ_YM</code>. The F-convention equivalents reverse the
-source/target order and use the new separator:</p>
+<p>Earlier versions of <code><a href="../reference/pathXMY.html">pathXMY()</a></code> labelled their
+<code>tidy_loop</code> / <code>tidy_joint</code> tables in the SEM-style
+<code>B1_MX</code> / <code>BZ_YX</code> convention (prefix
+<code>B</code>, scope digit, <em>target-source</em> suffix). The tables
+now key on the F-schema generic-slot form directly — prefix
+<code>f</code>, scope digit, <em>source-target</em> suffix, no separator
+(single-letter slots). The bracket column is the display form produced
+by <code><a href="../reference/pathXMY_to_F.html">pathXMY_to_F()</a></code>:</p>
 <table class="table">
 <thead><tr class="header">
 <th>Legacy label</th>
-<th>F-schema label</th>
+<th>F-schema key</th>
+<th>Display</th>
 <th>Reads as</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td><code>B1_MX</code></td>
-<td><code>f1_X.M</code></td>
+<td><code>f1_XM</code></td>
+<td><code>F1[X,M]</code></td>
 <td>baseline X → M force</td>
 </tr>
 <tr class="even">
 <td><code>BZ_MX</code></td>
-<td><code>fZ_X.M</code></td>
+<td><code>fZ_XM</code></td>
+<td><code>FZ[X,M]</code></td>
 <td>Z-moderation of X → M</td>
 </tr>
 <tr class="odd">
 <td><code>B1_YM</code></td>
-<td><code>f1_M.Y</code></td>
+<td><code>f1_MY</code></td>
+<td><code>F1[M,Y]</code></td>
 <td>baseline M → Y force</td>
 </tr>
 <tr class="even">
 <td><code>BZ_YM</code></td>
-<td><code>fZ_M.Y</code></td>
+<td><code>fZ_MY</code></td>
+<td><code>FZ[M,Y]</code></td>
 <td>Z-moderation of M → Y</td>
 </tr>
 <tr class="odd">
 <td><code>B1_YX</code></td>
-<td><code>f1_X.Y</code></td>
+<td><code>f1_XY</code></td>
+<td><code>F1[X,Y]</code></td>
 <td>direct X → Y (controlling for M)</td>
 </tr>
 <tr class="even">
 <td><code>BZ_YX</code></td>
-<td><code>fZ_X.Y</code></td>
+<td><code>fZ_XY</code></td>
+<td><code>FZ[X,Y]</code></td>
 <td>Z-moderation of direct X → Y</td>
 </tr>
 </tbody>
 </table>
-<p><code>pathXMY_to_F()</code> (see its own help page) returns the tidy
-table relabelled in the F-schema, as a parallel view alongside the
-existing <code>tidy_loop</code> / <code>tidy_joint</code>.</p>
+<p>The joint multi-mediator rows carry a <code>_joint</code> suffix
+(<code>f1_XY_joint</code>, <code>fZ_XY_joint</code>, …); the no-mediator
+<em>total</em> is written <code>f1_XY</code> with a <code>*</code>
+superscript in display, <code>F1*[X,Y]</code>.
+<code><a href="../reference/pathXMY_to_F.html">pathXMY_to_F()</a></code> (see its own help page) renders any of these
+keys — singles, products (<code>fZ_XM * f1_MY</code> →
+<code>FZ[X,M]·F1[M,Y]</code>), and <code>_joint</code> /
+<code>_total</code> / <code>(direct)</code> variants — into the bracket
+display used throughout the <code>pathXMY</code> vignettes. The
+deductive engine keeps the dotted, named-node form <code>fZ_X.Y</code>
+(above); the two coincide once nodes are single-letter slots.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

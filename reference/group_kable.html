@@ -3,7 +3,7 @@
 pathXMY_pairtable — as a self-contained HTML table in
 which the columns are gathered under spanning group headers. Each group
 after the first is set off by a divider rule, so two parameter blocks
-placed side by side (e.g. B1_MX beside B1_YM) read as
+placed side by side (e.g. f1_XM beside f1_MY) read as
 distinct, titled panels rather than one undifferentiated block of
 numbers.
 Intended for use inside R Markdown / knitr HTML documents (the package
@@ -13,7 +13,7 @@ The returned object renders as raw HTML; styling is carried in an inline
 pathXMY_pairtable — as a self-contained HTML table in
 which the columns are gathered under spanning group headers. Each group
 after the first is set off by a divider rule, so two parameter blocks
-placed side by side (e.g. B1_MX beside B1_YM) read as
+placed side by side (e.g. f1_XM beside f1_MY) read as
 distinct, titled panels rather than one undifferentiated block of
 numbers.
 Intended for use inside R Markdown / knitr HTML documents (the package
@@ -65,7 +65,7 @@ The returned object renders as raw HTML; styling is carried in an inline
 <code><a href="pathXMY_pairtable.html">pathXMY_pairtable</a></code> — as a self-contained HTML table in
 which the columns are gathered under spanning group headers. Each group
 after the first is set off by a divider rule, so two parameter blocks
-placed side by side (e.g. <code>B1_MX</code> beside <code>B1_YM</code>) read as
+placed side by side (e.g. <code>f1_XM</code> beside <code>f1_MY</code>) read as
 distinct, titled panels rather than one undifferentiated block of
 numbers.</p>
 <p>Intended for use inside R Markdown / knitr HTML documents (the package
@@ -144,12 +144,12 @@ Default <code>TRUE</code> matches the funfield vignette house style.</p></dd>
 <span class="r-in"><span>               <span class="st">"IntQuality"</span>,<span class="st">"FunDrive"</span>,<span class="st">"Appropriate"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="pathXMY.html">pathXMY</a></span><span class="op">(</span><span class="va">speedingESJT</span><span class="op">$</span><span class="va">PSI</span>, X <span class="op">=</span> <span class="st">"Speed"</span>, Y <span class="op">=</span> <span class="st">"Likelihood"</span>,</span></span>
 <span class="r-in"><span>               M <span class="op">=</span> <span class="va">mediators</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="pathXMY_pairtable.html">pathXMY_pairtable</a></span><span class="op">(</span><span class="va">res</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"B1_MX"</span>, <span class="st">"B1_YM"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">tab</span> <span class="op">&lt;-</span> <span class="fu"><a href="pathXMY_pairtable.html">pathXMY_pairtable</a></span><span class="op">(</span><span class="va">res</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"f1_XM"</span>, <span class="st">"f1_MY"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">group_kable</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">tab</span>,</span></span>
 <span class="r-in"><span>  groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">" "</span> <span class="op">=</span> <span class="fl">1</span>,</span></span>
-<span class="r-in"><span>             <span class="st">"Expectation paths (B1_MX)"</span> <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>             <span class="st">"Valuation paths (B1_YM)"</span>   <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>             <span class="st">"Expectation paths (F1[X,M])"</span> <span class="op">=</span> <span class="fl">4</span>,</span></span>
+<span class="r-in"><span>             <span class="st">"Valuation paths (F1[M,Y])"</span>   <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  col_labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Mediator"</span>, <span class="st">"est"</span>, <span class="st">"se"</span>, <span class="st">"z"</span>, <span class="st">"p"</span>,</span></span>
 <span class="r-in"><span>                             <span class="st">"est"</span>, <span class="st">"se"</span>, <span class="st">"z"</span>, <span class="st">"p"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>

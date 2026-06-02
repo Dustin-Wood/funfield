@@ -1,12 +1,13 @@
 # Fast moderator screen for the three X-M-Y path coefficients
 
 For each candidate trait in a battery, estimate its moderation of (a)
-the total \\X \to Y\\ path (`BZ_YX[1]`, one number per trait), (b) the
-per-mediator \\X \to M_k\\ paths (`BZ_MX`, one per trait per mediator),
-and (c) the per-mediator \\M_k \to Y\\ paths (`BZ_YM`, one per trait per
-mediator). A few [`cor.test()`](https://rdrr.io/r/stats/cor.test.html)
-and [`lm()`](https://rdrr.io/r/stats/lm.html) calls in place of dozens
-of SEM fits.
+the total \\X \to Y\\ path (the total `fZ_XY`, one number per trait),
+(b) the per-mediator \\X \to M_k\\ paths (`fZ_XM`, one per trait per
+mediator), and (c) the per-mediator \\M_k \to Y\\ paths (`fZ_MY`, one
+per trait per mediator). A few
+[`cor.test()`](https://rdrr.io/r/stats/cor.test.html) and
+[`lm()`](https://rdrr.io/r/stats/lm.html) calls in place of dozens of
+SEM fits.
 
 **The shortcuts.**
 
@@ -14,10 +15,10 @@ of SEM fits.
 
   Per person, compute the within-person slope of `Y` on `X` (call it
   \\\Delta Y\\). Across persons, the Pearson correlation \\r(T, \Delta
-  Y)\\ is algebraically related to `BZ_YX[1]` from a no-mediator
+  Y)\\ is algebraically related to the total `fZ_XY` from a no-mediator
   [`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
-  fit by \$\$\mathrm{BZ\\YX}\[1\] = r(T, \Delta Y) \cdot
-  \mathrm{SD}(\Delta Y),\$\$ because
+  fit by \$\$F_Z^{\*}\[X,Y\] = r(T, \Delta Y) \cdot \mathrm{SD}(\Delta
+  Y),\$\$ because
   [`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
   z-standardizes the between-person moderator internally (so the
   \\\mathrm{SD}(T)\\ factor that would otherwise appear cancels).
@@ -35,7 +36,7 @@ of SEM fits.
   partialled out), so the YM shortcut is computed at the population
   level: a single OLS regression of within-person-deviated `Y` on
   within-person-deviated `X` and `M_k` with a `T_z * M_dev` interaction.
-  The `M_dev:T_z` coefficient is the `BZ_YM` estimate (matches
+  The `M_dev:T_z` coefficient is the `fZ_MY` estimate (matches
   [`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
   to ~0.1 percent in the speeding fit). The reported p-value comes from
   OLS and does **not** account for within-person clustering, so it is

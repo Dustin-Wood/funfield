@@ -3,7 +3,7 @@
 Returns a patchwork composition of two
 [`plotPathXMY`](https://dustin-wood.github.io/funfield/reference/plotPathXMY.md)
 panels, one per moderation route. The **expectation** panel shows
-`BZ_MX` on the X-to-M arm (limegreen) and `B1_YM` on the M-to-Y arm
+`FZ[X,M]` on the X-to-M arm (limegreen) and `F1[M,Y]` on the M-to-Y arm
 (black); the **valuation** panel shows the converse pairing.
 
 Reading rule: a mediator whose two arms BOTH carry visible weight in the
@@ -43,7 +43,7 @@ plotPathXMY_routes(x, mediator = NULL, Z_label = "Z", panel_titles = NULL, ...)
 - panel_titles:
 
   Optional length-2 character vector of panel titles. If `NULL`, panel
-  titles are auto-generated from `Z_label`.
+  titles are auto-generated from `Z_label` in the F-schema display form.
 
 ## Value
 
