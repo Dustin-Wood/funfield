@@ -33,6 +33,8 @@
   : Cluster-Robust Covariance and Correlation Matrix for ESJT Data
 - [`esjtFromQualtrics()`](https://dustin-wood.github.io/funfield/reference/esjtFromQualtrics.md)
   : Build an ESJT/EXSJT dataset from raw Qualtrics data
+- [`evalF()`](https://dustin-wood.github.io/funfield/reference/evalF.md)
+  : Evaluate One Markov Step of a Functional Field
 - [`expEffects.voi()`](https://dustin-wood.github.io/funfield/reference/expEffects.voi.md)
   : Expected Effects of Variable-of-Interest
 - [`expOutcomes()`](https://dustin-wood.github.io/funfield/reference/expOutcomes.md)
@@ -58,6 +60,8 @@
   : Implied Covariance Matrix from a Field Model
 - [`kable0()`](https://dustin-wood.github.io/funfield/reference/kable0.md)
   : \`knitr::kable()\` wrapper with stripped leading zeros
+- [`labelF()`](https://dustin-wood.github.io/funfield/reference/labelF.md)
+  : Auto-generate \`fZ_X.Y\` parameter labels for a field model
 - [`lmhgroups()`](https://dustin-wood.github.io/funfield/reference/lmhgroups.md)
   : Create Low-Medium-High Subgroups at Specified Levels
 - [`makeFF()`](https://dustin-wood.github.io/funfield/reference/makeFF.md)
@@ -73,6 +77,8 @@
   and direct-moderation components
 - [`pathXMY_pairtable()`](https://dustin-wood.github.io/funfield/reference/pathXMY_pairtable.md)
   : Side-by-Side Table of Two (or More) pathXMY Parameters
+- [`plotField()`](https://dustin-wood.github.io/funfield/reference/plotField.md)
+  : Draw one frame of a functional field at a given state
 - [`plotFieldSequence()`](https://dustin-wood.github.io/funfield/reference/plotFieldSequence.md)
   : Plot a Sequence of Functional Field Time Steps
 - [`plotPathSchema()`](https://dustin-wood.github.io/funfield/reference/plotPathSchema.md)
@@ -93,6 +99,8 @@
   : Positive and Negative Levels'
 - [`prepField()`](https://dustin-wood.github.io/funfield/reference/prepField.md)
   : Prepare Functional Field
+- [`runF()`](https://dustin-wood.github.io/funfield/reference/runF.md) :
+  Iterate a Functional Field Forward
 - [`screenModerators()`](https://dustin-wood.github.io/funfield/reference/screenModerators.md)
   : Fast moderator screen for the three X-M-Y path coefficients
 - [`sdESJT()`](https://dustin-wood.github.io/funfield/reference/sdESJT.md)

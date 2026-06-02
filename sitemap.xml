@@ -6,6 +6,7 @@
 <url><loc>https://dustin-wood.github.io/funfield/articles/coffee_field_model.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/articles/coworker_pathXMY.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/articles/index.html</loc></url>
+<url><loc>https://dustin-wood.github.io/funfield/articles/notation.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/articles/overtime_pathXMY.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/articles/speeding_pathXMY.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/authors.html</loc></url>
@@ -25,6 +26,7 @@
 <url><loc>https://dustin-wood.github.io/funfield/reference/effectiveN.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/esjtCov.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/esjtFromQualtrics.html</loc></url>
+<url><loc>https://dustin-wood.github.io/funfield/reference/evalF.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/expEffects.voi.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/expOutcomes.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/expOutcomesFF.html</loc></url>
@@ -38,6 +40,7 @@
 <url><loc>https://dustin-wood.github.io/funfield/reference/impliedCov.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/index.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/kable0.html</loc></url>
+<url><loc>https://dustin-wood.github.io/funfield/reference/labelF.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/lmhgroups.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/makeFF.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/overtimeESJT.html</loc></url>
@@ -45,6 +48,7 @@
 <url><loc>https://dustin-wood.github.io/funfield/reference/pathXMY.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/pathXMY_decompose.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/pathXMY_pairtable.html</loc></url>
+<url><loc>https://dustin-wood.github.io/funfield/reference/plotField.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/plotFieldSequence.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/plotPathSchema.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/plotPathXMY.html</loc></url>
@@ -55,6 +59,7 @@
 <url><loc>https://dustin-wood.github.io/funfield/reference/plotsAsWidget.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/pnLevels.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/prepField.html</loc></url>
+<url><loc>https://dustin-wood.github.io/funfield/reference/runF.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/screenModerators.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/sdESJT.html</loc></url>
 <url><loc>https://dustin-wood.github.io/funfield/reference/siWeightedData.html</loc></url>
