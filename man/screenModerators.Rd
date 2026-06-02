@@ -60,10 +60,10 @@ A tidy data frame with one row per (trait \eqn{\times}
 }
 \description{
 For each candidate trait in a battery, estimate its moderation of
-(a) the total \eqn{X \to Y} path (\code{BZ_YX[1]}, one number per
-trait), (b) the per-mediator \eqn{X \to M_k} paths (\code{BZ_MX},
+(a) the total \eqn{X \to Y} path (the total \code{fZ_XY}, one number
+per trait), (b) the per-mediator \eqn{X \to M_k} paths (\code{fZ_XM},
 one per trait per mediator), and (c) the per-mediator
-\eqn{M_k \to Y} paths (\code{BZ_YM}, one per trait per mediator).
+\eqn{M_k \to Y} paths (\code{fZ_MY}, one per trait per mediator).
 A few \code{cor.test()} and \code{lm()} calls in place of dozens of
 SEM fits.
 
@@ -72,9 +72,9 @@ SEM fits.
   \item{\strong{YX arm}}{Per person, compute the within-person
     slope of \code{Y} on \code{X} (call it \eqn{\Delta Y}). Across
     persons, the Pearson correlation \eqn{r(T, \Delta Y)} is
-    algebraically related to \code{BZ_YX[1]} from a no-mediator
+    algebraically related to the total \code{fZ_XY} from a no-mediator
     \code{pathXMY()} fit by
-    \deqn{\mathrm{BZ\_YX}[1] = r(T, \Delta Y) \cdot \mathrm{SD}(\Delta Y),}
+    \deqn{F_Z^{*}[X,Y] = r(T, \Delta Y) \cdot \mathrm{SD}(\Delta Y),}
     because \code{pathXMY()} z-standardizes the between-person
     moderator internally (so the \eqn{\mathrm{SD}(T)} factor that
     would otherwise appear cancels).}
@@ -89,7 +89,7 @@ SEM fits.
     single OLS regression of within-person-deviated \code{Y} on
     within-person-deviated \code{X} and \code{M_k} with a
     \code{T_z * M_dev} interaction. The \code{M_dev:T_z}
-    coefficient is the \code{BZ_YM} estimate (matches
+    coefficient is the \code{fZ_MY} estimate (matches
     \code{pathXMY()} to ~0.1 percent in the speeding fit). The
     reported p-value comes from OLS and does \strong{not} account
     for within-person clustering, so it is optimistic compared to

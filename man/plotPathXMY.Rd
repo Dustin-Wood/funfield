@@ -70,10 +70,10 @@ that maps to maximum color intensity. Default \code{1} (the
 
 \item{Z_value}{Optional numeric scalar. If supplied, the diagram is
 rendered \emph{conditional on Z at this value} -- every coefficient
-becomes the effective slope at that Z (\code{b1 + bZ * Z_value}),
+becomes the effective slope at that Z (\code{f1 + fZ * Z_value}),
 node colors reflect expected scores at that Z, and edge labels show
 the single effective coefficient rather than the
-\code{b1 + bZ(Z)} decomposition. See also
+\code{f1 + fZ(Z)} decomposition. See also
 \code{\link{plotPathXMY_ZLH}} for a paired low/high view.}
 
 \item{Z_overlay}{Logical. If \code{TRUE}, render the \emph{Z-overlay}:
@@ -85,10 +85,10 @@ with \code{Z_value} and \code{route}.}
 
 \item{route}{One of \code{"none"} (default), \code{"expectation"}, or
 \code{"valuation"}. Selects a per-route moderation view rather than
-the decomposed default. \code{"expectation"} puts \code{BZ_MX} on
-the X-to-M arm (green) and \code{B1_YM} on the M-to-Y arm (black);
-\code{"valuation"} flips them (\code{B1_MX} green-less left,
-\code{BZ_YM} green right). No direct X-to-Y arrow is drawn since
+the decomposed default. \code{"expectation"} puts \code{fZ_XM} on
+the X-to-M arm (green) and \code{f1_MY} on the M-to-Y arm (black);
+\code{"valuation"} flips them (\code{f1_XM} green-less left,
+\code{fZ_MY} green right). No direct X-to-Y arrow is drawn since
 the route concept is about the indirect path through M. Mutually
 exclusive with \code{Z_value} and \code{Z_overlay}.}
 
@@ -148,7 +148,7 @@ funfield visualization conventions:
     background. Arrowheads are clipped to the node perimeter via
     shape-aware intersection (L-infinity for squares, edge
     intersection for the triangles). Edge labels carry the
-    \code{b1 + bZ(Z)} decomposition.
+    \code{f1 + fZ(Z)} decomposition.
   \item \strong{Moderator (Z) coloring.} Anything that is purely a
     bZ coefficient renders in limegreen. In the default decomposed
     label, only the trailing \code{bZ(Z)} fragment is green (the b1
@@ -156,7 +156,7 @@ funfield visualization conventions:
     Z-overlay view (\code{Z_overlay = TRUE}), the entire label and
     the edge are green, since the edge \emph{is} a bZ coefficient.
     A Z-collapsed view (\code{Z_value} supplied) renders normally:
-    the label there is a single total slope \code{b1 + bZ * Z_value},
+    the label there is a single total slope \code{f1 + fZ * Z_value},
     not a bZ coefficient on its own.
 }
 
@@ -181,7 +181,7 @@ Two view modes:
   \item \code{"joint"}: the joint multi-mediator simultaneous-fit
     picture -- each mediator's slopes are the partial slopes net of
     the other mediators, and the X to Y arrow is the single global
-    \code{B1_YX_joint} direct path after controlling for all M.
+    \code{f1_XY_joint} direct path after controlling for all M.
 }
 
 Passing \code{Z_overlay = TRUE} renders the same layout but with
@@ -192,9 +192,9 @@ expected scores have no meaning for a per-unit-Z slope.
 
 Passing \code{route = "expectation"} or \code{"valuation"} renders
 a per-route view of the moderation. The \emph{expectation route}
-shows \code{BZ_MX} on the X-to-M arm (green) and \code{B1_YM} on the
+shows \code{fZ_XM} on the X-to-M arm (green) and \code{f1_MY} on the
 M-to-Y arm (black); the \emph{valuation route} flips the arms
-(\code{B1_MX} on the left, \code{BZ_YM} on the right). The visual
+(\code{f1_XM} on the left, \code{fZ_MY} on the right). The visual
 grammar of the new coloring scheme makes the two route components of
 the moderation decomposition read directly: if both arms of a
 mediator carry visible weight in one of the two graphs, that

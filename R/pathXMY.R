@@ -81,24 +81,26 @@
 #'       regression and should not be read as partial effects net of the
 #'       other mediators.} Columns: \code{mediator}, \code{param},
 #'       \code{est}, \code{se}, \code{z}, \code{pvalue}, \code{ci.lower},
-#'       \code{ci.upper}. Parameter labels follow the XMY convention:
-#'       \code{B1_MX}, \code{BZ_MX}, \code{B1_YX}, \code{BZ_YX},
-#'       \code{B1_YM}, \code{BZ_YM}, plus the indirect effects
-#'       \code{B1_MX * B1_YM} (unmoderated only),
-#'       \code{BZ_MX * B1_YM} (\eqn{= \beta^Z_{MX} \cdot \beta^1_{YM}}),
-#'       and \code{B1_MX * BZ_YM} (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).
-#'       When \code{M = NULL}, this slot holds the rows from the single
-#'       Y-on-X direct regression (\code{mediator = NA}).}
+#'       \code{ci.upper}. Parameter labels use the F-schema source-target
+#'       convention: \code{f1_XM}, \code{fZ_XM}, \code{f1_XY},
+#'       \code{fZ_XY}, \code{f1_MY}, \code{fZ_MY}, plus the indirect
+#'       effects \code{f1_XM * f1_MY} (unmoderated only),
+#'       \code{fZ_XM * f1_MY} (\eqn{= F_Z[X,M] \cdot F_1[M,Y]}),
+#'       and \code{f1_XM * fZ_MY} (\eqn{= F_1[X,M] \cdot F_Z[M,Y]}).
+#'       The display form \code{FZ[X,Y]} is produced by
+#'       \code{\link{pathXMY_to_F}}. When \code{M = NULL}, this slot holds
+#'       the rows from the single Y-on-X direct regression
+#'       (\code{mediator = NA}).}
 #'     \item{tidy_joint}{A tidy data frame from the \strong{single
 #'       simultaneous multi-mediator regression} in which all mediators
 #'       appear together in the Y equation. \code{NULL} when
 #'       \code{joint = FALSE} or \code{length(M) <= 1}. Per-mediator rows
-#'       (\code{B1_MX_joint}, \code{BZ_MX_joint}, \code{B1_YM_joint},
-#'       \code{BZ_YM_joint}) are indexed by \code{mediator}; global rows
-#'       (\code{B1_YX_joint}, \code{BZ_YX_joint}) carry \code{mediator = NA}.
-#'       The \code{B*_YM_joint} coefficients are partial slopes net of the
+#'       (\code{f1_XM_joint}, \code{fZ_XM_joint}, \code{f1_MY_joint},
+#'       \code{fZ_MY_joint}) are indexed by \code{mediator}; global rows
+#'       (\code{f1_XY_joint}, \code{fZ_XY_joint}) carry \code{mediator = NA}.
+#'       The \code{f*_MY_joint} coefficients are partial slopes net of the
 #'       other mediators and are \emph{not} comparable to the
-#'       single-mediator \code{B*_YM} values in \code{tidy_loop}.}
+#'       single-mediator \code{f*_MY} values in \code{tidy_loop}.}
 #'     \item{fits}{A named list of the lavaan fit objects (one per mediator,
 #'       named by the mediator variable name; \code{"_direct"} when
 #'       \code{M = NULL}; \code{"_joint"} for the joint multi-mediator fit
@@ -124,11 +126,13 @@
 #' number of clusters \eqn{G} is large. With \eqn{G < 50}, results may be
 #' anti-conservative; consider \code{se = "boot"}.
 #'
-#' \strong{Naming convention.} Parameters use the X-M-Y suffix convention
-#' from Wood, Harms, & Cho (2023): \code{B1_*} are main-effect coefficients,
-#' \code{BZ_*} are Z-moderated coefficients; \code{B*_MX} parameters
-#' regress M on X, \code{B*_YM} regress Y on M, \code{B*_YX} are the
-#' (direct) Y on X coefficients.
+#' \strong{Naming convention.} Parameters use the F-schema source-target
+#' convention (see \code{vignette("notation")}): \code{f1_*} are baseline
+#' coefficients, \code{fZ_*} are Z-moderated coefficients; \code{f*_XM}
+#' parameters regress M on X (the \eqn{X \to M} force), \code{f*_MY}
+#' regress Y on M (\eqn{M \to Y}), \code{f*_XY} are the (direct)
+#' \eqn{X \to Y} coefficients. The two trailing letters read source then
+#' target, matching the matrix-cell display form \code{F[src,tgt]}.
 #'
 #' \strong{Loop vs joint fits --- two different regressions, two different
 #' tables.} With multiple mediators, \code{pathXMY()} produces two separate
@@ -137,25 +141,25 @@
 #' \itemize{
 #'   \item \code{$tidy_loop} comes from a "loop" pass: one independent
 #'         X-M-Y model is fit \emph{per mediator}, each with only that
-#'         single mediator in the Y equation. A row labeled \code{B1_YM}
+#'         single mediator in the Y equation. A row labeled \code{f1_MY}
 #'         for mediator \eqn{m_k} is the slope of Y on \eqn{m_k}
 #'         controlling for X --- nothing else. The loop pass is the
 #'         inferential workhorse and supports the stable
-#'         expectation-route summary \code{BZ_MX * B1_YM}.
+#'         expectation-route summary \code{fZ_XM * f1_MY}.
 #'   \item \code{$tidy_joint} comes from a single simultaneous regression
 #'         where \emph{all} mediators appear together in the Y equation.
-#'         A row labeled \code{B1_YM_joint} for mediator \eqn{m_k} is the
+#'         A row labeled \code{f1_MY_joint} for mediator \eqn{m_k} is the
 #'         partial slope of Y on \eqn{m_k} \emph{net of every other
 #'         mediator in M}. These are not comparable to the loop
-#'         \code{B1_YM} values and will routinely differ in magnitude
+#'         \code{f1_MY} values and will routinely differ in magnitude
 #'         (and sometimes sign) when mediators are correlated.
 #' }
-#' \code{B1_YX_joint} and \code{BZ_YX_joint} are the most useful joint
+#' \code{f1_XY_joint} and \code{fZ_XY_joint} are the most useful joint
 #' outputs: they index the residual direct \eqn{X \to Y} (and its
 #' Z-moderation) after controlling for the entire mediator set, and serve
 #' as a diagnostic of whether the measured mediators absorb the total
-#' \code{BZ_YX} moderation. \emph{Per-mediator} joint coefficients
-#' (especially \code{BZ_YM_joint}) are typically less stable than their
+#' \code{fZ_XY} moderation. \emph{Per-mediator} joint coefficients
+#' (especially \code{fZ_MY_joint}) are typically less stable than their
 #' loop counterparts when mediators are numerous or correlated, because
 #' the M-by-Z product terms are highly collinear (Wood, Adanu, & Harms,
 #' 2025). For inference about a single mediator's role, prefer the loop
@@ -336,19 +340,19 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
   ctrl_Y <- ctrl_M
   if (has_Z) {
     m_eq <- sprintf(
-      "M ~ 1 + B1_MX*X + .Z + BZ_MX*X:.Z%s", ctrl_M)
+      "M ~ 1 + f1_XM*X + .Z + fZ_XM*X:.Z%s", ctrl_M)
     y_eq <- sprintf(
-      "Y ~ 1 + B1_YX*X + .Z + BZ_YX*X:.Z + B1_YM*M + BZ_YM*M:.Z%s",
+      "Y ~ 1 + f1_XY*X + .Z + fZ_XY*X:.Z + f1_MY*M + fZ_MY*M:.Z%s",
       ctrl_Y)
     defs <- c(
-      "ind   := B1_MX*B1_YM",
-      "indZ_X := BZ_MX*B1_YM",
-      "indZ_Y := B1_MX*BZ_YM"
+      "ind   := f1_XM*f1_MY",
+      "indZ_X := fZ_XM*f1_MY",
+      "indZ_Y := f1_XM*fZ_MY"
     )
   } else {
-    m_eq <- sprintf("M ~ 1 + B1_MX*X%s", ctrl_M)
-    y_eq <- sprintf("Y ~ 1 + B1_YX*X + B1_YM*M%s", ctrl_Y)
-    defs <- "ind := B1_MX*B1_YM"
+    m_eq <- sprintf("M ~ 1 + f1_XM*X%s", ctrl_M)
+    y_eq <- sprintf("Y ~ 1 + f1_XY*X + f1_MY*M%s", ctrl_Y)
+    defs <- "ind := f1_XM*f1_MY"
   }
   paste(c(m_eq, y_eq, defs), collapse = "\n")
 }
@@ -357,9 +361,9 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
   ctrl_Y <- if (length(ctrl_terms) > 0)
     paste0(" + ", paste(ctrl_terms, collapse = " + ")) else ""
   if (has_Z) {
-    sprintf("Y ~ 1 + B1_YX*X + .Z + BZ_YX*X:.Z%s", ctrl_Y)
+    sprintf("Y ~ 1 + f1_XY*X + .Z + fZ_XY*X:.Z%s", ctrl_Y)
   } else {
-    sprintf("Y ~ 1 + B1_YX*X%s", ctrl_Y)
+    sprintf("Y ~ 1 + f1_XY*X%s", ctrl_Y)
   }
 }
 
@@ -426,9 +430,9 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
 ## (Lavaan cannot use "*" or spaces in defined-parameter names, so we keep
 ## the simple identifiers inside the model string and rename on the way out.)
 .relabel_ind <- function(x) {
-  m <- c(ind    = "B1_MX * B1_YM",
-         indZ_X = "BZ_MX * B1_YM",
-         indZ_Y = "B1_MX * BZ_YM")
+  m <- c(ind    = "f1_XM * f1_MY",
+         indZ_X = "fZ_XM * f1_MY",
+         indZ_Y = "f1_XM * fZ_MY")
   ifelse(x %in% names(m), m[x], x)
 }
 
@@ -437,7 +441,7 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
 ## row that lavaan emits for product terms).
 .pathXMY_tidy <- function(fit, conf.level) {
   pe <- lavaan::parameterestimates(fit, level = conf.level)
-  keep_lab <- c("B1_MX","BZ_MX","B1_YX","BZ_YX","B1_YM","BZ_YM",
+  keep_lab <- c("f1_XM","fZ_XM","f1_XY","fZ_XY","f1_MY","fZ_MY",
                 "ind","indZ_X","indZ_Y")
   pe <- pe[pe$label %in% keep_lab, , drop = FALSE]
   ## Order parameters consistently, then apply display labels
@@ -477,8 +481,8 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
       error = function(e) NULL)
     if (is.null(fb)) next
     pb <- lavaan::parameterestimates(fb)
-    pb <- pb[pb$label %in% c("B1_MX","BZ_MX","B1_YX","BZ_YX",
-                             "B1_YM","BZ_YM","ind","indZ_X","indZ_Y"),
+    pb <- pb[pb$label %in% c("f1_XM","fZ_XM","f1_XY","fZ_XY",
+                             "f1_MY","fZ_MY","ind","indZ_X","indZ_Y"),
              , drop = FALSE]
     if (is.null(par_mat)) {
       par_mat <- matrix(NA_real_, R, length(pb$label),
@@ -520,28 +524,28 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
 
   m_eqs <- vapply(seq_len(K), function(k) {
     if (has_Z) {
-      sprintf("M_%d ~ 1 + B1_MX_J_%d*X + .Z + BZ_MX_J_%d*X_Z%s",
+      sprintf("M_%d ~ 1 + f1_XM_J_%d*X + .Z + fZ_XM_J_%d*X_Z%s",
               k, k, k, ctrl_M)
     } else {
-      sprintf("M_%d ~ 1 + B1_MX_J_%d*X%s", k, k, ctrl_M)
+      sprintf("M_%d ~ 1 + f1_XM_J_%d*X%s", k, k, ctrl_M)
     }
   }, character(1))
 
   ym_terms <- if (has_Z) {
     paste(vapply(seq_len(K), function(k)
-      sprintf("B1_YM_J_%d*M_%d + BZ_YM_J_%d*M_%d_Z", k, k, k, k),
+      sprintf("f1_MY_J_%d*M_%d + fZ_MY_J_%d*M_%d_Z", k, k, k, k),
       character(1)), collapse = " + ")
   } else {
     paste(vapply(seq_len(K), function(k)
-      sprintf("B1_YM_J_%d*M_%d", k, k), character(1)),
+      sprintf("f1_MY_J_%d*M_%d", k, k), character(1)),
       collapse = " + ")
   }
 
   y_eq <- if (has_Z) {
-    sprintf("Y ~ 1 + B1_YX_J*X + .Z + BZ_YX_J*X_Z + %s%s",
+    sprintf("Y ~ 1 + f1_XY_J*X + .Z + fZ_XY_J*X_Z + %s%s",
             ym_terms, ctrl_Y)
   } else {
-    sprintf("Y ~ 1 + B1_YX_J*X + %s%s", ym_terms, ctrl_Y)
+    sprintf("Y ~ 1 + f1_XY_J*X + %s%s", ym_terms, ctrl_Y)
   }
 
   paste(c(m_eqs, y_eq), collapse = "\n")
@@ -598,21 +602,21 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
 
   rows <- list()
   for (k in seq_len(K)) {
-    rows[[length(rows) + 1L]] <- one_row(M[k], "B1_MX_joint",
+    rows[[length(rows) + 1L]] <- one_row(M[k], "f1_XM_joint",
                                          Mn[k], "~", "X")
     if (has_Z)
-      rows[[length(rows) + 1L]] <- one_row(M[k], "BZ_MX_joint",
+      rows[[length(rows) + 1L]] <- one_row(M[k], "fZ_XM_joint",
                                            Mn[k], "~", "X_Z")
-    rows[[length(rows) + 1L]] <- one_row(M[k], "B1_YM_joint",
+    rows[[length(rows) + 1L]] <- one_row(M[k], "f1_MY_joint",
                                          "Y", "~", Mn[k])
     if (has_Z)
-      rows[[length(rows) + 1L]] <- one_row(M[k], "BZ_YM_joint",
+      rows[[length(rows) + 1L]] <- one_row(M[k], "fZ_MY_joint",
                                            "Y", "~", paste0(Mn[k], "_Z"))
   }
-  rows[[length(rows) + 1L]] <- one_row(NA_character_, "B1_YX_joint",
+  rows[[length(rows) + 1L]] <- one_row(NA_character_, "f1_XY_joint",
                                        "Y", "~", "X")
   if (has_Z)
-    rows[[length(rows) + 1L]] <- one_row(NA_character_, "BZ_YX_joint",
+    rows[[length(rows) + 1L]] <- one_row(NA_character_, "fZ_XY_joint",
                                          "Y", "~", "X_Z")
 
   rows <- rows[!vapply(rows, is.null, logical(1))]

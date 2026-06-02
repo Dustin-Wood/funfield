@@ -3,8 +3,8 @@
 #' @description
 #' Returns a \pkg{patchwork} composition of two
 #' \code{\link{plotPathXMY}} panels, one per moderation route. The
-#' \strong{expectation} panel shows \code{BZ_MX} on the X-to-M arm
-#' (limegreen) and \code{B1_YM} on the M-to-Y arm (black); the
+#' \strong{expectation} panel shows \code{FZ[X,M]} on the X-to-M arm
+#' (limegreen) and \code{F1[M,Y]} on the M-to-Y arm (black); the
 #' \strong{valuation} panel shows the converse pairing.
 #'
 #' Reading rule: a mediator whose two arms BOTH carry visible weight in
@@ -22,7 +22,7 @@
 #'   Passed through to \code{\link{plotPathXMY}}. See there for details.
 #' @param panel_titles Optional length-2 character vector of panel
 #'   titles. If \code{NULL}, panel titles are auto-generated from
-#'   \code{Z_label}.
+#'   \code{Z_label} in the F-schema display form.
 #' @return A \code{patchwork} object combining the two \code{ggplot}
 #'   panels. Auto-prints in interactive sessions and knitr chunks.
 #' @seealso \code{\link{plotPathXMY}}, \code{\link{plotPathXMY_ZLH}},
@@ -34,10 +34,7 @@ plotPathXMY_routes <- function(x,
                                panel_titles = NULL,
                                ...) {
   if (is.null(panel_titles)) {
-    panel_titles <- c(
-      sprintf("Expectation route (BZ_MX(%s), B1_YM)", Z_label),
-      sprintf("Valuation route (B1_MX, BZ_YM(%s))",   Z_label)
-    )
+    panel_titles <- .route_panel_titles(Z_label)
   } else if (length(panel_titles) != 2L) {
     stop("`panel_titles` must be a character vector of length 2.")
   }
@@ -56,6 +53,12 @@ plotPathXMY_routes <- function(x,
   patchwork::wrap_plots(p_exp, p_val, ncol = 2)
 }
 
+## Auto panel titles for the two routes, in the F-schema display form.
+.route_panel_titles <- function(Z_label) {
+  c(sprintf("Expectation route (FZ[X,M](%s), F1[M,Y])", Z_label),
+    sprintf("Valuation route (F1[X,M], FZ[M,Y](%s))",   Z_label))
+}
+
 
 #' Toggleable widget for expectation vs valuation route diagrams
 #'
@@ -71,7 +74,8 @@ plotPathXMY_routes <- function(x,
 #' @param mediator,X_label,Y_label,Z_label,M_labels,X_shape,Y_shape,digits,scale_max,score_intensity_max,...
 #'   Passed through to \code{\link{plotPathXMY}}.
 #' @param panel_titles Optional length-2 character vector. If
-#'   \code{NULL}, titles are auto-generated from \code{Z_label}.
+#'   \code{NULL}, titles are auto-generated from \code{Z_label} in the
+#'   F-schema display form.
 #' @param width,height Frame width and height in inches. \code{height}
 #'   defaults to \code{3.5} for the single-mediator triangle view and to
 #'   \code{3 + 0.5 * n_mediators} for the fan view.
@@ -109,10 +113,7 @@ plotPathXMY_widget_routes <- function(x,
   if (is.null(height)) height <- if (n_m == 1L) 3.5 else 3 + 0.5 * n_m
 
   if (is.null(panel_titles)) {
-    panel_titles <- c(
-      sprintf("Expectation route (BZ_MX(%s), B1_YM)", Z_label),
-      sprintf("Valuation route (B1_MX, BZ_YM(%s))",   Z_label)
-    )
+    panel_titles <- .route_panel_titles(Z_label)
   } else if (length(panel_titles) != 2L) {
     stop("`panel_titles` must be a character vector of length 2.")
   }

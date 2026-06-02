@@ -124,40 +124,41 @@ is to take it, averaging across people and conditions?
 norm <- pathXMY(dat, X = "ExpDisapproval", Y = "Likelihood", M = mediators)
 
 ## Loop pass: one X -> M -> Y regression PER MEDIATOR, fit independently.
-## Each B1_YM row is the slope of Likelihood on that mediator controlling
+## Each f1_MY row is the slope of Likelihood on that mediator controlling
 ## only for ExpDisapproval (no other mediators in the equation).
-norm$tidy_loop
+## pathXMY_to_F() renders the terse f-keys as bracket display labels.
+pathXMY_to_F(norm$tidy_loop)
 
 ## Joint pass: a SINGLE simultaneous regression with all mediators together
-## in the Y equation. B1_YM_joint slopes are partial slopes net of the
-## other mediators -- not comparable to the loop B1_YM above.
-norm$tidy_joint
+## in the Y equation. The joint f1_MY slopes are partial slopes net of the
+## other mediators -- not comparable to the loop f1_MY above.
+pathXMY_to_F(norm$tidy_joint)
 ```
 
-### Expectation paths (B1_MX): what co-occurs with expressing disapproval?
+### Expectation paths (F1[X,M]): what co-occurs with expressing disapproval?
 
 Actions that score higher on `ExpDisapproval` (i.e., actions that would
 constitute more direct expression of disapproval) are also seen as more likely
-to produce a major argument/confrontation (`MajorArg`, B1_MX ≈ 0.79) and less
+to produce a major argument/confrontation (`MajorArg`, F1[X,M] ≈ 0.79) and less
 likely to maintain a good working relationship in the long run (`GoodRelationP`,
-B1_MX ≈ −0.64). They are also seen as more appropriate within the role
-(`Appropriate`, B1_MX > 0) and more likely to result in the coworker being
-formally punished (`P_Punished`, B1_MX > 0).
+F1[X,M] ≈ −0.64). They are also seen as more appropriate within the role
+(`Appropriate`, F1[X,M] > 0) and more likely to result in the coworker being
+formally punished (`P_Punished`, F1[X,M] > 0).
 
-### Valuation paths (B1_YM): which outcomes drive action likelihood?
+### Valuation paths (F1[M,Y]): which outcomes drive action likelihood?
 
-Acting appropriately (`Appropriate`, B1_YM ≈ 0.82) and benefiting company
-success (`CompanySuccess`, B1_YM ≈ 0.95) are the strongest positive drivers of
+Acting appropriately (`Appropriate`, F1[M,Y] ≈ 0.82) and benefiting company
+success (`CompanySuccess`, F1[M,Y] ≈ 0.95) are the strongest positive drivers of
 whether a respondent says they would take an action. Being formally punished
-(`Punished`, B1_YM ≈ −0.78) and having a major argument (`MajorArg`,
-B1_YM ≈ −0.60) are the strongest suppressors.
+(`Punished`, F1[M,Y] ≈ −0.78) and having a major argument (`MajorArg`,
+F1[M,Y] ≈ −0.60) are the strongest suppressors.
 
-### Indirect effects (B1_MX × B1_YM)
+### Indirect effects (F1[X,M]·F1[M,Y])
 
 Indirect effects are significant for every mediator whose two component paths
 are both non-zero — the lone exception is `Punished`, whose expectation path
-(`B1_MX` ≈ 0.01) is essentially zero. The largest indirect paths are both
-negative: through `MajorArg` (B1_MX × B1_YM ≈ −0.47) and `GoodRelationP`
+(`F1[X,M]` ≈ 0.01) is essentially zero. The largest indirect paths are both
+negative: through `MajorArg` (F1[X,M]·F1[M,Y] ≈ −0.47) and `GoodRelationP`
 (≈ −0.39). Within a situation, the action that more strongly expresses
 disapproval is expected to provoke a major argument and to erode the working
 relationship, and both expectations pull strongly against taking it.
@@ -178,16 +179,16 @@ mod_s <- pathXMY(dat, X = "ExpDisapproval", Y = "Likelihood",
 
 ```{r bz-mx}
 knitr::kable(
-  subset(mod_s$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "fZ_XM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of expectation paths by manager rank (BZ_MX)"
+  caption = "Moderation of expectation paths by manager rank (FZ[X,M])"
 )
 ```
 
 Six of the seven mediators show significant moderation. When the coworker holds
 a higher rank (manager condition), expressing disapproval is expected to be
 substantially *more* likely to result in formal punishment of oneself
-(`Punished`, BZ_MX > 0): the power asymmetry increases the perceived personal
+(`Punished`, FZ[X,M] > 0): the power asymmetry increases the perceived personal
 cost. At the same time, expressing disapproval in a manager scenario is
 perceived as *less* likely to be seen as role-appropriate (`Appropriate`), less
 likely to help complete the job (`CompleteJob`), less likely to maintain a good
@@ -199,9 +200,9 @@ facing a higher-power colleague.
 
 ```{r bz-indirect}
 knitr::kable(
-  subset(mod_s$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_s$tidy_loop, param == "fZ_XM * f1_MY")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of indirect effects by manager rank (BZ_MX × B1_YM)"
+  caption = "Moderation of indirect effects by manager rank (FZ[X,M]·F1[M,Y])"
 )
 ```
 
@@ -213,10 +214,10 @@ the indirect pull toward expressing disapproval through that path.
 
 ### Decomposition and field view
 
-`pathXMY_decompose()` partitions the total Z-moderation (`BZ_YX[1]`)
-into expectation routing (`BZ_MX × B1_YM`), valuation routing
-(`B1_MX × BZ_YM`), and a residual direct term. The static
-`plotPathXMY()` shows the full field with `b1 + bZ(Z)` edge labels;
+`pathXMY_decompose()` partitions the total Z-moderation (`FZ*[X,Y]`)
+into expectation routing (`FZ[X,M]·F1[M,Y]`), valuation routing
+(`F1[X,M]·FZ[M,Y]`), and a residual direct term. The static
+`plotPathXMY()` shows the full field with `f1 + fZ(Z)` edge labels;
 the toggleable widget overlays the field at low / mid / high
 manager exposure.
 
@@ -224,7 +225,7 @@ manager exposure.
 dec_m <- pathXMY_decompose(dat, X = "ExpDisapproval", Y = "Likelihood",
                            M = mediators, Z = "manager", Z.within = TRUE)
 knitr::kable(dec_m$total, digits = 3,
-             caption = "Total moderation BZ_YX[1] for manager rank")
+             caption = "Total moderation FZ*[X,Y] for manager rank")
 ```
 
 ```{r plot-manager, fig.width = 10, fig.height = 7}
@@ -243,7 +244,7 @@ The fan diagram's mediator arms are the per-mediator *loop* fits
 *full* set of seven mediators simultaneously. See the speeding
 vignette for an extended discussion of why the loop coefficients
 (not the per-mediator joint ones) are the right tool for inference
-about a single mediator's role, and why `BZ_YX_joint` is best
+about a single mediator's role, and why the joint `FZ[X,Y]` is best
 treated as a system-level diagnostic (Wood, Adanu, & Harms, 2025).
 
 ```{r plot-manager-widget, eval = knitr::is_html_output()}
@@ -308,19 +309,19 @@ mod_ue <- pathXMY(dat3, X = "ExpDisapproval", Y = "Likelihood",
 
 ```{r bz-mx-ue}
 knitr::kable(
-  subset(mod_ue$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_ue$tidy_loop, param == "fZ_XM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of expectation paths by perceived unethicality (BZ_MX)"
+  caption = "Moderation of expectation paths by perceived unethicality (FZ[X,M])"
 )
 ```
 
 Six of the seven mediators are significantly moderated (`P_Punished` is the
 exception), and the effects are substantially larger than those for coworker
-rank. The dominant pattern is through `Appropriate` (BZ_MX = 1.45, z = 23.4):
+rank. The dominant pattern is through `Appropriate` (FZ[X,M] = 1.45, z = 23.4):
 in situations perceived as more unethical than the respondent's personal
 average, expressing disapproval is expected to be dramatically *more*
 role-appropriate. The complementary picture holds for `Punished`
-(BZ_MX = −0.71): when the coworker's behavior is perceived as unethical, the
+(FZ[X,M] = −0.71): when the coworker's behavior is perceived as unethical, the
 respondent expects *less* personal punishment for pushing back — the moral
 justification removes the sense of personal risk. `CompleteJob` (0.60) and
 `CompanySuccess` (0.80) also show large positive moderation: in unethical
@@ -335,9 +336,9 @@ perceived unethicality amplifies them.
 
 ```{r bz-indirect-ue}
 knitr::kable(
-  subset(mod_ue$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_ue$tidy_loop, param == "fZ_XM * f1_MY")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of indirect effects by perceived unethicality (BZ_MX × B1_YM)"
+  caption = "Moderation of indirect effects by perceived unethicality (FZ[X,M]·F1[M,Y])"
 )
 ```
 
@@ -359,7 +360,7 @@ dec_ue <- pathXMY_decompose(dat3, X = "ExpDisapproval", Y = "Likelihood",
                             M = mediators, Z = "WasUnethical",
                             Z.within = TRUE)
 knitr::kable(dec_ue$total, digits = 3,
-             caption = "Total moderation BZ_YX[1] for WasUnethical")
+             caption = "Total moderation FZ*[X,Y] for WasUnethical")
 ```
 
 ```{r plot-unethical, fig.width = 10, fig.height = 7}
@@ -407,9 +408,9 @@ mod_p <- pathXMY(dat2, X = "ExpDisapproval", Y = "Likelihood",
 
 ```{r bz-mx-bold}
 knitr::kable(
-  subset(mod_p$tidy_loop, param == "BZ_MX")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "fZ_XM")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of expectation paths by boldness (BZ_MX)"
+  caption = "Moderation of expectation paths by boldness (FZ[X,M])"
 )
 ```
 
@@ -417,14 +418,14 @@ knitr::kable(
 
 ```{r bz-indirect-bold}
 knitr::kable(
-  subset(mod_p$tidy_loop, param == "BZ_MX * B1_YM")[, c("mediator","est","se","z","pvalue")],
+  subset(mod_p$tidy_loop, param == "fZ_XM * f1_MY")[, c("mediator","est","se","z","pvalue")],
   digits = 3,
-  caption = "Moderation of indirect effects by boldness (BZ_MX × B1_YM)"
+  caption = "Moderation of indirect effects by boldness (FZ[X,M]·F1[M,Y])"
 )
 ```
 
 Person-level boldness shows modest moderation overall. The only significant
-effect is through `Appropriate` (BZ_MX > 0, p < .05): bolder individuals
+effect is through `Appropriate` (FZ[X,M] > 0, p < .05): bolder individuals
 expect that directly expressing disapproval will be *more* role-appropriate
 than less bold individuals do. This translates into a small but significant
 indirect effect: among bolder respondents, expressing disapproval is somewhat
@@ -442,7 +443,7 @@ dec_b <- pathXMY_decompose(dat2, X = "ExpDisapproval", Y = "Likelihood",
                            M = mediators, Z = "IIDL_bold",
                            Z.within = FALSE)
 knitr::kable(dec_b$total, digits = 3,
-             caption = "Total moderation BZ_YX[1] for IIDL_bold")
+             caption = "Total moderation FZ*[X,Y] for IIDL_bold")
 ```
 
 ```{r plot-bold, fig.width = 7, fig.height = 3.5}

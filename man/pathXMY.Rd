@@ -109,24 +109,26 @@ A list with three elements:
       regression and should not be read as partial effects net of the
       other mediators.} Columns: \code{mediator}, \code{param},
       \code{est}, \code{se}, \code{z}, \code{pvalue}, \code{ci.lower},
-      \code{ci.upper}. Parameter labels follow the XMY convention:
-      \code{B1_MX}, \code{BZ_MX}, \code{B1_YX}, \code{BZ_YX},
-      \code{B1_YM}, \code{BZ_YM}, plus the indirect effects
-      \code{B1_MX * B1_YM} (unmoderated only),
-      \code{BZ_MX * B1_YM} (\eqn{= \beta^Z_{MX} \cdot \beta^1_{YM}}),
-      and \code{B1_MX * BZ_YM} (\eqn{= \beta^1_{MX} \cdot \beta^Z_{YM}}).
-      When \code{M = NULL}, this slot holds the rows from the single
-      Y-on-X direct regression (\code{mediator = NA}).}
+      \code{ci.upper}. Parameter labels use the F-schema source-target
+      convention: \code{f1_XM}, \code{fZ_XM}, \code{f1_XY},
+      \code{fZ_XY}, \code{f1_MY}, \code{fZ_MY}, plus the indirect
+      effects \code{f1_XM * f1_MY} (unmoderated only),
+      \code{fZ_XM * f1_MY} (\eqn{= F_Z[X,M] \cdot F_1[M,Y]}),
+      and \code{f1_XM * fZ_MY} (\eqn{= F_1[X,M] \cdot F_Z[M,Y]}).
+      The display form \code{FZ[X,Y]} is produced by
+      \code{\link{pathXMY_to_F}}. When \code{M = NULL}, this slot holds
+      the rows from the single Y-on-X direct regression
+      (\code{mediator = NA}).}
     \item{tidy_joint}{A tidy data frame from the \strong{single
       simultaneous multi-mediator regression} in which all mediators
       appear together in the Y equation. \code{NULL} when
       \code{joint = FALSE} or \code{length(M) <= 1}. Per-mediator rows
-      (\code{B1_MX_joint}, \code{BZ_MX_joint}, \code{B1_YM_joint},
-      \code{BZ_YM_joint}) are indexed by \code{mediator}; global rows
-      (\code{B1_YX_joint}, \code{BZ_YX_joint}) carry \code{mediator = NA}.
-      The \code{B*_YM_joint} coefficients are partial slopes net of the
+      (\code{f1_XM_joint}, \code{fZ_XM_joint}, \code{f1_MY_joint},
+      \code{fZ_MY_joint}) are indexed by \code{mediator}; global rows
+      (\code{f1_XY_joint}, \code{fZ_XY_joint}) carry \code{mediator = NA}.
+      The \code{f*_MY_joint} coefficients are partial slopes net of the
       other mediators and are \emph{not} comparable to the
-      single-mediator \code{B*_YM} values in \code{tidy_loop}.}
+      single-mediator \code{f*_MY} values in \code{tidy_loop}.}
     \item{fits}{A named list of the lavaan fit objects (one per mediator,
       named by the mediator variable name; \code{"_direct"} when
       \code{M = NULL}; \code{"_joint"} for the joint multi-mediator fit
@@ -164,11 +166,13 @@ moderator (\code{Z.within = TRUE}) is within-person deviated.
 number of clusters \eqn{G} is large. With \eqn{G < 50}, results may be
 anti-conservative; consider \code{se = "boot"}.
 
-\strong{Naming convention.} Parameters use the X-M-Y suffix convention
-from Wood, Harms, & Cho (2023): \code{B1_*} are main-effect coefficients,
-\code{BZ_*} are Z-moderated coefficients; \code{B*_MX} parameters
-regress M on X, \code{B*_YM} regress Y on M, \code{B*_YX} are the
-(direct) Y on X coefficients.
+\strong{Naming convention.} Parameters use the F-schema source-target
+convention (see \code{vignette("notation")}): \code{f1_*} are baseline
+coefficients, \code{fZ_*} are Z-moderated coefficients; \code{f*_XM}
+parameters regress M on X (the \eqn{X \to M} force), \code{f*_MY}
+regress Y on M (\eqn{M \to Y}), \code{f*_XY} are the (direct)
+\eqn{X \to Y} coefficients. The two trailing letters read source then
+target, matching the matrix-cell display form \code{F[src,tgt]}.
 
 \strong{Loop vs joint fits --- two different regressions, two different
 tables.} With multiple mediators, \code{pathXMY()} produces two separate
@@ -177,25 +181,25 @@ questions and the coefficients are \emph{not} interchangeable:
 \itemize{
   \item \code{$tidy_loop} comes from a "loop" pass: one independent
         X-M-Y model is fit \emph{per mediator}, each with only that
-        single mediator in the Y equation. A row labeled \code{B1_YM}
+        single mediator in the Y equation. A row labeled \code{f1_MY}
         for mediator \eqn{m_k} is the slope of Y on \eqn{m_k}
         controlling for X --- nothing else. The loop pass is the
         inferential workhorse and supports the stable
-        expectation-route summary \code{BZ_MX * B1_YM}.
+        expectation-route summary \code{fZ_XM * f1_MY}.
   \item \code{$tidy_joint} comes from a single simultaneous regression
         where \emph{all} mediators appear together in the Y equation.
-        A row labeled \code{B1_YM_joint} for mediator \eqn{m_k} is the
+        A row labeled \code{f1_MY_joint} for mediator \eqn{m_k} is the
         partial slope of Y on \eqn{m_k} \emph{net of every other
         mediator in M}. These are not comparable to the loop
-        \code{B1_YM} values and will routinely differ in magnitude
+        \code{f1_MY} values and will routinely differ in magnitude
         (and sometimes sign) when mediators are correlated.
 }
-\code{B1_YX_joint} and \code{BZ_YX_joint} are the most useful joint
+\code{f1_XY_joint} and \code{fZ_XY_joint} are the most useful joint
 outputs: they index the residual direct \eqn{X \to Y} (and its
 Z-moderation) after controlling for the entire mediator set, and serve
 as a diagnostic of whether the measured mediators absorb the total
-\code{BZ_YX} moderation. \emph{Per-mediator} joint coefficients
-(especially \code{BZ_YM_joint}) are typically less stable than their
+\code{fZ_XY} moderation. \emph{Per-mediator} joint coefficients
+(especially \code{fZ_MY_joint}) are typically less stable than their
 loop counterparts when mediators are numerous or correlated, because
 the M-by-Z product terms are highly collinear (Wood, Adanu, & Harms,
 2025). For inference about a single mediator's role, prefer the loop

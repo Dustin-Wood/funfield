@@ -13,7 +13,7 @@ plotPathXMY_routes(x, mediator = NULL, Z_label = "Z", panel_titles = NULL, ...)
 
 \item{panel_titles}{Optional length-2 character vector of panel
 titles. If \code{NULL}, panel titles are auto-generated from
-\code{Z_label}.}
+\code{Z_label} in the F-schema display form.}
 }
 \value{
 A \code{patchwork} object combining the two \code{ggplot}
@@ -22,8 +22,8 @@ A \code{patchwork} object combining the two \code{ggplot}
 \description{
 Returns a \pkg{patchwork} composition of two
 \code{\link{plotPathXMY}} panels, one per moderation route. The
-\strong{expectation} panel shows \code{BZ_MX} on the X-to-M arm
-(limegreen) and \code{B1_YM} on the M-to-Y arm (black); the
+\strong{expectation} panel shows \code{FZ[X,M]} on the X-to-M arm
+(limegreen) and \code{F1[M,Y]} on the M-to-Y arm (black); the
 \strong{valuation} panel shows the converse pairing.
 
 Reading rule: a mediator whose two arms BOTH carry visible weight in

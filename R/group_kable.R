@@ -5,7 +5,7 @@
 #' \code{\link{pathXMY_pairtable}} --- as a self-contained HTML table in
 #' which the columns are gathered under spanning group headers. Each group
 #' after the first is set off by a divider rule, so two parameter blocks
-#' placed side by side (e.g. \code{B1_MX} beside \code{B1_YM}) read as
+#' placed side by side (e.g. \code{f1_XM} beside \code{f1_MY}) read as
 #' distinct, titled panels rather than one undifferentiated block of
 #' numbers.
 #'
@@ -45,12 +45,12 @@
 #'                "IntQuality","FunDrive","Appropriate")
 #' res <- pathXMY(speedingESJT$PSI, X = "Speed", Y = "Likelihood",
 #'                M = mediators)
-#' tab <- pathXMY_pairtable(res, c("B1_MX", "B1_YM"))
+#' tab <- pathXMY_pairtable(res, c("f1_XM", "f1_MY"))
 #' group_kable(
 #'   tab,
 #'   groups = c(" " = 1,
-#'              "Expectation paths (B1_MX)" = 4,
-#'              "Valuation paths (B1_YM)"   = 4),
+#'              "Expectation paths (F1[X,M])" = 4,
+#'              "Valuation paths (F1[M,Y])"   = 4),
 #'   col_labels = c("Mediator", "est", "se", "z", "p",
 #'                              "est", "se", "z", "p"))
 #' }

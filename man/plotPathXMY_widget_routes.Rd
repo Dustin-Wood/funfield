@@ -22,7 +22,8 @@ plotPathXMY_widget_routes(
 \item{mediator, X_label, Y_label, Z_label, M_labels, X_shape, Y_shape, digits, scale_max, score_intensity_max, ...}{Passed through to \code{\link{plotPathXMY}}.}
 
 \item{panel_titles}{Optional length-2 character vector. If
-\code{NULL}, titles are auto-generated from \code{Z_label}.}
+\code{NULL}, titles are auto-generated from \code{Z_label} in the
+F-schema display form.}
 
 \item{width, height}{Frame width and height in inches. \code{height}
 defaults to \code{3.5} for the single-mediator triangle view and to

@@ -31,7 +31,7 @@
 #'     background. Arrowheads are clipped to the node perimeter via
 #'     shape-aware intersection (L-infinity for squares, edge
 #'     intersection for the triangles). Edge labels carry the
-#'     \code{b1 + bZ(Z)} decomposition.
+#'     \code{f1 + fZ(Z)} decomposition.
 #'   \item \strong{Moderator (Z) coloring.} Anything that is purely a
 #'     bZ coefficient renders in limegreen. In the default decomposed
 #'     label, only the trailing \code{bZ(Z)} fragment is green (the b1
@@ -39,7 +39,7 @@
 #'     Z-overlay view (\code{Z_overlay = TRUE}), the entire label and
 #'     the edge are green, since the edge \emph{is} a bZ coefficient.
 #'     A Z-collapsed view (\code{Z_value} supplied) renders normally:
-#'     the label there is a single total slope \code{b1 + bZ * Z_value},
+#'     the label there is a single total slope \code{f1 + fZ * Z_value},
 #'     not a bZ coefficient on its own.
 #' }
 #'
@@ -64,7 +64,7 @@
 #'   \item \code{"joint"}: the joint multi-mediator simultaneous-fit
 #'     picture -- each mediator's slopes are the partial slopes net of
 #'     the other mediators, and the X to Y arrow is the single global
-#'     \code{B1_YX_joint} direct path after controlling for all M.
+#'     \code{f1_XY_joint} direct path after controlling for all M.
 #' }
 #'
 #' Passing \code{Z_overlay = TRUE} renders the same layout but with
@@ -75,9 +75,9 @@
 #'
 #' Passing \code{route = "expectation"} or \code{"valuation"} renders
 #' a per-route view of the moderation. The \emph{expectation route}
-#' shows \code{BZ_MX} on the X-to-M arm (green) and \code{B1_YM} on the
+#' shows \code{fZ_XM} on the X-to-M arm (green) and \code{f1_MY} on the
 #' M-to-Y arm (black); the \emph{valuation route} flips the arms
-#' (\code{B1_MX} on the left, \code{BZ_YM} on the right). The visual
+#' (\code{f1_XM} on the left, \code{fZ_MY} on the right). The visual
 #' grammar of the new coloring scheme makes the two route components of
 #' the moderation decomposition read directly: if both arms of a
 #' mediator carry visible weight in one of the two graphs, that
@@ -114,10 +114,10 @@
 #'   \code{[-1, 1]} range).
 #' @param Z_value Optional numeric scalar. If supplied, the diagram is
 #'   rendered \emph{conditional on Z at this value} -- every coefficient
-#'   becomes the effective slope at that Z (\code{b1 + bZ * Z_value}),
+#'   becomes the effective slope at that Z (\code{f1 + fZ * Z_value}),
 #'   node colors reflect expected scores at that Z, and edge labels show
 #'   the single effective coefficient rather than the
-#'   \code{b1 + bZ(Z)} decomposition. See also
+#'   \code{f1 + fZ(Z)} decomposition. See also
 #'   \code{\link{plotPathXMY_ZLH}} for a paired low/high view.
 #' @param Z_overlay Logical. If \code{TRUE}, render the \emph{Z-overlay}:
 #'   the same graph layout as the normative model, but each B1
@@ -127,10 +127,10 @@
 #'   with \code{Z_value} and \code{route}.
 #' @param route One of \code{"none"} (default), \code{"expectation"}, or
 #'   \code{"valuation"}. Selects a per-route moderation view rather than
-#'   the decomposed default. \code{"expectation"} puts \code{BZ_MX} on
-#'   the X-to-M arm (green) and \code{B1_YM} on the M-to-Y arm (black);
-#'   \code{"valuation"} flips them (\code{B1_MX} green-less left,
-#'   \code{BZ_YM} green right). No direct X-to-Y arrow is drawn since
+#'   the decomposed default. \code{"expectation"} puts \code{fZ_XM} on
+#'   the X-to-M arm (green) and \code{f1_MY} on the M-to-Y arm (black);
+#'   \code{"valuation"} flips them (\code{f1_XM} green-less left,
+#'   \code{fZ_MY} green right). No direct X-to-Y arrow is drawn since
 #'   the route concept is about the indirect path through M. Mutually
 #'   exclusive with \code{Z_value} and \code{Z_overlay}.
 #' @param from One of \code{"loop"} (default) or \code{"joint"}: which
@@ -181,7 +181,7 @@ plotPathXMY <- function(x,
   ## -- Extract tidy tables -----------------------------------------
   ## tidy_loop carries per-mediator loop-fit rows; tidy_joint (when
   ## present) carries the joint multi-mediator simultaneous-fit rows,
-  ## including the global B1_YX_joint / BZ_YX_joint rows
+  ## including the global f1_XY_joint / fZ_XY_joint rows
   ## (mediator = NA). `from` selects which table drives the diagram:
   ##  - "loop" (default): per-mediator loop overlay; in fan view this
   ##    overlay is intentionally pure -- NO direct X to Y arrow is
@@ -233,15 +233,15 @@ plotPathXMY <- function(x,
   }
   pull_est <- function(med, param) pull(med, param)$est
 
-  B1_MX <- vapply(mediator, pull_est, numeric(1), param = mk("B1_MX"))
-  BZ_MX <- vapply(mediator, pull_est, numeric(1), param = mk("BZ_MX"))
-  B1_YM <- vapply(mediator, pull_est, numeric(1), param = mk("B1_YM"))
-  BZ_YM <- vapply(mediator, pull_est, numeric(1), param = mk("BZ_YM"))
+  f1_XM <- vapply(mediator, pull_est, numeric(1), param = mk("f1_XM"))
+  fZ_XM <- vapply(mediator, pull_est, numeric(1), param = mk("fZ_XM"))
+  f1_MY <- vapply(mediator, pull_est, numeric(1), param = mk("f1_MY"))
+  fZ_MY <- vapply(mediator, pull_est, numeric(1), param = mk("fZ_MY"))
 
   ## Direct X to Y path:
-  ##  - from = "joint": pull the single global B*_YX_joint row
+  ##  - from = "joint": pull the single global f*_XY_joint row
   ##    (mediator = NA) from the joint table.
-  ##  - from = "loop", triangle: per-mediator residual B1_YX from
+  ##  - from = "loop", triangle: per-mediator residual f1_XY from
   ##    that one mediator's loop fit.
   ##  - from = "loop", fan: intentionally NO direct arrow, so the
   ##    loop overlay is pure.
@@ -251,24 +251,24 @@ plotPathXMY <- function(x,
     else list(est = r$est[1], pvalue = r$pvalue[1])
   }
   if (from == "joint") {
-    has_global <- any(is.na(tidy$mediator) & tidy$param == mk("B1_YX"))
+    has_global <- any(is.na(tidy$mediator) & tidy$param == mk("f1_XY"))
     if (has_global) {
       has_direct  <- TRUE
-      B1_YX       <- pull_global(mk("B1_YX"))$est
-      BZ_YX       <- pull_global(mk("BZ_YX"))$est
-      p_YX_pvalue <- pull_global(mk("B1_YX"))$pvalue
+      f1_XY       <- pull_global(mk("f1_XY"))$est
+      fZ_XY       <- pull_global(mk("fZ_XY"))$est
+      p_YX_pvalue <- pull_global(mk("f1_XY"))$pvalue
     } else {
       has_direct <- FALSE
-      B1_YX <- NA_real_; BZ_YX <- NA_real_; p_YX_pvalue <- NA_real_
+      f1_XY <- NA_real_; fZ_XY <- NA_real_; p_YX_pvalue <- NA_real_
     }
   } else if (fan_view) {
     has_direct <- FALSE
-    B1_YX <- NA_real_; BZ_YX <- NA_real_; p_YX_pvalue <- NA_real_
+    f1_XY <- NA_real_; fZ_XY <- NA_real_; p_YX_pvalue <- NA_real_
   } else {
     has_direct  <- TRUE
-    B1_YX       <- pull_est(mediator[1], "B1_YX")
-    BZ_YX       <- pull_est(mediator[1], "BZ_YX")
-    p_YX_pvalue <- pull(mediator[1], "B1_YX")$pvalue
+    f1_XY       <- pull_est(mediator[1], "f1_XY")
+    fZ_XY       <- pull_est(mediator[1], "fZ_XY")
+    p_YX_pvalue <- pull(mediator[1], "f1_XY")$pvalue
   }
 
   ## -- Z collapse / Z overlay / route -----------------------------
@@ -291,31 +291,31 @@ plotPathXMY <- function(x,
   YM_is_bZ <- Z_overlay || route == "valuation"
   YX_is_bZ <- Z_overlay
   if (Z_overlay) {
-    MX_eff <- naz(BZ_MX)
-    YM_eff <- naz(BZ_YM)
-    YX_eff <- if (has_direct) naz(BZ_YX) else NA_real_
+    MX_eff <- naz(fZ_XM)
+    YM_eff <- naz(fZ_MY)
+    YX_eff <- if (has_direct) naz(fZ_XY) else NA_real_
     if (has_direct) {
-      p_YX_pvalue <- if (from == "joint") pull_global(mk("BZ_YX"))$pvalue
-                     else pull(mediator[1], "BZ_YX")$pvalue
+      p_YX_pvalue <- if (from == "joint") pull_global(mk("fZ_XY"))$pvalue
+                     else pull(mediator[1], "fZ_XY")$pvalue
     }
   } else if (z_collapsed) {
     if (!is.numeric(Z_value) || length(Z_value) != 1L)
       stop("`Z_value` must be a single numeric scalar.")
-    MX_eff <- B1_MX + naz(BZ_MX) * Z_value
-    YM_eff <- B1_YM + naz(BZ_YM) * Z_value
-    YX_eff <- if (has_direct) B1_YX + naz(BZ_YX) * Z_value else NA_real_
+    MX_eff <- f1_XM + naz(fZ_XM) * Z_value
+    YM_eff <- f1_MY + naz(fZ_MY) * Z_value
+    YX_eff <- if (has_direct) f1_XY + naz(fZ_XY) * Z_value else NA_real_
   } else if (route == "expectation") {
     ## Expectation route: bZ on MX (green), b1 on YM (black). The
     ## direct X-to-Y arrow is suppressed because the route concept is
     ## about the indirect path through M, not the residual direct path.
-    MX_eff <- naz(BZ_MX); YM_eff <- B1_YM
+    MX_eff <- naz(fZ_XM); YM_eff <- f1_MY
     YX_eff <- NA_real_; has_direct <- FALSE
   } else if (route == "valuation") {
     ## Valuation route: b1 on MX (black), bZ on YM (green).
-    MX_eff <- B1_MX; YM_eff <- naz(BZ_YM)
+    MX_eff <- f1_XM; YM_eff <- naz(fZ_MY)
     YX_eff <- NA_real_; has_direct <- FALSE
   } else {
-    MX_eff <- B1_MX; YM_eff <- B1_YM; YX_eff <- B1_YX
+    MX_eff <- f1_XM; YM_eff <- f1_MY; YX_eff <- f1_XY
   }
   ## Suppress node fill in any "purely bZ on some arm" presentation
   ## (Z_overlay collapses both arms; route views collapse one). Node
@@ -410,7 +410,7 @@ plotPathXMY <- function(x,
   ## -- Edges -------------------------------------------------------
   ## Label coloring convention: any fragment that is purely a bZ
   ## coefficient renders in limegreen. There are two display modes:
-  ##  - "decomposed" (default view): the label is "b1 + bZ(Z)"; only
+  ##  - "decomposed" (default view): the label is "f1 + fZ(Z)"; only
   ##    the trailing bZ fragment is wrapped in green.
   ##  - "single" (Z_overlay, Z_value, route): the label is one number.
   ##    If the arm itself is bZ (is_bZ_arm), the whole label is green;
@@ -455,29 +455,29 @@ plotPathXMY <- function(x,
   edge_rows <- list()
   for (i in seq_along(mediator)) {
     med  <- mediator[i]
-    p_MX <- pull(med, mk(if (MX_is_bZ) "BZ_MX" else "B1_MX"))$pvalue
-    p_YM <- pull(med, mk(if (YM_is_bZ) "BZ_YM" else "B1_YM"))$pvalue
+    p_MX <- pull(med, mk(if (MX_is_bZ) "fZ_XM" else "f1_XM"))$pvalue
+    p_YM <- pull(med, mk(if (YM_is_bZ) "fZ_MY" else "f1_MY"))$pvalue
     edge_rows[[length(edge_rows) + 1L]] <- data.frame(
       from = "X", to = med,
-      coef = MX_eff[i], bZ = BZ_MX[i], pv = p_MX,
+      coef = MX_eff[i], bZ = fZ_XM[i], pv = p_MX,
       is_bZ = MX_is_bZ,
-      label = fmt_path(MX_eff[i], BZ_MX[i], p_MX, MX_is_bZ),
+      label = fmt_path(MX_eff[i], fZ_XM[i], p_MX, MX_is_bZ),
       stringsAsFactors = FALSE
     )
     edge_rows[[length(edge_rows) + 1L]] <- data.frame(
       from = med, to = "Y",
-      coef = YM_eff[i], bZ = BZ_YM[i], pv = p_YM,
+      coef = YM_eff[i], bZ = fZ_MY[i], pv = p_YM,
       is_bZ = YM_is_bZ,
-      label = fmt_path(YM_eff[i], BZ_YM[i], p_YM, YM_is_bZ),
+      label = fmt_path(YM_eff[i], fZ_MY[i], p_YM, YM_is_bZ),
       stringsAsFactors = FALSE
     )
   }
   if (has_direct && !is.na(YX_eff)) {
     edge_rows[[length(edge_rows) + 1L]] <- data.frame(
       from = "X", to = "Y",
-      coef = YX_eff, bZ = BZ_YX, pv = p_YX_pvalue,
+      coef = YX_eff, bZ = fZ_XY, pv = p_YX_pvalue,
       is_bZ = YX_is_bZ,
-      label = fmt_path(YX_eff, BZ_YX, p_YX_pvalue, YX_is_bZ),
+      label = fmt_path(YX_eff, fZ_XY, p_YX_pvalue, YX_is_bZ),
       stringsAsFactors = FALSE
     )
   }
@@ -575,17 +575,21 @@ plotPathXMY <- function(x,
   edges$ex <- shortened[, 3]; edges$ey <- shortened[, 4]
 
   ## -- Title / subtitle (fan / overlay / route caption) -----------
+  ## Coefficient names in the auto-captions use the F-schema matrix-cell
+  ## display form (FZ[X,M], F1[M,Y], ...). Edge labels themselves are
+  ## bare numbers, so this is the only place a label name surfaces in the
+  ## plot.
   subtitle <- NULL
   if (Z_overlay) {
     subtitle <- sprintf(
-      "Z overlay: per-unit-%s change in path weight (bZ paths)", Z_label)
+      "Z overlay: per-unit-%s change in path weight (FZ paths)", Z_label)
   } else if (route == "expectation") {
     subtitle <- sprintf(
-      "Expectation route: BZ_MX(%s) on the left arm, B1_YM on the right",
+      "Expectation route: FZ[X,M](%s) on the left arm, F1[M,Y] on the right",
       Z_label)
   } else if (route == "valuation") {
     subtitle <- sprintf(
-      "Valuation route: B1_MX on the left arm, BZ_YM(%s) on the right",
+      "Valuation route: F1[X,M] on the left arm, FZ[M,Y](%s) on the right",
       Z_label)
   } else if (fan_view) {
     subtitle <- if (from == "joint") {

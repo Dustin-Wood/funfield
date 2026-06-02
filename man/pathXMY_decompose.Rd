@@ -19,17 +19,17 @@ required.}
 \value{
 A list with three elements:
   \describe{
-    \item{total}{One-row data frame with the no-mediator (Model [1])
+    \item{total}{One-row data frame with the no-mediator (total-model)
       estimates: \code{est}, \code{se}, \code{z}, \code{pvalue} for
-      \code{BZ_YX[1]}.}
+      the total \code{fZ_XY} (\eqn{F_Z^{*}[X,Y]}).}
     \item{components}{Long tidy data frame, one row per (mediator,
-      term). Terms: \code{"BZ_MX * B1_YM"} (expectation moderation),
-      \code{"B1_MX * BZ_YM"} (valuation moderation), \code{"BZ_YX (direct)"}
+      term). Terms: \code{"fZ_XM * f1_MY"} (expectation moderation),
+      \code{"f1_XM * fZ_MY"} (valuation moderation), \code{"fZ_XY (direct)"}
       (residual direct moderation), and \code{"sum (1+2+3)"} (their
-      algebraic sum; should approximate \code{BZ_YX[1]} for each
+      algebraic sum; should approximate the total \code{fZ_XY} for each
       single-mediator fit). The first three rows carry full SE/z/p
       columns; the sum row has \code{est} only.}
-    \item{fits}{A list with \code{$direct} (Model [1]) and \code{$full}
+    \item{fits}{A list with \code{$direct} (total model) and \code{$full}
       (the multi-mediator \code{pathXMY()} object).}
   }
 }
@@ -38,36 +38,37 @@ For a moderator \code{Z} acting on the link from \code{X} to \code{Y},
 two models are commonly of interest:
 
 \describe{
-  \item{Model [1]}{The direct moderation \eqn{Y = b^1_{YX} X + b^Z_{YX} X
-    \cdot Z + \dots}. \code{BZ_YX[1]} indexes the \emph{total} moderation
-    effect — how much \eqn{Z} shifts the action-outcome link, without
-    reference to any mediator.}
-  \item{Model [2]}{The full mediated model \eqn{X \to M \to Y} with
-    \eqn{Z} moderating all three paths.}
+  \item{Total model}{The direct moderation \eqn{Y = F_1[X,Y] X +
+    F_Z[X,Y] X \cdot Z + \dots}. The total \code{fZ_XY}
+    (\eqn{F_Z^{*}[X,Y]}) indexes the \emph{total} moderation effect —
+    how much \eqn{Z} shifts the action-outcome link, without reference
+    to any mediator.}
+  \item{Mediated model}{The full mediated model \eqn{X \to M \to Y}
+    with \eqn{Z} moderating all three paths.}
 }
 
 These are related by the algebraic identity (applied to one mediator
 at a time, in linear regression with cluster-robust SEs):
 
-\deqn{b^Z_{YX}[1] = b^Z_{MX} \cdot b^1_{YM} + b^1_{MX} \cdot b^Z_{YM} +
-b^Z_{YX}[2]}
+\deqn{F_Z^{*}[X,Y] = F_Z[X,M] \cdot F_1[M,Y] + F_1[X,M] \cdot F_Z[M,Y] +
+F_Z[X,Y]}
 
 \itemize{
-  \item Term 1, \code{BZ_MX * B1_YM}: moderation that flows through
+  \item Term 1, \code{fZ_XM * f1_MY}: moderation that flows through
     \eqn{Z} changing the \emph{expectation} of \eqn{M} given \eqn{X}.
     This is what \code{pathXMY()} highlights by default.
-  \item Term 2, \code{B1_MX * BZ_YM}: moderation that flows through
+  \item Term 2, \code{f1_XM * fZ_MY}: moderation that flows through
     \eqn{Z} changing the \emph{valuation} of \eqn{M} as a driver of
     \eqn{Y}, while leaving expectations untouched.
-  \item Term 3, \code{BZ_YX[2]}: direct \eqn{Z}-moderation of the
+  \item Term 3, residual \code{fZ_XY}: direct \eqn{Z}-moderation of the
     \eqn{X \to Y} link that does \emph{not} route through this mediator.
 }
 
-Identifying which term carries most of \code{BZ_YX[1]} for a given
-mediator answers a different psychological question than \code{pathXMY()}
-alone. A person-trait moderator may leave expectations untouched
-(\code{BZ_MX} near zero) yet substantially shift valuation
-(\code{BZ_YM} large) — invisible in the \code{BZ_MX} table but central
+Identifying which term carries most of the total \code{fZ_XY} for a
+given mediator answers a different psychological question than
+\code{pathXMY()} alone. A person-trait moderator may leave expectations
+untouched (\code{fZ_XM} near zero) yet substantially shift valuation
+(\code{fZ_MY} large) — invisible in the \code{fZ_XM} table but central
 to understanding why the trait moderates action.
 }
 \seealso{
