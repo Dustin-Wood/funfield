@@ -88,6 +88,7 @@ no separate equilibrium vs. dynamical mode.</p>
 <span>  <span class="va">s_0</span>,</span>
 <span>  <span class="va">policy</span>,</span>
 <span>  readout <span class="op">=</span> <span class="st">"L"</span>,</span>
+<span>  aux <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stocks <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  flows <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max_turns <span class="op">=</span> <span class="fl">32L</span>,</span>
@@ -130,10 +131,19 @@ a one-variable condition; an interaction (`Pour ~ HCoPot`) likewise.</p></dd>
 to report. Default `"L"`.</p></dd>
 
 
+<dt id="arg-aux">aux<a class="anchor" aria-label="anchor" href="#arg-aux"></a></dt>
+<dd><p>Character vector of **derived** field nodes that recompute each
+turn rather than latch — pure functions of the stocks, such as a
+conjunction `Prepped ~ a:b:c` that is on only while all of `a`, `b`, `c`
+are. They may be used as policy conditions. Default `NULL`. (The
+`readout` is always non-latching; `aux` adds to it.)</p></dd>
+
+
 <dt id="arg-stocks">stocks<a class="anchor" aria-label="anchor" href="#arg-stocks"></a></dt>
 <dd><p>Character vector of field nodes that **latch**. Default
 `NULL` — derive automatically as every field target except `readout`
-(object/resource states persist; the readout recomputes).</p></dd>
+and `aux` (object/resource states persist; readouts and derived nodes
+recompute).</p></dd>
 
 
 <dt id="arg-flows">flows<a class="anchor" aria-label="anchor" href="#arg-flows"></a></dt>

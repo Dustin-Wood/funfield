@@ -2,6 +2,8 @@
 
 ## All functions
 
+- [`andF()`](https://dustin-wood.github.io/funfield/reference/andF.md) :
+  Build a Conjunction (logical AND) as a Pairwise Chain
 - [`chooseF()`](https://dustin-wood.github.io/funfield/reference/chooseF.md)
   : Choose Among Action Plans by Expected Outcome
 - [`conditionTest()`](https://dustin-wood.github.io/funfield/reference/conditionTest.md)

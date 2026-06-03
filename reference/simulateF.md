@@ -24,6 +24,7 @@ simulateF(
   s_0,
   policy,
   readout = "L",
+  aux = NULL,
   stocks = NULL,
   flows = NULL,
   max_turns = 32L,
@@ -64,11 +65,21 @@ simulateF(
   Name of the node read as the value to appraise against and to report.
   Default \`"L"\`.
 
+- aux:
+
+  Character vector of \*\*derived\*\* field nodes that recompute each
+  turn rather than latch — pure functions of the stocks, such as a
+  conjunction \`Prepped ~ a:b:c\` that is on only while all of \`a\`,
+  \`b\`, \`c\` are. They may be used as policy conditions. Default
+  \`NULL\`. (The \`readout\` is always non-latching; \`aux\` adds to
+  it.)
+
 - stocks:
 
   Character vector of field nodes that \*\*latch\*\*. Default \`NULL\` —
-  derive automatically as every field target except \`readout\`
-  (object/resource states persist; the readout recomputes).
+  derive automatically as every field target except \`readout\` and
+  \`aux\` (object/resource states persist; readouts and derived nodes
+  recompute).
 
 - flows:
 

@@ -4,11 +4,14 @@ Renders a functional field \`F\` evaluated at a single state \`s\` as a
 ggplot2 node-link diagram. Nodes are placed at caller-supplied
 coordinates and drawn as shapes coloured by their current state value
 (white at the low limit, blue at the high limit). An edge is drawn for
-every force that is currently \*\*afforded\*\* — i.e., whose resolved
-field coefficient is non-zero given \`s\`. Stepping \`plotField()\`
+\*\*every structural force\*\* in the model (any non-zero coefficient),
+and coloured by whether its condition is currently met: a
+\*\*potential\*\* path, whose gate is not yet on, is light grey; it
+darkens to its full colour as the gate goes on. Stepping \`plotField()\`
 across the rows of a \[simulateF()\] trajectory and stitching the frames
-with \[plotsAsWidget()\] produces a back/forward animation of forces
-being introduced as gates open and state propagating through the field.
+with \[plotsAsWidget()\] produces a back/forward animation in which the
+whole field is visible throughout and the active sub-path lights up as
+conditions are met.
 
 ## Usage
 
@@ -19,8 +22,11 @@ plotField(
   s,
   layout,
   plan = NULL,
+  conjunctive = NULL,
+  condition_labels = TRUE,
   edge_color = "black",
   plan_color = "#DAA520",
+  potential_color = "grey80",
   fill_limits = c(-1, 1),
   fill_low = "#b73712",
   fill_mid = "white",
@@ -90,11 +96,35 @@ s <- sub("0+$", "", s)
   colour. Typically the action-plan half of a stitched model. Default
   \`NULL\` (no gold edges).
 
+- conjunctive:
+
+  Character vector of target node names whose incoming edges are
+  \*\*conjunctive\*\* — the node fires only when \*all\* of them are on
+  (a product, not a sum). Those edges are drawn \*\*dotted\*\* and carry
+  no numeric label, so they are not mistaken for additive regression
+  weights. Default \`NULL\`.
+
+- condition_labels:
+
+  Logical; when \`TRUE\` (default), a \*\*gated\*\* edge (from an
+  interaction \`Y ~ Z:X\`, where \`Z\` is the condition that opens the
+  \`X -\> Y\` force) is labelled by its condition's displayed name —
+  e.g. \`TurnOn -\> HCoPot\`, gated on \`s2\`, reads "rig set" — rather
+  than by the coefficient. Ungated paths keep their numeric weight. Set
+  \`FALSE\` to label every edge by its coefficient.
+
 - edge_color, plan_color:
 
-  Base colours for situation edges and plan-contributed edges (each
-  fades toward white as \`\|f\| -\> 0\`). Defaults \`"black"\` and
-  \`"#DAA520"\` (gold).
+  Base (fully active) colours for situation edges and plan-contributed
+  edges — the colour a path takes when its condition is fully met.
+  Defaults \`"black"\` and \`"#DAA520"\` (gold).
+
+- potential_color:
+
+  Colour of a \*\*potential\*\* path — one drawn from the model
+  structure but whose condition is not yet met. An edge interpolates
+  from this toward its base colour as its condition's activation goes 0
+  -\> 1. Default \`"grey80"\` (light but legible).
 
 - fill_limits:
 
@@ -112,8 +142,8 @@ s <- sub("0+$", "", s)
 
 - edge_min:
 
-  Minimum absolute resolved coefficient for an edge to be drawn. Default
-  \`1e-9\` (draw any afforded force).
+  Minimum absolute coefficient for a path to be drawn at all. Default
+  \`1e-9\` (draw any structural force).
 
 - edge_scale_max:
 
@@ -205,30 +235,29 @@ Each regression row of \`model\` (\`Y ~ label \* X\` or \`Y ~ label \*
 X:Z\`) is read through its \`fZ_X.Y\` label (see \`vignette("notation",
 package = "funfield")\`): the label names the source \`X\` and target
 \`Y\`, and any remaining variable in the right-hand-side interaction is
-the \*\*gate\*\* \`Z\`. The resolved field coefficient is
-\`params\[label\] \* prod(s\[gate\])\`, so an afforded force (no
-baseline term) contributes nothing until its gate flips on. The edge \`X
--\> Y\` is drawn whenever the magnitude of that resolved coefficient
-exceeds \`edge_min\`; the source node \`X\` itself is coloured by
-\`s\[X\]\`, so an afforded-but-unfired force shows as an edge leaving a
-still-white node. Terms with a fixed coefficient (e.g. \`1 \* X\`, as in
-a conditional action plan) are valued from that fixed coefficient rather
-than \`params\`.
+the \*\*gate\*\* \`Z\`. The edge \`X -\> Y\` is drawn whenever the
+coefficient is non-zero, and its \*\*activation\*\* —
+\`prod(s\[gate\])\`, or \`1\` for an ungated standing force — sets its
+colour: light grey (\`potential_color\`) when 0, the base colour when 1.
+The source node \`X\` is coloured by \`s\[X\]\`, so an open-but-unfired
+path shows as a black edge leaving a still-white node. Terms with a
+fixed coefficient (e.g. \`1 \* X\`) are valued from that coefficient
+rather than \`params\`.
 
-\*\*Encoding the force.\*\* Each edge's resolved coefficient is read off
-its appearance: its \*\*magnitude\*\* sets the linewidth and colour
-intensity (the edge's base colour fading toward white as \`\|f\| -\>
-0\`, capped at \`edge_scale_max\`), and its \*\*sign\*\* sets the
-linetype (solid for a positive force, dashed for a negative one). So a
-force of \`1\` is a strong solid line and a force of \`-0.1\` a faint
-dashed one, and (with \`edge_labels\`) the level is printed on the
-shaft. The shaft is drawn with butt-ended dashes so they stay legible on
-a thick line, and the \*\*arrowhead\*\* is a sharp, solid mitred
-triangle — identical for positive and negative forces — carried on a
-short solid tip segment so a dashed shaft never breaks up the head.
-\*\*Node bodies\*\* are shaded on a diverging red-white-blue scale
-(negative red, zero white, positive blue), so a depleting \`Energy\`
-stock reddens as it is spent.
+\*\*Encoding the force.\*\* Each edge's coefficient is read off its
+appearance: its \*\*magnitude\*\* sets the linewidth (and how far an
+\*active\* edge fades toward white as \`\|f\| -\> 0\`, capped at
+\`edge_scale_max\`), and its \*\*sign\*\* sets the linetype (solid for a
+positive force, dashed for a negative one). So a force of \`1\` is a
+strong solid line and a force of \`-0.1\` a faint dashed one, and (with
+\`edge_labels\`) the level — or, for a gated path, its condition's name
+— is printed on the shaft. The shaft is drawn with butt-ended dashes so
+they stay legible on a thick line, and the \*\*arrowhead\*\* is a sharp,
+solid mitred triangle — identical for positive and negative forces —
+carried on a short solid tip segment so a dashed shaft never breaks up
+the head. \*\*Node bodies\*\* are shaded on a diverging red-white-blue
+scale (negative red, zero white, positive blue), so a depleting
+\`Energy\` stock reddens as it is spent.
 
 When a \`plan\` sub-model is supplied, the edges it contributes take
 \`plan_color\` (gold by convention) as their base colour – a visual

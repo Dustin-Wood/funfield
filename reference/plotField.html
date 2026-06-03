@@ -3,19 +3,23 @@
 ggplot2 node-link diagram. Nodes are placed at caller-supplied
 coordinates and drawn as shapes coloured by their current state value
 (white at the low limit, blue at the high limit). An edge is drawn for
-every force that is currently **afforded** — i.e., whose resolved
-field coefficient is non-zero given `s`. Stepping `plotField()` across
-the rows of a [simulateF()] trajectory and stitching the frames with
-[plotsAsWidget()] produces a back/forward animation of forces being
-introduced as gates open and state propagating through the field."><meta property="og:description" content="Renders a functional field `F` evaluated at a single state `s` as a
+**every structural force** in the model (any non-zero coefficient), and
+coloured by whether its condition is currently met: a **potential** path,
+whose gate is not yet on, is light grey; it darkens to its full colour as
+the gate goes on. Stepping `plotField()` across the rows of a
+[simulateF()] trajectory and stitching the frames with [plotsAsWidget()]
+produces a back/forward animation in which the whole field is visible
+throughout and the active sub-path lights up as conditions are met."><meta property="og:description" content="Renders a functional field `F` evaluated at a single state `s` as a
 ggplot2 node-link diagram. Nodes are placed at caller-supplied
 coordinates and drawn as shapes coloured by their current state value
 (white at the low limit, blue at the high limit). An edge is drawn for
-every force that is currently **afforded** — i.e., whose resolved
-field coefficient is non-zero given `s`. Stepping `plotField()` across
-the rows of a [simulateF()] trajectory and stitching the frames with
-[plotsAsWidget()] produces a back/forward animation of forces being
-introduced as gates open and state propagating through the field."></head><body>
+**every structural force** in the model (any non-zero coefficient), and
+coloured by whether its condition is currently met: a **potential** path,
+whose gate is not yet on, is light grey; it darkens to its full colour as
+the gate goes on. Stepping `plotField()` across the rows of a
+[simulateF()] trajectory and stitching the frames with [plotsAsWidget()]
+produces a back/forward animation in which the whole field is visible
+throughout and the active sub-path lights up as conditions are met."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -61,11 +65,13 @@ introduced as gates open and state propagating through the field."></head><body>
 <span class="pkg">ggplot2</span> node-link diagram. Nodes are placed at caller-supplied
 coordinates and drawn as shapes coloured by their current state value
 (white at the low limit, blue at the high limit). An edge is drawn for
-every force that is currently **afforded** — i.e., whose resolved
-field coefficient is non-zero given `s`. Stepping `plotField()` across
-the rows of a [simulateF()] trajectory and stitching the frames with
-[plotsAsWidget()] produces a back/forward animation of forces being
-introduced as gates open and state propagating through the field.</p>
+**every structural force** in the model (any non-zero coefficient), and
+coloured by whether its condition is currently met: a **potential** path,
+whose gate is not yet on, is light grey; it darkens to its full colour as
+the gate goes on. Stepping `plotField()` across the rows of a
+[simulateF()] trajectory and stitching the frames with [plotsAsWidget()]
+produces a back/forward animation in which the whole field is visible
+throughout and the active sub-path lights up as conditions are met.</p>
     </div>
 
     <div class="section level2">
@@ -76,8 +82,11 @@ introduced as gates open and state propagating through the field.</p>
 <span>  <span class="va">s</span>,</span>
 <span>  <span class="va">layout</span>,</span>
 <span>  plan <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  conjunctive <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  condition_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  edge_color <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>  plan_color <span class="op">=</span> <span class="st">"#DAA520"</span>,</span>
+<span>  potential_color <span class="op">=</span> <span class="st">"grey80"</span>,</span>
 <span>  fill_limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>,</span>
 <span>  fill_low <span class="op">=</span> <span class="st">"#b73712"</span>,</span>
 <span>  fill_mid <span class="op">=</span> <span class="st">"white"</span>,</span>
@@ -148,10 +157,34 @@ base colour. Typically the action-plan half of a stitched model.
 Default `NULL` (no gold edges).</p></dd>
 
 
+<dt id="arg-conjunctive">conjunctive<a class="anchor" aria-label="anchor" href="#arg-conjunctive"></a></dt>
+<dd><p>Character vector of target node names whose incoming
+edges are **conjunctive** — the node fires only when *all* of them are
+on (a product, not a sum). Those edges are drawn **dotted** and carry no
+numeric label, so they are not mistaken for additive regression weights.
+Default `NULL`.</p></dd>
+
+
+<dt id="arg-condition-labels">condition_labels<a class="anchor" aria-label="anchor" href="#arg-condition-labels"></a></dt>
+<dd><p>Logical; when `TRUE` (default), a **gated** edge
+(from an interaction `Y ~ Z:X`, where `Z` is the condition that opens
+the `X -&gt; Y` force) is labelled by its condition's displayed name —
+e.g. `TurnOn -&gt; HCoPot`, gated on `s2`, reads "rig set" — rather than
+by the coefficient. Ungated paths keep their numeric weight. Set `FALSE`
+to label every edge by its coefficient.</p></dd>
+
+
 <dt id="arg-edge-color-plan-color">edge_color, plan_color<a class="anchor" aria-label="anchor" href="#arg-edge-color-plan-color"></a></dt>
-<dd><p>Base colours for situation edges and
-plan-contributed edges (each fades toward white as `|f| -&gt; 0`).
-Defaults `"black"` and `"#DAA520"` (gold).</p></dd>
+<dd><p>Base (fully active) colours for situation
+edges and plan-contributed edges — the colour a path takes when its
+condition is fully met. Defaults `"black"` and `"#DAA520"` (gold).</p></dd>
+
+
+<dt id="arg-potential-color">potential_color<a class="anchor" aria-label="anchor" href="#arg-potential-color"></a></dt>
+<dd><p>Colour of a **potential** path — one drawn from
+the model structure but whose condition is not yet met. An edge
+interpolates from this toward its base colour as its condition's
+activation goes 0 -&gt; 1. Default `"grey80"` (light but legible).</p></dd>
 
 
 <dt id="arg-fill-limits">fill_limits<a class="anchor" aria-label="anchor" href="#arg-fill-limits"></a></dt>
@@ -171,8 +204,8 @@ zero, and high ends. Default red `"#b73712"` / white / blue
 
 
 <dt id="arg-edge-min">edge_min<a class="anchor" aria-label="anchor" href="#arg-edge-min"></a></dt>
-<dd><p>Minimum absolute resolved coefficient for an edge to
-be drawn. Default `1e-9` (draw any afforded force).</p></dd>
+<dd><p>Minimum absolute coefficient for a path to be drawn at
+all. Default `1e-9` (draw any structural force).</p></dd>
 
 
 <dt id="arg-edge-scale-max">edge_scale_max<a class="anchor" aria-label="anchor" href="#arg-edge-scale-max"></a></dt>
@@ -268,22 +301,21 @@ zeros trimmed (`1`, `.9`, `-.1`).</p></dd>
 `Y ~ label * X:Z`) is read through its `fZ_X.Y` label (see
 `vignette("notation", package = "funfield")`): the label names the
 source `X` and target `Y`, and any remaining variable in the
-right-hand-side interaction is the **gate** `Z`. The resolved field
-coefficient is `params[label] * prod(s[gate])`, so an afforded force
-(no baseline term) contributes nothing until its gate flips on. The
-edge `X -&gt; Y` is drawn whenever the magnitude of that resolved
-coefficient exceeds `edge_min`; the source node `X` itself is coloured
-by `s[X]`, so an afforded-but-unfired force shows as an edge leaving a
-still-white node. Terms with a fixed coefficient (e.g. `1 * X`, as in
-a conditional action plan) are valued from that fixed coefficient
-rather than `params`.</p>
-<p>**Encoding the force.** Each edge's resolved coefficient is read off its
-appearance: its **magnitude** sets the linewidth and colour intensity
-(the edge's base colour fading toward white as `|f| -&gt; 0`, capped at
-`edge_scale_max`), and its **sign** sets the linetype (solid for a
-positive force, dashed for a negative one). So a force of `1` is a strong
-solid line and a force of `-0.1` a faint dashed one, and (with
-`edge_labels`) the level is printed on the shaft. The shaft is drawn with
+right-hand-side interaction is the **gate** `Z`. The edge `X -&gt; Y` is
+drawn whenever the coefficient is non-zero, and its **activation** —
+`prod(s[gate])`, or `1` for an ungated standing force — sets its colour:
+light grey (`potential_color`) when 0, the base colour when 1. The source
+node `X` is coloured by `s[X]`, so an open-but-unfired path shows as a
+black edge leaving a still-white node. Terms with a fixed coefficient
+(e.g. `1 * X`) are valued from that coefficient rather than `params`.</p>
+<p>**Encoding the force.** Each edge's coefficient is read off its
+appearance: its **magnitude** sets the linewidth (and how far an *active*
+edge fades toward white as `|f| -&gt; 0`, capped at `edge_scale_max`), and
+its **sign** sets the linetype (solid for a positive force, dashed for a
+negative one). So a force of `1` is a strong solid line and a force of
+`-0.1` a faint dashed one, and (with `edge_labels`) the level — or, for
+a gated path, its condition's name — is printed on the shaft. The shaft
+is drawn with
 butt-ended dashes so they stay legible on a thick line, and the
 **arrowhead** is a sharp, solid mitred triangle — identical for
 positive and negative forces — carried on a short solid tip segment so
