@@ -49,11 +49,11 @@
 #'       retained label, holding the fixed value where the input
 #'       supplied one and `default` otherwise.}
 #'   }
-#'   Suitable for passing straight to [runF()] / [evalF()] (as
+#'   Suitable for passing straight to [simulateF()] / [evalF()] (as
 #'   `out$model`, `out$params`), or for stitching two halves with
 #'   `paste(a$model, b$model)` and `c(a$params, b$params)`.
 #'
-#' @seealso [evalF()], [runF()], and
+#' @seealso [simulateF()], [evalF()], and
 #'   `vignette("notation", package = "funfield")` for the label schema.
 #' @examples
 #' \dontrun{

@@ -26,7 +26,7 @@ A list with two elements:
       retained label, holding the fixed value where the input
       supplied one and `default` otherwise.}
   }
-  Suitable for passing straight to [runF()] / [evalF()] (as
+  Suitable for passing straight to [simulateF()] / [evalF()] (as
   `out$model`, `out$params`), or for stitching two halves with
   `paste(a$model, b$model)` and `c(a$params, b$params)`.
 }
@@ -76,6 +76,6 @@ lab$params   # all = 1, taken from the fixed coefficients
 }
 }
 \seealso{
-[evalF()], [runF()], and
+[simulateF()], [evalF()], and
   `vignette("notation", package = "funfield")` for the label schema.
 }
