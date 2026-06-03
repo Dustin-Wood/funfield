@@ -2,8 +2,12 @@
 
 ## All functions
 
+- [`chooseF()`](https://dustin-wood.github.io/funfield/reference/chooseF.md)
+  : Choose Among Action Plans by Expected Outcome
 - [`conditionTest()`](https://dustin-wood.github.io/funfield/reference/conditionTest.md)
   : Test of Condition Differences across Situation-Action (s,i) Pairs
+- [`costF()`](https://dustin-wood.github.io/funfield/reference/costF.md)
+  : Build an Action-Cost Force for a Functional Field
 - [`covnps()`](https://dustin-wood.github.io/funfield/reference/covnps.md)
   : Extract covariance and p Values from Lavaan Output
 - [`coworkerESJT`](https://dustin-wood.github.io/funfield/reference/coworkerESJT.md)
@@ -101,14 +105,14 @@
   : Positive and Negative Levels'
 - [`prepField()`](https://dustin-wood.github.io/funfield/reference/prepField.md)
   : Prepare Functional Field
-- [`runF()`](https://dustin-wood.github.io/funfield/reference/runF.md) :
-  Iterate a Functional Field Forward
 - [`screenModerators()`](https://dustin-wood.github.io/funfield/reference/screenModerators.md)
   : Fast moderator screen for the three X-M-Y path coefficients
 - [`sdESJT()`](https://dustin-wood.github.io/funfield/reference/sdESJT.md)
   : Standard deviation of ESJT ratings
 - [`siWeightedData()`](https://dustin-wood.github.io/funfield/reference/siWeightedData.md)
   : Situation-Action Weighted Data
+- [`simulateF()`](https://dustin-wood.github.io/funfield/reference/simulateF.md)
+  : Simulate a Functional Field as a Turn-Based Process
 - [`speedingESJT`](https://dustin-wood.github.io/funfield/reference/speedingESJT.md)
   : Speeding ESJT Dataset
 - [`strip0_css()`](https://dustin-wood.github.io/funfield/reference/strip0_css.md)

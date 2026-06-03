@@ -1,0 +1,174 @@
+# Simulate a Functional Field as a Turn-Based Process
+
+Runs a functional field forward as a sequence of \*\*turns\*\*, one
+action at a time, under a \*\*policy\*\*. This is the deductive engine
+in its unified form: a single \`field\` model (the physics — how actions
+and states move states and outcomes, including consumption) is driven by
+a separate \`policy\` (which action is eligible when). Each turn the
+engine finds the eligible actions, fires \*\*one\*\* of them, lets its
+total effects settle, and records the result; the run ends when no
+action is eligible (quiescence) or after \`max_turns\`.
+
+Because actions are injected \*\*exogenously\*\*, one per turn, the
+field over the \*states\* is acyclic and settles cleanly — so the same
+run answers both "what does this plan ultimately afford?" (read the
+final \`readout\`) and "how does it unfold in time?" (read the whole
+trajectory). There is no separate equilibrium vs. dynamical mode.
+
+## Usage
+
+``` r
+simulateF(
+  field,
+  params,
+  s_0,
+  policy,
+  readout = "L",
+  stocks = NULL,
+  flows = NULL,
+  max_turns = 32L,
+  tol = 1e-09,
+  warn_bounds = TRUE,
+  bound = 1
+)
+```
+
+## Arguments
+
+- field:
+
+  A \`lavaan\`-syntax model string of the field's forces (production,
+  consumption, cost, value), with \`fZ_X.Y\`-labelled or fixed (\`1 \*
+  X\`) terms, as consumed by \[evalF()\]. Action nodes appear only on
+  right-hand sides (they are exogenous); the engine injects them.
+
+- params:
+
+  Named numeric vector of parameter values for \`field\`.
+
+- s_0:
+
+  Named numeric vector of the initial state, including every action node
+  (typically \`0\`) and any trigger such as \`choice\`.
+
+- policy:
+
+  A \`lavaan\`-syntax string of \`action ~ condition\` rows (the plan):
+  each names an action and the state variable(s) whose joint presence
+  makes it eligible. Coefficients are ignored — only the condition
+  variables matter. A single bare variable (\`make ~ choice\`) is a
+  one-variable condition; an interaction (\`Pour ~ HCoPot\`) likewise.
+
+- readout:
+
+  Name of the node read as the value to appraise against and to report.
+  Default \`"L"\`.
+
+- stocks:
+
+  Character vector of field nodes that \*\*latch\*\*. Default \`NULL\` —
+  derive automatically as every field target except \`readout\`
+  (object/resource states persist; the readout recomputes).
+
+- flows:
+
+  Character vector of exogenous \*\*one-shot triggers\*\* that are spent
+  when the action they gate fires (seeded in \`s_0\`, depleted on use)
+  rather than persisting. Default \`NULL\`.
+
+- max_turns:
+
+  Maximum number of turns. Default \`32\`.
+
+- tol:
+
+  Threshold on a condition's product for an action to count as eligible.
+  Default \`1e-9\`.
+
+- warn_bounds, bound:
+
+  When \`warn_bounds\` is \`TRUE\`, warn if any state value exceeds
+  \`bound\` in magnitude after a turn — functional-field state is
+  expected to stay within \`\[-bound, bound\]\`, so an overshoot signals
+  a misspecification (e.g. an unconsumed stock). Defaults \`TRUE\`,
+  \`1\`.
+
+## Value
+
+A list with:
+
+- \`trajectory\`:
+
+  Numeric matrix, one row per recorded state (\`t=0\` through \`t=N\`,
+  \`N\` the number of turns run) and one column per state variable. Row
+  \`t=0\` is \`s_0\`; each later row is the state after that turn, with
+  the action that fired marked \`1\` for display (it is otherwise
+  spent).
+
+- \`fired\`:
+
+  Character vector, the action fired on each turn.
+
+- \`halted\`:
+
+  \`"quiescent"\` (no eligible action) or \`"max_turns"\`.
+
+## Details
+
+\*\*The turn.\*\* Given the current state, an action is \*\*eligible\*\*
+when the state variables named as its condition in \`policy\` are
+jointly present (their product exceeds \`tol\`). Of the eligible
+actions, one fires:
+
+- if exactly one is eligible, it fires;
+
+- if several are, each is \*\*appraised\*\* — simulated one turn ahead —
+  and the one yielding the highest \`readout\` fires (the deductive role
+  of a choice / chance node, resolved here as a one-step argmax).
+
+The chosen action is injected (set to \`1\`) and the field takes one
+step via \[evalF()\] in \`mode = "sync"\`: stocks transition by \`new =
+old + inflow - outflow\` reading the \*old\* stock levels (so a
+production term uses the un-consumed upstream value), then the
+\`readout\` settles against the new state. The action is then spent
+(reset to \`0\`), as are any \*\*one-shot triggers\*\* among its
+conditions named in \`flows\` (e.g. an intention \`choice\` that is used
+up once it launches the first action). Field-level consumption makes the
+remaining actions self-limiting: once an action consumes the state that
+afforded it, it is no longer eligible.
+
+\*\*Why one action per turn.\*\* Firing a single action and settling its
+total effects — rather than placing a whole plan in the model at once —
+advances the process exactly one stage: downstream forces gated on
+\*other\* actions stay shut until those actions take their own turn. A
+plan that omits a step simply runs out of eligible actions there and
+halts, which is the structural signature of a broken plan.
+
+## See also
+
+\[evalF()\] for the within-turn step, \[labelF()\] / \[costF()\] for
+building the field, \[plotField()\] to draw a trajectory row, and
+\`vignette("coffee_field_model", package = "funfield")\`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+field <- "
+  s2     ~ 1 * make        + use * s2:TurnOn
+  HCoPot ~ 1 * s2:TurnOn   + use * HCoPot:Pour
+  HCoCup ~ 1 * HCoPot:Pour + use * HCoCup:Sip
+  HCo    ~ 1 * HCoCup:Sip
+  Energy ~ -0.1*make + -0.1*TurnOn + -0.1*Pour + -0.1*Sip
+  L      ~ 0.9 * HCo + 0.1 * Energy
+"
+policy <- "make ~ choice
+           TurnOn ~ s2
+           Pour ~ HCoPot
+           Sip ~ HCoCup"
+s_0 <- c(choice = 1, make = 0, s2 = 0, TurnOn = 0, HCoPot = 0,
+         Pour = 0, HCoCup = 0, Sip = 0, HCo = 0, Energy = 0, L = 0)
+out <- simulateF(field, c(use = -1), s_0, policy, flows = "choice")
+out$trajectory; out$fired   # make -> TurnOn -> Pour -> Sip, final L = .86
+} # }
+```

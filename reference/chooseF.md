@@ -1,0 +1,147 @@
+# Choose Among Action Plans by Expected Outcome
+
+The deductive counterpart of a \*\*choice / chance node\*\*, one level
+up from the per-turn appraisal inside \[simulateF()\]: given one
+\`field\` and a set of candidate \*\*policies\*\*, run each policy
+forward to completion and report what it affords, then flag the policy
+with the highest value on a readout node (by convention the likelihood
+node \`L\`, playing the role of subjective expected utility). The
+selection is an argmax over whole runs.
+
+## Usage
+
+``` r
+chooseF(
+  field,
+  params,
+  s_0,
+  policies,
+  readout = "L",
+  report = NULL,
+  flows = NULL,
+  null_plan = TRUE,
+  null_name = "(do nothing)",
+  tol = 1e-09,
+  max_turns = 32L
+)
+```
+
+## Arguments
+
+- field:
+
+  A \`lavaan\`-syntax model string for the field (physics: production,
+  consumption, cost, value), with \`fZ_X.Y\`-labelled or fixed (\`1 \*
+  X\`) terms, as consumed by \[simulateF()\]. Actions appear only on
+  right-hand sides.
+
+- params:
+
+  Named numeric vector of parameter values for \`field\`.
+
+- s_0:
+
+  Named numeric vector of the initial state, including any trigger such
+  as \`choice = 1\`.
+
+- policies:
+
+  A \*\*named\*\* list of candidate policies, each a \`lavaan\`-syntax
+  string of \`action ~ condition\` rows (see \[simulateF()\]).
+
+- readout:
+
+  Name of the node read as expected utility and used to pick the chosen
+  policy. Default \`"L"\`.
+
+- report:
+
+  Character vector of node names to tabulate at the final state. Default
+  \`NULL\` — use the field's endogenous targets (the object states, the
+  cost tally, and the readout).
+
+- flows:
+
+  Character vector of exogenous one-shot triggers, passed to
+  \[simulateF()\] (e.g. \`"choice"\`). Default \`NULL\`.
+
+- null_plan:
+
+  Logical; append a do-nothing baseline. Default \`TRUE\`.
+
+- null_name:
+
+  Row label for the do-nothing baseline. Default \`"(do nothing)"\`.
+
+- tol:
+
+  Numeric tolerance for the argmax tie-break on \`readout\`; any policy
+  within \`tol\` of the maximum is flagged \`chosen\`. Default \`1e-9\`.
+
+- max_turns:
+
+  Maximum turns per run, passed to \[simulateF()\]. Default \`32\`.
+
+## Value
+
+A data frame with one row per policy (candidates in the order given,
+then the do-nothing baseline if requested), columns: \`plan\` (the list
+names), one numeric column per \`report\` node holding its afforded
+value, and \`chosen\` (logical) marking the maximum-\`readout\` policy.
+
+## Details
+
+Each policy is run on the shared \`field\` with \[simulateF()\] until it
+goes quiescent (no action eligible) or hits \`max_turns\`. The value of
+each \`report\` node at that final state becomes one cell of the output;
+the \`readout\` node's value is the policy's expected utility and drives
+the \`chosen\` flag.
+
+A policy that omits a necessary step runs out of eligible actions there
+and halts, so it affords nothing downstream of the gap — e.g. dropping
+the pour from a coffee plan leaves the cup empty, the sip never becomes
+eligible, and the readout never reaches the coffee payoff. Comparing the
+readout column across policies is what lets the choice node reject such
+a plan in favour of a complete one — and, once the field charges a cost
+for each action attempted, rank a wasteful failed plan \*below\* doing
+nothing.
+
+With \`null_plan = TRUE\` a do-nothing baseline (no action taken, so the
+final state is \`s_0\`) is appended, giving the floor inaction affords —
+the minimal "do something vs. do nothing" contrast.
+
+## See also
+
+\[simulateF()\] for the underlying run, \[labelF()\] / \[costF()\] for
+building the field, and \`vignette("coffee_field_model", package =
+"funfield")\` for a worked choice-point example.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+field <- labelF(paste("
+  s2     ~ 1 * make        + use * s2:TurnOn
+  HCoPot ~ 1 * s2:TurnOn   + use * HCoPot:Pour
+  HCoCup ~ 1 * HCoPot:Pour + use * HCoCup:Sip
+  HCo    ~ 1 * HCoCup:Sip",
+  costF(c("make","TurnOn","Pour","Sip")),
+  "L ~ 0.9 * HCo + 0.1 * Energy", sep = "\n"),
+  actions = c("make","TurnOn","Pour","Sip"))
+field$params["use"] <- -1
+
+full    <- "make ~ choice
+            TurnOn ~ s2
+            Pour ~ HCoPot
+            Sip ~ HCoCup"
+no_pour <- "make ~ choice
+            TurnOn ~ s2
+            Sip ~ HCoCup"
+
+s_0 <- c(choice = 1, make = 0, s2 = 0, TurnOn = 0, HCoPot = 0,
+         Pour = 0, HCoCup = 0, Sip = 0, HCo = 0, Energy = 0, L = 0)
+
+chooseF(field$model, field$params, s_0,
+        policies = list(full = full, no_pour = no_pour), flows = "choice")
+} # }
+```

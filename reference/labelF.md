@@ -46,7 +46,7 @@ A list with two elements:
   holding the fixed value where the input supplied one and \`default\`
   otherwise.
 
-Suitable for passing straight to \[runF()\] / \[evalF()\] (as
+Suitable for passing straight to \[simulateF()\] / \[evalF()\] (as
 \`out\$model\`, \`out\$params\`), or for stitching two halves with
 \`paste(a\$model, b\$model)\` and \`c(a\$params, b\$params)\`.
 
@@ -80,7 +80,7 @@ it.
 
 ## See also
 
-\[evalF()\], \[runF()\], and \`vignette("notation", package =
+\[simulateF()\], \[evalF()\], and \`vignette("notation", package =
 "funfield")\` for the label schema.
 
 ## Examples

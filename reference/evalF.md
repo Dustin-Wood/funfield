@@ -12,7 +12,15 @@ at a time — and individual nodes can be marked as latching
 ## Usage
 
 ``` r
-evalF(model, params, s_t, stocks = character(0), mode = c("sweep", "sync"))
+evalF(
+  model,
+  params,
+  s_t,
+  stocks = character(0),
+  flows = character(0),
+  readouts = character(0),
+  mode = c("sweep", "sync")
+)
 ```
 
 ## Arguments
@@ -38,10 +46,25 @@ evalF(model, params, s_t, stocks = character(0), mode = c("sweep", "sync"))
   \`character(0)\` — every node recomputes (memoryless), matching the
   field's afforded-equilibrium behaviour.
 
+- flows:
+
+  Character vector of \*\*exogenous\*\* node names (those never on a
+  left-hand side) to treat as one-shot pulses: seeded, read, then zeroed
+  each step instead of carried forward. Endogenous nodes already
+  recompute and are unaffected. Default \`character(0)\`. See Details.
+
+- readouts:
+
+  Character vector of endogenous node names that recompute from the
+  \*freshly updated\* stock levels at the end of a \`"sync"\` step
+  (phase 3) — the likelihood / appraisal nodes, which should reflect the
+  current state rather than feed back into it. Ignored under
+  \`"sweep"\`. Default \`character(0)\`.
+
 - mode:
 
   Propagation mode: \`"sweep"\` (default, topological, whole-chain) or
-  \`"sync"\` (one edge per step). See Details.
+  \`"sync"\` (one stock/flow time step). See Details.
 
 ## Value
 
@@ -77,11 +100,20 @@ error, as do a label missing from \`params\` or a variable missing from
 
 - \`"sync"\`:
 
-  Every right-hand side is read from \`s_t\` (the state at the \*start\*
-  of the call), so the signal advances exactly one edge per call. This
-  is the natural mode for cyclic / dynamical fields — in particular
-  stock-and-flow consumption pipelines, which are inherently cyclic and
-  cannot sweep.
+  One discrete time step of a stock-and-flow system, evaluated in the
+  standard rate-then-integrate order so each tick advances the process
+  one stage. Three phases run in sequence: (1) \*\*rate flows\*\* — the
+  non-stock, non-readout nodes (typically \*actions\*) — are recomputed
+  from the start-of-step \*\*stock levels\*\*; (2) \*\*stocks\*\*
+  integrate, \`new = old + inflow - outflow\`, reading the \*fresh\*
+  rate flows just computed and the \*old\* stock levels; (3)
+  \*\*readouts\*\* (named in \`readouts\`) recompute from the \*freshly
+  updated\* stocks. Evaluating rates before integrating means a stock is
+  consumed in the very tick the action that draws on it fires, so an
+  affording state lives exactly one step and each action fires exactly
+  \*\*once\*\* before its trigger is spent. This is the natural mode for
+  cyclic / dynamical fields — in particular stock-and-flow consumption
+  pipelines, which are inherently cyclic and cannot sweep.
 
 \*\*Stocks vs. flows.\*\* By default every endogenous node is recomputed
 from scratch each step (a \*flow\*: its value is a pure function of the
@@ -92,16 +124,24 @@ s_t\[Y\] + sum_k coef_k \* prod(...)\`. Stocks are how a field remembers
 — an object state stays on once attained, and a negative (consumption)
 term such as \`c \* Y:trigger\` draws it back down. lavaan forbids the
 self-edge \`Y ~ Y\`, so the carry-forward cannot be written in the model
-string; marking \`Y\` a stock supplies it. See \[runF()\] to have the
-stock set derived automatically from the action nodes, and
-\`vignette("coffee_field_model", package = "funfield")\` for a worked
-stock/flow example.
+string; marking \`Y\` a stock supplies it. See \[simulateF()\], which
+drives this one-step propagator as a turn-based process and derives the
+stock set automatically, and \`vignette("coffee_field_model", package =
+"funfield")\` for a worked stock/flow example.
 
 Nodes that never appear on the left of \`~\` (exogenous nodes, typically
-persistent context) are always carried forward unchanged, which is
-itself stock-like behaviour and needs no declaration.
+persistent context) are by default carried forward unchanged, which is
+itself stock-like behaviour. Naming such a node in \`flows\` overrides
+that default and makes it a \*\*one-shot pulse\*\*: it is seeded by
+\`s_t\`, read by its consumers this step, and then zeroed, so it is "on"
+only at the moment it fires and then depletes. This is the transient
+dual of the carried-forward default, and is how a \*\*choice / chance
+node\*\* that fires once and is spent is expressed (it triggers the
+first action and then empties, rather than persisting as a stock).
+\`flows\` has no effect on endogenous nodes, which already recompute
+unless listed in \`stocks\`.
 
 ## See also
 
-\[runF()\] for the iteration driver (which derives \`stocks\` from the
-action set), \[labelF()\] for building the model string.
+\[simulateF()\], the turn-based driver that calls this propagator one
+action at a time, and \[labelF()\] for building the model string.

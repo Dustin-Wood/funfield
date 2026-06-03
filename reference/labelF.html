@@ -28,7 +28,7 @@ pre-populated with any coefficients the input fixed."></head><body>
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/coffee_field_model.html">Coffee Field Model: Affordances and a Process in Time</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/coffee_field_model.html">Coffee Field Model: One Field, One Policy, One Run</a></li>
     <li><a class="dropdown-item" href="../articles/coworker_pathXMY.html">Moderated mediation with `pathXMY()`: the coworker assertiveness ESJT</a></li>
     <li><a class="dropdown-item" href="../articles/notation.html">Notation: F, F_t, and the fZ_X.Y schema</a></li>
     <li><a class="dropdown-item" href="../articles/overtime_pathXMY.html">Moderated mediation with `pathXMY()`: the work-overtime EXSJT</a></li>
@@ -96,7 +96,7 @@ a fixed coefficient nor an existing label-with-value. Default `NA`.</p></dd>
       supplied one and `default` otherwise.</p></dd>
 
 
-</dl><p>Suitable for passing straight to [runF()] / [evalF()] (as
+</dl><p>Suitable for passing straight to [simulateF()] / [evalF()] (as
   `out$model`, `out$params`), or for stitching two halves with
   `paste(a$model, b$model)` and `c(a$params, b$params)`.</p>
     </div>
@@ -126,7 +126,7 @@ the model is run. Terms that already carry a label keep it.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p>[evalF()], [runF()], and
+    <div class="dont-index"><p>[simulateF()], [evalF()], and
   `vignette("notation", package = "funfield")` for the label schema.</p></div>
     </div>
 

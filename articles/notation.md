@@ -265,7 +265,7 @@ The same `F` lives at the centre of two complementary workflows:
 | Role | Direction | Tool | Parameters |
 |----|----|----|----|
 | **Induction** — learn the world from observed behaviour | Data → `F` | [`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md) and friends | Fit, uncertain, carry SEs |
-| **Deduction** — use a working theory of the world to plan | `F` → behaviour | [`runF()`](https://dustin-wood.github.io/funfield/reference/runF.md), `chooseAction()`, the redesigned coffee vignette | Hand-set, treated as known |
+| **Deduction** — use a working theory of the world to plan | `F` → behaviour | [`simulateF()`](https://dustin-wood.github.io/funfield/reference/simulateF.md), [`chooseF()`](https://dustin-wood.github.io/funfield/reference/chooseF.md), the coffee vignette | Hand-set, treated as known |
 
 Both directions use the same model syntax and the same parameter schema.
 The bridge between them — turning a `pathXMY` fit into a runnable field

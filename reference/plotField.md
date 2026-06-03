@@ -6,9 +6,9 @@ coordinates and drawn as shapes coloured by their current state value
 (white at the low limit, blue at the high limit). An edge is drawn for
 every force that is currently \*\*afforded\*\* — i.e., whose resolved
 field coefficient is non-zero given \`s\`. Stepping \`plotField()\`
-across the rows of a \[runF()\] trajectory and stitching the frames with
-\[plotsAsWidget()\] produces a back/forward animation of forces being
-introduced as gates open and state propagating through the field.
+across the rows of a \[simulateF()\] trajectory and stitching the frames
+with \[plotsAsWidget()\] produces a back/forward animation of forces
+being introduced as gates open and state propagating through the field.
 
 ## Usage
 
@@ -19,21 +19,34 @@ plotField(
   s,
   layout,
   plan = NULL,
-  edge_color = "grey25",
+  edge_color = "black",
   plan_color = "#DAA520",
-  fill_limits = c(0, 1),
-  fill_low = "white",
+  fill_limits = c(-1, 1),
+  fill_low = "#b73712",
+  fill_mid = "white",
   fill_high = "#1572da",
   na_fill = "grey90",
   edge_min = 1e-09,
+  edge_scale_max = 1,
+  curvature = -1,
   node_size = 0.32,
   label_pad = 0.12,
   label_size = 3.2,
+  glyph_size = 5,
+  glyph_color = "#1572da",
   edge_label_size = 3,
-  edge_linewidth = 0.8,
-  arrow_inches = 0.11,
-  edge_labels = FALSE,
-  edge_label_fmt = function(x) formatC(x, digits = 2, format = "g"),
+  edge_linewidth = 2.1,
+  arrow_inches = 0.15,
+  arrow_size = 0.26,
+  arrow_stroke = 0.8,
+  arrow_gap = 0.06,
+  edge_labels = TRUE,
+  edge_label_fmt = function(x) {
+s <- f0(x, digits = 2)
+s <- sub("0+$", "", s)
+
+        sub("\\.$", "", s)
+ },
   title = NULL
 )
 ```
@@ -44,8 +57,8 @@ plotField(
 
   A \`lavaan\`-syntax model string with \`fZ_X.Y\` labels (and
   optionally fixed \`1 \* X\` terms), as consumed by \[evalF()\] /
-  \[runF()\]. When a \`plan\` is layered onto a situation model, pass
-  the full stitched string here.
+  \[simulateF()\]. When a \`plan\` is layered onto a situation model,
+  pass the full stitched string here.
 
 - params:
 
@@ -59,29 +72,39 @@ plotField(
 
   A data frame describing node placement, with columns \`name\`
   (matching the model's variables), \`x\`, \`y\`, and \`shape\` (one of
-  \`"square"\`, \`"diamond"\`, \`"rtTri"\`, \`"lfTri"\`). An optional
-  \`label\` column supplies display text (defaults to \`name\`).
+  \`"square"\`, \`"diamond"\`, \`"rtTri"\`, \`"lfTri"\`, \`"circle"\`).
+  By convention objects are diamonds, actions right-facing triangles,
+  the likelihood readout a left-facing triangle, and a choice / chance
+  node a circle. An optional \`label\` column supplies display text
+  (defaults to \`name\`). An optional \`glyph\` column marks a node as a
+  \*\*glyph node\*\*: where it holds a non-empty string, that string is
+  drawn centred inside the shape and no caption is placed beneath it.
+  The body is still value-shaded like any other node — e.g. an
+  \`Energy\` node drawn as a square holding a lightning bolt that
+  reddens as energy is spent.
 
 - plan:
 
   Optional \`lavaan\`-syntax sub-model string. Edges whose source -\>
-  target identity appears in \`plan\` are drawn in \`plan_color\`.
-  Typically the action-plan half of a stitched model. Default \`NULL\`
-  (no gold edges).
+  target identity appears in \`plan\` take \`plan_color\` as their base
+  colour. Typically the action-plan half of a stitched model. Default
+  \`NULL\` (no gold edges).
 
 - edge_color, plan_color:
 
-  Colours for situation edges and plan-contributed edges. Defaults
-  \`"grey25"\` and \`"#DAA520"\` (gold).
+  Base colours for situation edges and plan-contributed edges (each
+  fades toward white as \`\|f\| -\> 0\`). Defaults \`"black"\` and
+  \`"#DAA520"\` (gold).
 
 - fill_limits:
 
-  Numeric length-2 range mapped to the colour gradient. Default \`c(0,
-  1)\`; values outside are squished to the ends.
+  Numeric length-2 range mapped to the diverging fill scale. Default
+  \`c(-1, 1)\`; values outside are squished to the ends.
 
-- fill_low, fill_high:
+- fill_low, fill_mid, fill_high:
 
-  Gradient endpoint colours. Default white to \`"#1572da"\`.
+  Diverging fill colours at the low, zero, and high ends. Default red
+  \`"#b73712"\` / white / blue \`"#1572da"\`, midpoint \`0\`.
 
 - na_fill:
 
@@ -91,6 +114,20 @@ plotField(
 
   Minimum absolute resolved coefficient for an edge to be drawn. Default
   \`1e-9\` (draw any afforded force).
+
+- edge_scale_max:
+
+  Absolute resolved coefficient mapped to a full-strength edge
+  (linewidth and colour saturate here). Default \`1\`.
+
+- curvature:
+
+  Arc curvature for backward consumption edges (the negative member of
+  an anti-parallel pair), drawn as a quadratic Bezier so they bow clear
+  of the straight forward edge they would otherwise overlay. Negative
+  bows the arc below the forward edge (a leftward "mirrored smile"); the
+  dip is deep enough to keep the two edges' mid-shaft labels from
+  colliding. Default \`-1\`.
 
 - node_size:
 
@@ -104,23 +141,55 @@ plotField(
 
   Text sizes for node and edge labels. Defaults \`3.2\` and \`3\`.
 
+- glyph_size:
+
+  Text size for centred glyph-node symbols. Default \`5\`.
+
+- glyph_color:
+
+  Fill colour for the lightning-bolt glyph (\`glyph\` of \`"bolt"\` or
+  \`"⚡"\`). Default blue \`"#1572da"\` (the positive-activation
+  colour).
+
 - edge_linewidth:
 
-  Edge linewidth. Default \`0.8\`.
+  Linewidth of a full-strength edge (\`\|f\| \>= edge_scale_max\`);
+  fainter forces scale below it. Default \`2.1\`.
 
 - arrow_inches:
 
-  Arrowhead length in inches. Default \`0.11\`.
+  Arrowhead length in inches. Default \`0.15\`. The head is a sharp,
+  solid (mitred) triangle, the same size for every edge and for positive
+  and negative forces alike.
+
+- arrow_size:
+
+  Length (data units) of the solid tip segment that carries each
+  arrowhead, kept solid so the head reads cleanly even on a dashed
+  shaft. Default \`0.26\`.
+
+- arrow_stroke:
+
+  Linewidth of the arrowhead's own stroke (constant, not the shaft's
+  \`lw\`). Kept thin so the sharp mitred tip lands exactly on the node
+  outline instead of overshooting into it. Default \`0.8\`.
+
+- arrow_gap:
+
+  Distance (data units) the head end is pulled back from the node
+  perimeter, so the arrowhead tip rests on the outline rather than
+  poking inside. Default \`0.06\`.
 
 - edge_labels:
 
-  Logical: label each drawn edge with its resolved coefficient. Default
-  \`FALSE\`.
+  Logical: label each drawn edge with its resolved force level. Default
+  \`TRUE\`.
 
 - edge_label_fmt:
 
   Function formatting the resolved coefficient for the edge label.
-  Default two significant digits.
+  Default the no-leading-zero house style with trailing zeros trimmed
+  (\`1\`, \`.9\`, \`-.1\`).
 
 - title:
 
@@ -146,15 +215,30 @@ still-white node. Terms with a fixed coefficient (e.g. \`1 \* X\`, as in
 a conditional action plan) are valued from that fixed coefficient rather
 than \`params\`.
 
-When a \`plan\` sub-model is supplied, the edges it contributes are
-drawn in \`plan_color\` (gold by convention) – a visual marker for the
-forces a conditional action plan adds on top of the situation's own
-affordance structure.
+\*\*Encoding the force.\*\* Each edge's resolved coefficient is read off
+its appearance: its \*\*magnitude\*\* sets the linewidth and colour
+intensity (the edge's base colour fading toward white as \`\|f\| -\>
+0\`, capped at \`edge_scale_max\`), and its \*\*sign\*\* sets the
+linetype (solid for a positive force, dashed for a negative one). So a
+force of \`1\` is a strong solid line and a force of \`-0.1\` a faint
+dashed one, and (with \`edge_labels\`) the level is printed on the
+shaft. The shaft is drawn with butt-ended dashes so they stay legible on
+a thick line, and the \*\*arrowhead\*\* is a sharp, solid mitred
+triangle — identical for positive and negative forces — carried on a
+short solid tip segment so a dashed shaft never breaks up the head.
+\*\*Node bodies\*\* are shaded on a diverging red-white-blue scale
+(negative red, zero white, positive blue), so a depleting \`Energy\`
+stock reddens as it is spent.
+
+When a \`plan\` sub-model is supplied, the edges it contributes take
+\`plan_color\` (gold by convention) as their base colour – a visual
+marker for the forces a conditional action plan adds on top of the
+situation's own affordance structure.
 
 ## See also
 
-\[runF()\] for the trajectory, \[plotsAsWidget()\] to stitch frames,
-\[plotPathSchema()\] for the fixed X-M-Y schematic.
+\[simulateF()\] for the trajectory, \[plotsAsWidget()\] to stitch
+frames, \[plotPathSchema()\] for the fixed X-M-Y schematic.
 
 ## Examples
 

@@ -1231,10 +1231,9 @@ visualization style:
 
 - Nodes are colored by their **expected score when X is held at 1** on a
   continuous red→white→blue gradient over the `[-1, 1]` range
-  ([`scale_fill_gradient2()`](https://ggplot2.tidyverse.org/reference/scale_gradient.html)).
-  X is by definition full blue (score = 1); each mediator is colored by
-  its `F1[X,M]` coefficient; Y is colored by the implied total effect at
-  X = 1.
+  (`scale_fill_gradient2()`). X is by definition full blue (score = 1);
+  each mediator is colored by its `F1[X,M]` coefficient; Y is colored by
+  the implied total effect at X = 1.
 - The default shape convention reads action-status off the variable
   role: squares for regular continuous variables, triangles for action
   variables. Y (Likelihood) is drawn as a **left-facing triangle**
