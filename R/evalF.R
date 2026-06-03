@@ -217,11 +217,19 @@ evalF <- function(model, params, s_t, stocks = character(0),
       w[stock_t] <- upd
     }
 
-    ## Phase 3 -- readouts reflect the freshly updated stock levels.
-    for (tg in read_t) {
-      val <- 0
-      for (i in rows_of(tg)) val <- val + coef_i(i) * prod(w[rhs_vars[[i]]])
-      w[tg] <- val
+    ## Phase 3 -- readouts / derived nodes reflect the freshly updated stock
+    ## levels. Evaluated in topological order among themselves, so a derived
+    ## node built from other derived nodes (e.g. a conjunction chain
+    ## `p1 ~ a:b`, `p2 ~ p1:c`) settles to its total value within the step.
+    if (length(read_t)) {
+      r_dep <- lapply(read_t, function(tg)
+        intersect(unique(unlist(rhs_vars[rows_of(tg)])), read_t))
+      names(r_dep) <- read_t
+      for (tg in .topo_order(read_t, r_dep)) {
+        val <- 0
+        for (i in rows_of(tg)) val <- val + coef_i(i) * prod(w[rhs_vars[[i]]])
+        w[tg] <- val
+      }
     }
 
     ## One-shot exogenous flows have now been read; empty them.

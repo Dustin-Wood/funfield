@@ -124,34 +124,35 @@
 #' \pkg{ggplot2} node-link diagram. Nodes are placed at caller-supplied
 #' coordinates and drawn as shapes coloured by their current state value
 #' (white at the low limit, blue at the high limit). An edge is drawn for
-#' every force that is currently **afforded** --- i.e., whose resolved
-#' field coefficient is non-zero given `s`. Stepping `plotField()` across
-#' the rows of a [simulateF()] trajectory and stitching the frames with
-#' [plotsAsWidget()] produces a back/forward animation of forces being
-#' introduced as gates open and state propagating through the field.
+#' **every structural force** in the model (any non-zero coefficient), and
+#' coloured by whether its condition is currently met: a **potential** path,
+#' whose gate is not yet on, is light grey; it darkens to its full colour as
+#' the gate goes on. Stepping `plotField()` across the rows of a
+#' [simulateF()] trajectory and stitching the frames with [plotsAsWidget()]
+#' produces a back/forward animation in which the whole field is visible
+#' throughout and the active sub-path lights up as conditions are met.
 #'
 #' @details
 #' Each regression row of `model` (`Y ~ label * X` or
 #' `Y ~ label * X:Z`) is read through its `fZ_X.Y` label (see
 #' `vignette("notation", package = "funfield")`): the label names the
 #' source `X` and target `Y`, and any remaining variable in the
-#' right-hand-side interaction is the **gate** `Z`. The resolved field
-#' coefficient is `params[label] * prod(s[gate])`, so an afforded force
-#' (no baseline term) contributes nothing until its gate flips on. The
-#' edge `X -> Y` is drawn whenever the magnitude of that resolved
-#' coefficient exceeds `edge_min`; the source node `X` itself is coloured
-#' by `s[X]`, so an afforded-but-unfired force shows as an edge leaving a
-#' still-white node. Terms with a fixed coefficient (e.g. `1 * X`, as in
-#' a conditional action plan) are valued from that fixed coefficient
-#' rather than `params`.
+#' right-hand-side interaction is the **gate** `Z`. The edge `X -> Y` is
+#' drawn whenever the coefficient is non-zero, and its **activation** ---
+#' `prod(s[gate])`, or `1` for an ungated standing force --- sets its colour:
+#' light grey (`potential_color`) when 0, the base colour when 1. The source
+#' node `X` is coloured by `s[X]`, so an open-but-unfired path shows as a
+#' black edge leaving a still-white node. Terms with a fixed coefficient
+#' (e.g. `1 * X`) are valued from that coefficient rather than `params`.
 #'
-#' **Encoding the force.** Each edge's resolved coefficient is read off its
-#' appearance: its **magnitude** sets the linewidth and colour intensity
-#' (the edge's base colour fading toward white as `|f| -> 0`, capped at
-#' `edge_scale_max`), and its **sign** sets the linetype (solid for a
-#' positive force, dashed for a negative one). So a force of `1` is a strong
-#' solid line and a force of `-0.1` a faint dashed one, and (with
-#' `edge_labels`) the level is printed on the shaft. The shaft is drawn with
+#' **Encoding the force.** Each edge's coefficient is read off its
+#' appearance: its **magnitude** sets the linewidth (and how far an *active*
+#' edge fades toward white as `|f| -> 0`, capped at `edge_scale_max`), and
+#' its **sign** sets the linetype (solid for a positive force, dashed for a
+#' negative one). So a force of `1` is a strong solid line and a force of
+#' `-0.1` a faint dashed one, and (with `edge_labels`) the level --- or, for
+#' a gated path, its condition's name --- is printed on the shaft. The shaft
+#' is drawn with
 #' butt-ended dashes so they stay legible on a thick line, and the
 #' **arrowhead** is a sharp, solid mitred triangle --- identical for
 #' positive and negative forces --- carried on a short solid tip segment so
@@ -185,9 +186,24 @@
 #'   source -> target identity appears in `plan` take `plan_color` as their
 #'   base colour. Typically the action-plan half of a stitched model.
 #'   Default `NULL` (no gold edges).
-#' @param edge_color,plan_color Base colours for situation edges and
-#'   plan-contributed edges (each fades toward white as `|f| -> 0`).
-#'   Defaults `"black"` and `"#DAA520"` (gold).
+#' @param conjunctive Character vector of target node names whose incoming
+#'   edges are **conjunctive** --- the node fires only when *all* of them are
+#'   on (a product, not a sum). Those edges are drawn **dotted** and carry no
+#'   numeric label, so they are not mistaken for additive regression weights.
+#'   Default `NULL`.
+#' @param condition_labels Logical; when `TRUE` (default), a **gated** edge
+#'   (from an interaction `Y ~ Z:X`, where `Z` is the condition that opens
+#'   the `X -> Y` force) is labelled by its condition's displayed name ---
+#'   e.g. `TurnOn -> HCoPot`, gated on `s2`, reads "rig set" --- rather than
+#'   by the coefficient. Ungated paths keep their numeric weight. Set `FALSE`
+#'   to label every edge by its coefficient.
+#' @param edge_color,plan_color Base (fully active) colours for situation
+#'   edges and plan-contributed edges --- the colour a path takes when its
+#'   condition is fully met. Defaults `"black"` and `"#DAA520"` (gold).
+#' @param potential_color Colour of a **potential** path --- one drawn from
+#'   the model structure but whose condition is not yet met. An edge
+#'   interpolates from this toward its base colour as its condition's
+#'   activation goes 0 -> 1. Default `"grey80"` (light but legible).
 #' @param fill_limits Numeric length-2 range mapped to the diverging fill
 #'   scale. Default `c(-1, 1)`; values outside are squished to the ends.
 #' @param fill_low,fill_mid,fill_high Diverging fill colours at the low,
@@ -195,8 +211,8 @@
 #'   `"#1572da"`, midpoint `0`.
 #' @param na_fill Fill for layout nodes absent from `s`. Default
 #'   `"grey90"`.
-#' @param edge_min Minimum absolute resolved coefficient for an edge to
-#'   be drawn. Default `1e-9` (draw any afforded force).
+#' @param edge_min Minimum absolute coefficient for a path to be drawn at
+#'   all. Default `1e-9` (draw any structural force).
 #' @param edge_scale_max Absolute resolved coefficient mapped to a
 #'   full-strength edge (linewidth and colour saturate here). Default `1`.
 #' @param curvature Arc curvature for backward consumption edges (the
@@ -257,9 +273,12 @@
 #' @importFrom grid arrow unit
 #' @export
 plotField <- function(model, params, s, layout,
-                      plan            = NULL,
-                      edge_color      = "black",
-                      plan_color      = "#DAA520",
+                      plan             = NULL,
+                      conjunctive      = NULL,
+                      condition_labels = TRUE,
+                      edge_color       = "black",
+                      plan_color       = "#DAA520",
+                      potential_color  = "grey80",
                       fill_limits     = c(-1, 1),
                       fill_low        = "#b73712",
                       fill_mid        = "white",
@@ -343,13 +362,21 @@ plotField <- function(model, params, s, layout,
     ## the action/source last (`Z:X`), so fall back to the final rhs var.
     src <- if (!is.null(parsed)) parsed$source else rhs_vars[length(rhs_vars)]
     gate <- setdiff(rhs_vars, src)
-    gate_val <- if (length(gate)) prod(s[gate]) else 1
-    resolved <- coef * gate_val
-    if (is.na(resolved) || abs(resolved) <= edge_min) next
-    pair <- paste(src, pt$lhs[i], sep = "\r")
+    if (is.na(coef) || abs(coef) <= edge_min) next   # no structural force
+    pair    <- paste(src, pt$lhs[i], sep = "\r")
+    is_plan <- pair %in% plan_pairs
+    ## Activation: how "on" the path's condition is. A gated situation force
+    ## (`Y ~ Z:X`) is afforded to the degree its gate `Z` is present; a plan
+    ## rule (`action ~ condition`) to the degree its condition (the source)
+    ## is; an ungated standing force is always on. The edge is drawn always
+    ## (its structure), coloured by this --- light grey when 0 (a *potential*
+    ## path), full colour at 1.
+    act <- if (length(gate)) prod(s[gate]) else if (is_plan) s[[src]] else 1
     edge_rows[[length(edge_rows) + 1L]] <-
-      data.frame(from = src, to = pt$lhs[i], resolved = resolved,
-                 base = if (pair %in% plan_pairs) plan_color else edge_color,
+      data.frame(from = src, to = pt$lhs[i], coef = coef,
+                 act  = if (is.na(act)) 0 else act,
+                 gate = if (length(gate)) paste(gate, collapse = ":") else "",
+                 base = if (is_plan) plan_color else edge_color,
                  stringsAsFactors = FALSE)
   }
 
@@ -375,22 +402,59 @@ plotField <- function(model, params, s, layout,
     edges$ex <- sh[, 3]; edges$ey <- sh[, 4]
     edges$mid_x <- (edges$sx + edges$ex) / 2
     edges$mid_y <- (edges$sy + edges$ey) / 2
-    edges$elab  <- edge_label_fmt(edges$resolved)
 
-    ## Encode each force's resolved coefficient: magnitude -> linewidth and
-    ## colour intensity (its base colour fading toward white as |f| -> 0),
-    ## sign -> linetype (solid for a positive force, dashed for negative).
-    ## So f = 1 is a strong solid line, f = -0.1 a faint dashed one.
-    mag_ratio   <- pmin(abs(edges$resolved) / edge_scale_max, 1)
-    ## Floor the linewidth so a faint force still reads as a proper dashed
-    ## line rather than a dotted one (grid scales the dash pattern with the
-    ## linewidth, so a hairline dashed edge degenerates into dots).
+    ## Edge label: by default a *gated* path (an interaction `Y ~ Z:X`, where
+    ## Z is a known condition) is labelled by its condition --- its
+    ## displayed-name --- rather than by the coefficient, since for these
+    ## paths the informative thing is "fires when Z is on", not the (usually
+    ## fixed) weight. Ungated paths keep their numeric coefficient.
+    cond_label <- function(g) {
+      vars <- strsplit(g, ":", fixed = TRUE)[[1]]
+      labs <- vapply(vars, function(v) {
+        k <- match(v, layout$name)
+        gsub("\n", " ", if (!is.na(k)) layout$label[k] else v)
+      }, character(1))
+      paste(labs, collapse = " & ")
+    }
+    num_lab  <- edge_label_fmt(edges$coef)
+    gated    <- condition_labels & nzchar(edges$gate)
+    edges$elab <- num_lab
+    if (any(gated))
+      edges$elab[gated] <- vapply(edges$gate[gated], cond_label, character(1))
+
+    ## Structure vs. activation. The edge's *structure* is fixed: magnitude
+    ## |coef| sets the linewidth, sign sets the linetype. Its *colour* tracks
+    ## activation `act` (the gate value): a fully active path (act = 1) takes
+    ## its base colour (faded toward white only by small magnitude), a
+    ## potential path (act = 0) is drawn in light grey, and partial gates
+    ## interpolate. So a path appears as soon as it exists in the model and
+    ## darkens to black exactly when its condition is met.
+    mag_ratio   <- pmin(abs(edges$coef) / edge_scale_max, 1)
     edges$lw    <- mag_ratio^1.4 * (edge_linewidth - 0.45) + 0.45
-    edges$lty   <- ifelse(edges$resolved < 0, "dashed", "solid")
+    edges$lty   <- ifelse(edges$coef < 0, "dashed", "solid")
+
+    edges$conj  <- edges$to %in% conjunctive   # see below; affects activation
     fade        <- (1 - mag_ratio)^3
     base_rgb    <- t(grDevices::col2rgb(edges$base) / 255)
-    faded       <- base_rgb + (1 - base_rgb) * fade
-    edges$ecol  <- grDevices::rgb(faded[, 1], faded[, 2], faded[, 3])
+    active_rgb  <- base_rgb + (1 - base_rgb) * fade           # act == 1 colour
+    pot_rgb     <- matrix(grDevices::col2rgb(potential_color) / 255,
+                          nrow = nrow(edges), ncol = 3, byrow = TRUE)
+    ## A conjunctive input lights with the *source's* own presence (each
+    ## ingredient of the AND), not a separate gate.
+    act <- edges$act
+    if (any(edges$conj)) act[edges$conj] <- s[edges$from[edges$conj]]
+    act <- pmin(pmax(ifelse(is.na(act), 0, act), 0), 1)
+    mix <- pot_rgb + (active_rgb - pot_rgb) * act
+    edges$ecol <- grDevices::rgb(mix[, 1], mix[, 2], mix[, 3])
+
+    ## Conjunctive ("joint") inputs: edges into a node that fires only when
+    ## *all* of them are on are drawn dotted (a product, not an additive
+    ## coefficient) and carry no numeric label --- the dotted style says it.
+    if (any(edges$conj)) {
+      edges$lty[edges$conj]  <- "dotted"
+      edges$elab[edges$conj] <- NA_character_
+      edges$lw[edges$conj]   <- 1.1   # structural, not magnitude-scaled
+    }
 
     ## Backward consumption ('use') edges run anti-parallel to a forward
     ## (plan) edge between the same two nodes and would overlay it. Draw
@@ -398,7 +462,7 @@ plotField <- function(model, params, s, layout,
     ## arcs that bow clear of the straight forward edge.
     e_key <- paste(edges$from, edges$to, sep = "\r")
     e_rev <- paste(edges$to,   edges$from, sep = "\r")
-    edges$curved <- edges$resolved < 0 & e_rev %in% e_key
+    edges$curved <- edges$coef < 0 & e_rev %in% e_key
   }
 
   ## -- Assemble ----------------------------------------------------
@@ -445,8 +509,10 @@ plotField <- function(model, params, s, layout,
       g <- geoms[[i]]; n <- length(g$x)
       if (n <= 2L) { lx <- mean(g$x); ly <- mean(g$y) }
       else        { m <- (n + 1L) %/% 2L; lx <- g$x[m]; ly <- g$y[m] }
-      data.frame(x = lx, y = ly, elab = edges$elab[i], stringsAsFactors = FALSE)
+      data.frame(x = lx, y = ly, elab = edges$elab[i], ecol = edges$ecol[i],
+                 stringsAsFactors = FALSE)
     }))
+    lab_df <- lab_df[!is.na(lab_df$elab) & nzchar(lab_df$elab), , drop = FALSE]
 
     p <- p +
       ggplot2::geom_path(
@@ -514,10 +580,11 @@ plotField <- function(model, params, s, layout,
       ggplot2::aes(x = .data$x, y = .data$y - node_size - label_pad,
                    label = .data$label),
       vjust = 1, size = label_size)
-  if (have_edges && edge_labels) {
+  if (have_edges && edge_labels && nrow(lab_df)) {
     p <- p + ggtext::geom_richtext(
       data = lab_df,
-      ggplot2::aes(x = .data$x, y = .data$y, label = .data$elab),
+      ggplot2::aes(x = .data$x, y = .data$y, label = .data$elab,
+                   colour = .data$ecol),
       size = edge_label_size, label.size = 0,
       label.padding = grid::unit(0.1, "lines"), fill = "white")
   }

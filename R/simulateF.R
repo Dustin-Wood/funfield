@@ -57,9 +57,15 @@
 #'   a one-variable condition; an interaction (`Pour ~ HCoPot`) likewise.
 #' @param readout Name of the node read as the value to appraise against and
 #'   to report. Default `"L"`.
+#' @param aux Character vector of **derived** field nodes that recompute each
+#'   turn rather than latch --- pure functions of the stocks, such as a
+#'   conjunction `Prepped ~ a:b:c` that is on only while all of `a`, `b`, `c`
+#'   are. They may be used as policy conditions. Default `NULL`. (The
+#'   `readout` is always non-latching; `aux` adds to it.)
 #' @param stocks Character vector of field nodes that **latch**. Default
 #'   `NULL` --- derive automatically as every field target except `readout`
-#'   (object/resource states persist; the readout recomputes).
+#'   and `aux` (object/resource states persist; readouts and derived nodes
+#'   recompute).
 #' @param flows Character vector of exogenous **one-shot triggers** that are
 #'   spent when the action they gate fires (seeded in `s_0`, depleted on use)
 #'   rather than persisting. Default `NULL`.
@@ -108,6 +114,7 @@
 #' @export
 simulateF <- function(field, params, s_0, policy,
                       readout     = "L",
+                      aux         = NULL,
                       stocks      = NULL,
                       flows       = NULL,
                       max_turns   = 32L,
@@ -137,19 +144,23 @@ simulateF <- function(field, params, s_0, policy,
   if (length(miss))
     stop("Policy variables not in `s_0`: ", paste(miss, collapse = ", "), ".")
 
-  ## -- Stock set: field targets that latch (everything bar the readouts).
+  ## -- Non-latching nodes: the appraisal `readout` plus any derived `aux`
+  ## nodes (pure functions of the stocks, recomputed each turn, e.g. an AND
+  ## of several prerequisites). Everything else among the field's targets is
+  ## a latching stock.
+  nonlatch  <- union(readout, if (is.null(aux)) character(0) else aux)
   ft        <- lavaan::lavaanify(field, fixed.x = FALSE)
   targets   <- unique(ft$lhs[ft$op == "~"])
-  stock_set <- if (is.null(stocks)) setdiff(targets, readout) else stocks
+  stock_set <- if (is.null(stocks)) setdiff(targets, nonlatch) else stocks
   flow_set  <- if (is.null(flows))  character(0)              else flows
 
   ## -- One turn: inject one action, take a single field step (stock
-  ## transition + readout settle), then spend the action and any one-shot
-  ## triggers among its conditions.
+  ## transition + derived/readout settle), then spend the action and any
+  ## one-shot triggers among its conditions.
   one_turn <- function(state, a) {
     st <- state; st[[a]] <- 1
     nx <- evalF(field, params, st, stocks = stock_set,
-                readouts = readout, mode = "sync")
+                readouts = nonlatch, mode = "sync")
     nx[[a]] <- 0
     spent <- intersect(cond[[a]], flow_set)
     if (length(spent)) nx[spent] <- 0

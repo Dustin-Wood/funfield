@@ -341,6 +341,152 @@ downstream of it stays unlit. The run doesn't error or stall on a
 technicality — it **runs out of eligible actions**, which is exactly what
 a broken plan is.
 
+## Step 7: Blowing out the prep — parallel, any-order actions
+
+So far every action had exactly one predecessor: the pipeline self-ordered
+through gating. Real plans are rarely so linear. The single `make` step
+compressed all of *setting up the coffee maker* into one move; blow it out
+into the five things that actually have to happen — add water, add grounds,
+add a filter, plug it in, set the pot under it — and two new features of
+action appear:
+
+- the five preps can be done in **any order** (they don't depend on each
+  other), and
+- the machine brews only once **all five** are done (a **conjunction**).
+
+Each prep is an action producing its own state. "Prepped" is the AND of all
+five — and since `lavaan` interactions are only pairwise,
+[`andF()`](../reference/andF.html) builds that five-way conjunction two at a
+time, returning the model fragment and the names of the **derived** nodes
+it introduces:
+
+```{r blowout-field}
+preps    <- c("AddWater", "AddGrounds", "AddFilter", "PlugIn", "AddPot")
+haves    <- c("HasWater", "HasGrounds", "HasFilter", "HasPower", "HasPot")
+actions2 <- c(preps, "TurnOnCM", "Pour", "Sip")
+
+prepped <- andF("Prepped", haves)
+cat(prepped$model)
+prepped$aux
+
+field2 <- labelF(paste("
+  HasWater   ~ 1 * AddWater + use * HasWater:TurnOnCM
+  HasGrounds ~ 1 * AddGrounds
+  HasFilter  ~ 1 * AddFilter
+  HasPower   ~ 1 * PlugIn
+  HasPot     ~ 1 * AddPot",
+  prepped$model,
+  "HCoPot ~ 1 * Prepped:TurnOnCM + use * HCoPot:Pour
+   HCoCup ~ 1 * HCoPot:Pour      + use * HCoCup:Sip
+   HCo    ~ 1 * HCoCup:Sip",
+  costF(actions2, cost = -0.1),
+  "L ~ 0.9 * HCo + 0.1 * Energy", sep = "\n"),
+  actions = actions2)
+field2$params["use"] <- -1
+```
+
+Brewing (`TurnOnCM`) is gated on `Prepped` and *uses up the water*, which
+un-prepares the machine so it can't re-brew. The agent's plan is a **to-do
+list**: five one-shot intentions, one per prep, plus the usual brew / pour /
+sip rules. Because all five intentions are live at the start, all five preps
+are eligible at once:
+
+```{r blowout-policy}
+policy2 <- "
+  AddWater   ~ toWater
+  AddGrounds ~ toGrounds
+  AddFilter  ~ toFilter
+  PlugIn     ~ toPower
+  AddPot     ~ toPot
+  TurnOnCM   ~ Prepped
+  Pour       ~ HCoPot
+  Sip        ~ HCoCup
+"
+todo <- c(toWater = 1, toGrounds = 1, toFilter = 1, toPower = 1, toPot = 1)
+s2_0 <- c(todo,
+          setNames(rep(0, length(haves)), haves),
+          setNames(rep(0, length(prepped$aux)), prepped$aux),
+          setNames(rep(0, length(actions2)), actions2),
+          HCoPot = 0, HCoCup = 0, HCo = 0, Energy = 0, L = 0)
+```
+
+Run it. `aux = prepped$aux` tells `simulateF()` those conjunction nodes are
+**derived** — recomputed each turn from the current states rather than
+latching — and `flows` marks the five to-do tokens as one-shot:
+
+```{r blowout-run}
+out2 <- simulateF(field2$model, field2$params, s2_0, policy2,
+                  aux = prepped$aux, flows = names(todo), max_turns = 20)
+round(out2$trajectory[, c("HasWater","HasGrounds","HasFilter","HasPower",
+                          "HasPot","Prepped","HCoPot","HCoCup","HCo","Energy","L")], 2)
+out2$fired
+```
+
+The five preps fire one per turn (turns 1–5), `Prepped` flips on the moment
+the last one lands, brewing fills the pot at turn 6, and pour / sip finish
+the job — eight actions, so `Energy = -0.8` and `L = 0.82`. Two things are
+worth drawing out:
+
+- **The order is genuinely arbitrary.** When several actions are eligible,
+  the choice node appraises each one turn ahead and takes the best — but no
+  single prep moves `L` (you need all five *and* the brew), so the appraisal
+  is **indifferent**, and the tie is broken by listing order. Any permutation
+  of the five reaches the same prepped machine and the same final `L`. This
+  is the first time the per-turn appraisal faces a real tie; the linear
+  pipeline never did.
+- **`Prepped` is a derived node, not a stock.** It is a pure function of the
+  five states, so it recomputes every turn (passed via `aux`) and
+  `simulateF()` resolves the whole conjunction chain within a single turn.
+  The moment water is consumed at brew time, `Prepped` falls back to `0`.
+
+Drawn, the process is a **fan into a staircase**: five parallel preps merge
+into `Prepped`, then the familiar linear brew → pour → sip. The merge edges
+are **conjunctive** --- `Prepped` fires only when *all* five hold --- so
+`plotField()` draws them **dotted** (a product), rather than the solid
+numeric edges of an additive relationship, which would misleadingly read as
+regression weights. (For the diagram we show the
+conjunction as a direct five-way merge; under the hood it is the pairwise
+chain `andF()` built.)
+
+```{r blowout-widget, eval=has_ggplot, fig.alt="Interactive field diagram for the blown-out prep: five prep actions in parallel converge on a 'prepped' node, then a linear brew-pour-sip staircase to coffee."}
+disp2 <- "
+  HasWater ~ 1*AddWater
+  HasGrounds ~ 1*AddGrounds
+  HasFilter ~ 1*AddFilter
+  HasPower ~ 1*PlugIn
+  HasPot ~ 1*AddPot
+  Prepped ~ 1*HasWater + 1*HasGrounds + 1*HasFilter + 1*HasPower + 1*HasPot
+  HCoPot ~ 1*Prepped:TurnOnCM
+  HCoCup ~ 1*HCoPot:Pour
+  HCo ~ 1*HCoCup:Sip
+  L ~ 0.9*HCo + 0.1*Energy"
+disp_pol2   <- "TurnOnCM ~ 1*Prepped\nPour ~ 1*HCoPot\nSip ~ 1*HCoCup"
+disp_model2 <- paste(disp2, disp_pol2, sep = "\n")
+
+layout2 <- data.frame(
+  name  = c(preps, haves, "Prepped","TurnOnCM","HCoPot","Pour",
+            "HCoCup","Sip","HCo","Energy","L"),
+  x     = c(rep(0,5), rep(2,5), 4.5, 6.0, 7.3, 8.6, 9.9, 11.2, 12.5, 10.0, 14.0),
+  y     = c(0,2,4,6,8, 0,2,4,6,8, 4, 5.5, 4, 5.5, 4, 5.5, 4, 0.6, 4),
+  shape = c(rep("rtTri",5), rep("diamond",5), "diamond","rtTri","diamond",
+            "rtTri","diamond","rtTri","diamond","square","lfTri"),
+  label = c("add\nwater","add\ngrounds","add\nfilter","plug\nin","add\npot",
+            "water","grounds","filter","power","pot","prepped","turn\non",
+            "pot\ncoffee","pour","cup\ncoffee","sip","have\ncoffee","Energy","L"),
+  glyph = c(rep(NA,17), "⚡", NA),
+  stringsAsFactors = FALSE)
+
+steps2  <- nrow(out2$trajectory) - 1L
+frames2 <- lapply(0:steps2, function(t) {
+  plotField(disp_model2, numeric(0), out2$trajectory[paste0("t=", t), ],
+            layout2, plan = disp_pol2, conjunctive = "Prepped",
+            node_size = 0.30, title = paste("t =", t))
+})
+
+plotsAsWidget(frames2, panel_titles = paste("Step", 0:steps2),
+              width = 10, height = 6)
+```
+
 ## Consumption is what keeps a field bounded
 
 `simulateF()` does **not** clamp. Functional-field state is expected to
