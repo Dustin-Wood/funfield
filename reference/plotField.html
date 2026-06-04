@@ -82,8 +82,13 @@ throughout and the active sub-path lights up as conditions are met.</p>
 <span>  <span class="va">s</span>,</span>
 <span>  <span class="va">layout</span>,</span>
 <span>  plan <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plan_label <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plan_ramp <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  plan_colors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#00FF00"</span>, <span class="st">"#32CD32"</span>, <span class="st">"#41A317"</span><span class="op">)</span>,</span>
 <span>  conjunctive <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  condition_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  condition_ramp <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  condition_colors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#F6BE00"</span>, <span class="st">"#9A6000"</span><span class="op">)</span>,</span>
 <span>  edge_color <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>  plan_color <span class="op">=</span> <span class="st">"#DAA520"</span>,</span>
 <span>  potential_color <span class="op">=</span> <span class="st">"grey80"</span>,</span>
@@ -157,6 +162,33 @@ base colour. Typically the action-plan half of a stitched model.
 Default `NULL` (no gold edges).</p></dd>
 
 
+<dt id="arg-plan-label">plan_label<a class="anchor" aria-label="anchor" href="#arg-plan-label"></a></dt>
+<dd><p>Optional single-character prefix naming the plan (e.g.
+`"a"` for "Plan A"). When supplied, each plan edge is labelled by its
+**step** in the plan – the order its `action ~ condition` rule appears
+in `plan` – as `&lt;plan_label&gt;&lt;step&gt;` (so Plan A's four rules read
+`a1`, `a2`, `a3`, `a4`). Default `NULL` (plan edges keep their
+coefficient / condition label).</p></dd>
+
+
+<dt id="arg-plan-ramp">plan_ramp<a class="anchor" aria-label="anchor" href="#arg-plan-ramp"></a></dt>
+<dd><p>Logical; when `TRUE`, the **action plan's forces** are
+coloured on a green ramp (the "green means go" cue): each plan edge and its
+`&lt;plan_label&gt;&lt;step&gt;` label take a colour stepped along `plan_colors` by
+plan order (first step = the ramp's first colour), shown when the edge's
+condition is met and `potential_color` (grey) when merely potential. Only
+the **forces** are recoloured — action *nodes* keep the value scale
+(white when idle, blue on the turn they fire), so the plan adds no new node
+colour. When `FALSE`, plan edges take flat `plan_color` (gold). Default
+`FALSE`.</p></dd>
+
+
+<dt id="arg-plan-colors">plan_colors<a class="anchor" aria-label="anchor" href="#arg-plan-colors"></a></dt>
+<dd><p>Anchor colours for the `plan_ramp`, interpolated to one
+colour per plan step. Default `c("#00FF00", "#32CD32", "#41A317")`
+(lime -&gt; limegreen -&gt; dark lime green).</p></dd>
+
+
 <dt id="arg-conjunctive">conjunctive<a class="anchor" aria-label="anchor" href="#arg-conjunctive"></a></dt>
 <dd><p>Character vector of target node names whose incoming
 edges are **conjunctive** — the node fires only when *all* of them are
@@ -172,6 +204,28 @@ the `X -&gt; Y` force) is labelled by its condition's displayed name —
 e.g. `TurnOn -&gt; HCoPot`, gated on `s2`, reads "rig set" — rather than
 by the coefficient. Ungated paths keep their numeric weight. Set `FALSE`
 to label every edge by its coefficient.</p></dd>
+
+
+<dt id="arg-condition-ramp">condition_ramp<a class="anchor" aria-label="anchor" href="#arg-condition-ramp"></a></dt>
+<dd><p>Logical; when `TRUE`, the **condition states** —
+the moderators `Z` that gate the afforded forces (`Y ~ Z:X`) — are
+coloured on a gold -&gt; orange ramp instead of the red-white-blue value
+scale. Each condition node, the gated force it opens, and that force's
+label take a colour stepped along `condition_colors` by the condition's
+order of appearance (earliest = the ramp's first colour). The node fills
+with its colour when present and is white when absent; the gated force and
+its label show the colour when the condition is met and `potential_color`
+(grey) when not. Actions and non-condition states keep the diverging
+value scale. Default `FALSE`. (With `plan_ramp` this gives two parallel
+staircases: a green action ramp and a gold condition ramp, kept clear of
+each other and of the red-white-blue value scale.)</p></dd>
+
+
+<dt id="arg-condition-colors">condition_colors<a class="anchor" aria-label="anchor" href="#arg-condition-colors"></a></dt>
+<dd><p>Anchor colours for the `condition_ramp`,
+interpolated to one colour per condition. Default
+`c("#F6BE00", "#9A6000")` (gold -&gt; deep amber), kept clear of the
+value-red and the green action ramp.</p></dd>
 
 
 <dt id="arg-edge-color-plan-color">edge_color, plan_color<a class="anchor" aria-label="anchor" href="#arg-edge-color-plan-color"></a></dt>

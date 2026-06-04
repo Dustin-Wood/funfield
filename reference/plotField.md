@@ -22,8 +22,13 @@ plotField(
   s,
   layout,
   plan = NULL,
+  plan_label = NULL,
+  plan_ramp = FALSE,
+  plan_colors = c("#00FF00", "#32CD32", "#41A317"),
   conjunctive = NULL,
   condition_labels = TRUE,
+  condition_ramp = FALSE,
+  condition_colors = c("#F6BE00", "#9A6000"),
   edge_color = "black",
   plan_color = "#DAA520",
   potential_color = "grey80",
@@ -96,6 +101,33 @@ s <- sub("0+$", "", s)
   colour. Typically the action-plan half of a stitched model. Default
   \`NULL\` (no gold edges).
 
+- plan_label:
+
+  Optional single-character prefix naming the plan (e.g. \`"a"\` for
+  "Plan A"). When supplied, each plan edge is labelled by its
+  \*\*step\*\* in the plan – the order its \`action ~ condition\` rule
+  appears in \`plan\` – as \`\<plan_label\>\<step\>\` (so Plan A's four
+  rules read \`a1\`, \`a2\`, \`a3\`, \`a4\`). Default \`NULL\` (plan
+  edges keep their coefficient / condition label).
+
+- plan_ramp:
+
+  Logical; when \`TRUE\`, the \*\*action plan's forces\*\* are coloured
+  on a green ramp (the "green means go" cue): each plan edge and its
+  \`\<plan_label\>\<step\>\` label take a colour stepped along
+  \`plan_colors\` by plan order (first step = the ramp's first colour),
+  shown when the edge's condition is met and \`potential_color\` (grey)
+  when merely potential. Only the \*\*forces\*\* are recoloured — action
+  \*nodes\* keep the value scale (white when idle, blue on the turn they
+  fire), so the plan adds no new node colour. When \`FALSE\`, plan edges
+  take flat \`plan_color\` (gold). Default \`FALSE\`.
+
+- plan_colors:
+
+  Anchor colours for the \`plan_ramp\`, interpolated to one colour per
+  plan step. Default \`c("#00FF00", "#32CD32", "#41A317")\` (lime -\>
+  limegreen -\> dark lime green).
+
 - conjunctive:
 
   Character vector of target node names whose incoming edges are
@@ -112,6 +144,28 @@ s <- sub("0+$", "", s)
   e.g. \`TurnOn -\> HCoPot\`, gated on \`s2\`, reads "rig set" — rather
   than by the coefficient. Ungated paths keep their numeric weight. Set
   \`FALSE\` to label every edge by its coefficient.
+
+- condition_ramp:
+
+  Logical; when \`TRUE\`, the \*\*condition states\*\* — the moderators
+  \`Z\` that gate the afforded forces (\`Y ~ Z:X\`) — are coloured on a
+  gold -\> orange ramp instead of the red-white-blue value scale. Each
+  condition node, the gated force it opens, and that force's label take
+  a colour stepped along \`condition_colors\` by the condition's order
+  of appearance (earliest = the ramp's first colour). The node fills
+  with its colour when present and is white when absent; the gated force
+  and its label show the colour when the condition is met and
+  \`potential_color\` (grey) when not. Actions and non-condition states
+  keep the diverging value scale. Default \`FALSE\`. (With \`plan_ramp\`
+  this gives two parallel staircases: a green action ramp and a gold
+  condition ramp, kept clear of each other and of the red-white-blue
+  value scale.)
+
+- condition_colors:
+
+  Anchor colours for the \`condition_ramp\`, interpolated to one colour
+  per condition. Default \`c("#F6BE00", "#9A6000")\` (gold -\> deep
+  amber), kept clear of the value-red and the green action ramp.
 
 - edge_color, plan_color:
 
