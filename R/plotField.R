@@ -186,6 +186,40 @@
 #'   source -> target identity appears in `plan` take `plan_color` as their
 #'   base colour. Typically the action-plan half of a stitched model.
 #'   Default `NULL` (no gold edges).
+#' @param plan_label Optional single-character prefix naming the plan (e.g.
+#'   `"a"` for "Plan A"). When supplied, each plan edge is labelled by its
+#'   **step** in the plan -- the order its `action ~ condition` rule appears
+#'   in `plan` -- as `<plan_label><step>` (so Plan A's four rules read
+#'   `a1`, `a2`, `a3`, `a4`). Default `NULL` (plan edges keep their
+#'   coefficient / condition label).
+#' @param plan_ramp Logical; when `TRUE`, the **action staircase** is coloured
+#'   on a green ramp (the "green means go" cue): each plan edge, its
+#'   `<plan_label><step>` label, and the **action node it fires** take a
+#'   colour stepped along `plan_colors` by plan order (first step = the ramp's
+#'   first colour). An action node fills with its green when it fires and is
+#'   white otherwise; a plan edge shows its green when its condition is met and
+#'   `potential_color` (grey) when merely potential. When `FALSE`, plan edges
+#'   take flat `plan_color` (gold) and action nodes keep the value scale.
+#'   Default `FALSE`.
+#' @param plan_colors Anchor colours for the `plan_ramp`, interpolated to one
+#'   colour per plan step. Default `c("#00FF00", "#32CD32", "#41A317")`
+#'   (lime -> limegreen -> dark lime green).
+#' @param condition_ramp Logical; when `TRUE`, the **condition states** ---
+#'   the moderators `Z` that gate the afforded forces (`Y ~ Z:X`) --- are
+#'   coloured on a gold -> orange ramp instead of the red-white-blue value
+#'   scale. Each condition node, the gated force it opens, and that force's
+#'   label take a colour stepped along `condition_colors` by the condition's
+#'   order of appearance (earliest = the ramp's first colour). The node fills
+#'   with its colour when present and is white when absent; the gated force and
+#'   its label show the colour when the condition is met and `potential_color`
+#'   (grey) when not. Actions and non-condition states keep the diverging
+#'   value scale. Default `FALSE`. (With `plan_ramp` this gives two parallel
+#'   staircases: a green action ramp and a gold condition ramp, kept clear of
+#'   each other and of the red-white-blue value scale.)
+#' @param condition_colors Anchor colours for the `condition_ramp`,
+#'   interpolated to one colour per condition. Default
+#'   `c("#F6BE00", "#9A6000")` (gold -> deep amber), kept clear of the
+#'   value-red and the green action ramp.
 #' @param conjunctive Character vector of target node names whose incoming
 #'   edges are **conjunctive** --- the node fires only when *all* of them are
 #'   on (a product, not a sum). Those edges are drawn **dotted** and carry no
@@ -274,8 +308,13 @@
 #' @export
 plotField <- function(model, params, s, layout,
                       plan             = NULL,
+                      plan_label       = NULL,
+                      plan_ramp        = FALSE,
+                      plan_colors      = c("#00FF00", "#32CD32", "#41A317"),
                       conjunctive      = NULL,
                       condition_labels = TRUE,
+                      condition_ramp   = FALSE,
+                      condition_colors = c("#F6BE00", "#9A6000"),
                       edge_color       = "black",
                       plan_color       = "#DAA520",
                       potential_color  = "grey80",
@@ -365,6 +404,7 @@ plotField <- function(model, params, s, layout,
     if (is.na(coef) || abs(coef) <= edge_min) next   # no structural force
     pair    <- paste(src, pt$lhs[i], sep = "\r")
     is_plan <- pair %in% plan_pairs
+    step    <- if (is_plan) match(pair, plan_pairs) else NA_integer_
     ## Activation: how "on" the path's condition is. A gated situation force
     ## (`Y ~ Z:X`) is afforded to the degree its gate `Z` is present; a plan
     ## rule (`action ~ condition`) to the degree its condition (the source)
@@ -377,9 +417,12 @@ plotField <- function(model, params, s, layout,
                  act  = if (is.na(act)) 0 else act,
                  gate = if (length(gate)) paste(gate, collapse = ":") else "",
                  base = if (is_plan) plan_color else edge_color,
+                 is_plan = is_plan, step = step,
                  stringsAsFactors = FALSE)
   }
 
+  cond_color      <- character(0)   # condition -> gold-ramp colour
+  plan_node_color <- character(0)   # action node -> green-ramp colour
   have_edges <- length(edge_rows) > 0L
   if (have_edges) {
     edges <- do.call(rbind, edge_rows)
@@ -421,6 +464,46 @@ plotField <- function(model, params, s, layout,
     edges$elab <- num_lab
     if (any(gated))
       edges$elab[gated] <- vapply(edges$gate[gated], cond_label, character(1))
+
+    ## Plan-step labels: each plan edge is named by its step in the plan ---
+    ## the order its `action ~ condition` rule appears --- as
+    ## `<plan_label><step>` (Plan A -> a1, a2, ...).
+    if (!is.null(plan_label) && any(edges$is_plan))
+      edges$elab[edges$is_plan] <-
+        paste0(plan_label, edges$step[edges$is_plan])
+
+    ## Action staircase (green ramp). "Green means go": when `plan_ramp` is on,
+    ## each plan edge, its step label, and the action node it fires share a
+    ## colour stepped along `plan_colors` (lime -> dark green) by plan order.
+    ## Recolour the plan edges here; the matching node fills (`plan_node_color`)
+    ## are applied when the nodes are drawn.
+    if (plan_ramp && any(edges$is_plan)) {
+      pramp <- grDevices::colorRampPalette(plan_colors)(length(plan_pairs))
+      ip <- which(edges$is_plan)
+      edges$base[ip] <- pramp[edges$step[ip]]
+      tgt <- sub("^.*\r", "", plan_pairs)               # action node per step
+      plan_node_color <- stats::setNames(pramp[seq_along(plan_pairs)], tgt)
+    }
+
+    ## Condition ramp. The moderators Z that gate the afforded forces
+    ## (`Y ~ Z:X`) carry a gold -> orange colour, ordered by appearance, shared
+    ## by the condition node, the gated force it opens, and that force's label.
+    ## Recolour the gated (non-plan) edges here; node fills are held in
+    ## `cond_color` and applied when the nodes are drawn.
+    if (condition_ramp) {
+      gidx <- which(nzchar(edges$gate) & !edges$is_plan)
+      cond_order <- unique(unlist(
+        strsplit(edges$gate[gidx], ":", fixed = TRUE)))
+      if (length(cond_order)) {
+        cramp <- grDevices::colorRampPalette(condition_colors)(length(cond_order))
+        cond_color <- stats::setNames(cramp, cond_order)
+        for (i in gidx) {
+          gv <- strsplit(edges$gate[i], ":", fixed = TRUE)[[1]]
+          gv <- gv[gv %in% names(cond_color)]
+          if (length(gv)) edges$base[i] <- cond_color[[gv[length(gv)]]]
+        }
+      }
+    }
 
     ## Structure vs. activation. The edge's *structure* is fixed: magnitude
     ## |coef| sets the linewidth, sign sets the linetype. Its *colour* tracks
@@ -533,13 +616,30 @@ plotField <- function(model, params, s, layout,
       ggplot2::scale_linewidth_identity() +
       ggplot2::scale_linetype_identity()
   }
+  ## Ramped nodes leave the diverging value scale: an action node fills
+  ## white -> its green-ramp colour by how "on" it is (it fires this turn), and
+  ## a condition node fills white -> its gold-ramp colour by how present it is.
+  ## Action (plan) colours win on any name collision. Each is drawn with a
+  ## constant per-node fill (no fill aesthetic) so it sits outside the gradient
+  ## scale, and is removed from the gradient layer below.
+  special <- cond_color
+  special[names(plan_node_color)] <- plan_node_color   # plan wins on collision
+  special_fill <- character(0)
+  for (nm in intersect(names(special), layout$name)) {
+    v  <- unname(s[nm]); if (is.na(v)) v <- 0
+    v  <- min(max(v, 0), 1)
+    cr <- grDevices::col2rgb(special[[nm]]) / 255
+    mx <- c(1, 1, 1) + (cr[, 1] - c(1, 1, 1)) * v
+    special_fill[nm] <- grDevices::rgb(mx[1], mx[2], mx[3])
+  }
   ## Node bodies, value-shaded on a diverging red-white-blue scale
   ## (negative red, zero white, positive blue) --- the same convention used
   ## by the pathXMY diagrams. Glyph nodes are shaded the same way; only
   ## their label differs (a centred symbol, no caption beneath).
+  grad_df <- poly_df[!poly_df$name %in% names(special_fill), , drop = FALSE]
   p <- p +
     ggplot2::geom_polygon(
-      data = poly_df,
+      data = grad_df,
       ggplot2::aes(x = .data$px, y = .data$py, group = .data$name,
                    fill = .data$value),
       colour = "black", linewidth = 0.5) +
@@ -547,6 +647,13 @@ plotField <- function(model, params, s, layout,
       low = fill_low, mid = fill_mid, high = fill_high, midpoint = 0,
       limits = fill_limits, oob = scales::squish, na.value = na_fill,
       name = "state")
+  for (nm in names(special_fill)) {
+    p <- p + ggplot2::geom_polygon(
+      data = poly_df[poly_df$name == nm, , drop = FALSE],
+      ggplot2::aes(x = .data$px, y = .data$py, group = .data$name),
+      fill = special_fill[[nm]], colour = "black", linewidth = 0.5,
+      inherit.aes = FALSE)
+  }
   ## Glyph nodes carry a centred symbol in place of a caption beneath. A
   ## lightning bolt ("bolt" or the emoji) is drawn as a filled polygon so it
   ## sits exactly centred; any other glyph string is drawn as centred text.

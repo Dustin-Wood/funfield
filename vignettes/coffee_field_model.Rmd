@@ -242,14 +242,37 @@ as a node-link diagram: the **choice point** is a circle, **object**
 states are diamonds, **actions** right-facing triangles, the **value**
 readout a left-facing triangle, and **`Energy`** a square holding a ⚡
 bolt, set just left of `L` so the value forces from `HCo` (down the
-staircase) and `Energy` (along the floor) converge on `L`. Every node is
-shaded on a diverging **red–white–blue** scale (negative red, zero white,
-positive blue). Each edge encodes its force, with the level printed on the
-shaft: thicker and darker for larger `|f|`, dashed when negative — so the
-production forces (`f = 1`) read as strong solid lines and the energy
-costs (`f = -0.1`) as faint dashed ones. The **policy** edges are drawn in
-**gold**, distinct from the field's **black**; the backward **consumption**
-arcs bow below their forward edge so they do not overlay it.
+staircase) and `Energy` (along the floor) converge on `L`. Each edge
+encodes its force, with the level printed on the shaft: thicker and darker
+for larger `|f|`, dashed when negative — so the production forces (`f = 1`)
+read as strong solid lines and the energy costs (`f = -0.1`) as faint
+dashed ones. The backward **consumption** arcs bow below their forward edge
+so they do not overlay it.
+
+The diagram carries **two parallel staircases**, each on its own ramp, so the
+agent's *doing* and the field's *readiness* never blur together — and neither
+is mistaken for the red–white–blue value scale:
+
+- The **action staircase** is **green** — *green means go*. Naming this plan
+  **Plan A** (`plan_label = "a"`, `plan_ramp = TRUE`), each rule is labelled
+  by its **step** — `a1, a2, a3, a4` — and the policy edge, its label, and the
+  **action node it fires** all share a colour stepped from lime at the first
+  move to dark green at the last. An action node lights green on the turn it
+  fires; its policy edge shows green while its trigger is present and stays
+  light grey while merely *potential*.
+- The **condition staircase** is **gold → deep amber**. The **condition
+  states** — the moderators `Z` that gate each afforded force (`rig set` opens
+  turning-on, `coffee in pot` opens pouring, …) — ride a ramp from gold at the
+  first condition to a darker amber at the last (`condition_ramp = TRUE`). Each
+  condition shares its colour with the force it opens and that force's label:
+  the node fills gold when the state is present (white when absent), and its
+  force shows the colour once the condition is met (grey while potential).
+
+Everything else — the value readout `L`, the cost ledger `Energy`, and the
+bare production forces — keeps the diverging **red–white–blue** value scale
+(negative red, zero white, positive blue). So three colour languages run
+without collision: **green** for what the agent *does*, **gold/amber** for
+what the situation has made *ready*, and **red–white–blue** for *value*.
 
 We seat `L` and `Energy` on the floor, level with `make`, so the diagram
 closes back where it began. For drawing, we layer the policy onto the
@@ -286,7 +309,8 @@ cost:
 steps  <- nrow(out$trajectory) - 1L
 frames <- lapply(0:steps, function(t) {
   plotField(model_full, field$params, out$trajectory[paste0("t=", t), ],
-            layout, plan = full, title = paste("t =", t))
+            layout, plan = full, plan_label = "a", plan_ramp = TRUE,
+            condition_ramp = TRUE, title = paste("t =", t))
 })
 
 plotsAsWidget(
@@ -298,9 +322,10 @@ plotsAsWidget(
 
 ## Step 6: Where a faulty plan breaks
 
-Running the faulty policy through the *same* field shows **where** it
-breaks. It commits to making, turning on, and (eventually) sipping, but
-never pours:
+Running the faulty policy — call it **Plan B** — through the *same* field
+shows **where** it breaks. It commits to making, turning on, and
+(eventually) sipping, but never pours, so it has only three gold steps
+(`b1, b2, b3`) where Plan A had four:
 
 ```{r faulty-run}
 out_np <- simulateF(field$model, field$params, s_0, faulty, flows = "choice")
@@ -322,7 +347,8 @@ model_np  <- paste(field$model, faulty, sep = "\n")
 steps_np  <- nrow(out_np$trajectory) - 1L
 frames_np <- lapply(0:steps_np, function(t) {
   plotField(model_np, field$params, out_np$trajectory[paste0("t=", t), ],
-            layout, plan = faulty, title = paste("t =", t))
+            layout, plan = faulty, plan_label = "b", plan_ramp = TRUE,
+            condition_ramp = TRUE, title = paste("t =", t))
 })
 
 plotsAsWidget(
@@ -334,9 +360,10 @@ plotsAsWidget(
 
 Tellingly, the pour *affordance* stays open: because there is coffee in
 the pot, the `Pour → coffee-in-cup` force (and its consumption arc back to
-the pot) are still drawn — but they leave a **dark `pour` node**. The move
-is available and the field would reward it; the policy simply never calls
-it. That gap is the whole failure: one missing rule, and everything
+the pot) are still drawn — and **lit gold**, since *coffee in pot* is a met
+condition — yet they leave a **white `pour` node**, because the green action
+that would fill it never fires. The move is available and the field would
+reward it; the policy simply never calls it. That gap is the whole failure: one missing rule, and everything
 downstream of it stays unlit. The run doesn't error or stall on a
 technicality — it **runs out of eligible actions**, which is exactly what
 a broken plan is.
