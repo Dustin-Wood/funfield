@@ -49,11 +49,12 @@ sized so their bounding box matches the square's, and edges are
 clipped against the shape's actual perimeter.}
 
 \item{XM_color, MY_color, XY_color}{Per-edge arrow colors. All default
-to \code{"black"}. Use \code{"#32CD32"} (limegreen, the bZ
-convention) when an arm represents a bZ moderation route, and a
-light gray (e.g. \code{"#BBBBBB"}) to fade arms that are not part
-of the term being highlighted in a panel. Ignored for any edge
-not drawn (e.g. \code{XY_color} when \code{XY_label} is NULL).}
+to \code{"black"}. Use \code{"#F6BE00"} (gold, the bZ moderator
+convention matching \code{plotField()} condition nodes) when an arm
+represents a bZ moderation route, and a light gray (e.g.
+\code{"#BBBBBB"}) to fade arms that are not part of the term being
+highlighted in a panel. Ignored for any edge not drawn (e.g.
+\code{XY_color} when \code{XY_label} is NULL).}
 
 \item{node_size}{Half-side of each node shape in data coordinates.
 Default \code{0.09}.}

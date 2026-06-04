@@ -33,14 +33,16 @@
 #'     intersection for the triangles). Edge labels carry the
 #'     \code{f1 + fZ(Z)} decomposition.
 #'   \item \strong{Moderator (Z) coloring.} Anything that is purely a
-#'     bZ coefficient renders in limegreen. In the default decomposed
-#'     label, only the trailing \code{bZ(Z)} fragment is green (the b1
-#'     portion and the edge itself describe the normative path). In the
-#'     Z-overlay view (\code{Z_overlay = TRUE}), the entire label and
-#'     the edge are green, since the edge \emph{is} a bZ coefficient.
-#'     A Z-collapsed view (\code{Z_value} supplied) renders normally:
-#'     the label there is a single total slope \code{f1 + fZ * Z_value},
-#'     not a bZ coefficient on its own.
+#'     bZ coefficient renders in gold (\code{#F6BE00}), matching the
+#'     condition-node color used in the deductive \code{plotField()}
+#'     diagrams. In the default decomposed label, only the trailing
+#'     \code{bZ(Z)} fragment is gold (the b1 portion and the edge itself
+#'     describe the normative path). In the Z-overlay view
+#'     (\code{Z_overlay = TRUE}), the entire label and the edge are gold,
+#'     since the edge \emph{is} a bZ coefficient. A Z-collapsed view
+#'     (\code{Z_value} supplied) renders normally: the label there is a
+#'     single total slope \code{f1 + fZ * Z_value}, not a bZ coefficient
+#'     on its own.
 #' }
 #'
 #' Two view modes:
@@ -75,14 +77,14 @@
 #'
 #' Passing \code{route = "expectation"} or \code{"valuation"} renders
 #' a per-route view of the moderation. The \emph{expectation route}
-#' shows \code{fZ_XM} on the X-to-M arm (green) and \code{f1_MY} on the
+#' shows \code{fZ_XM} on the X-to-M arm (gold) and \code{f1_MY} on the
 #' M-to-Y arm (black); the \emph{valuation route} flips the arms
 #' (\code{f1_XM} on the left, \code{fZ_MY} on the right). The visual
-#' grammar of the new coloring scheme makes the two route components of
-#' the moderation decomposition read directly: if both arms of a
-#' mediator carry visible weight in one of the two graphs, that
-#' green--black or black--green chain identifies a \emph{reason} that
-#' the moderator shifts the X-to-Y relationship. Mutually exclusive
+#' grammar of the coloring scheme makes the two route components of the
+#' moderation decomposition read directly: if both arms of a mediator
+#' carry visible weight in one of the two graphs, that gold--black or
+#' black--gold chain identifies a \emph{reason} that the moderator
+#' shifts the X-to-Y relationship. Mutually exclusive
 #' with \code{Z_value} and \code{Z_overlay}; nodes are drawn white in
 #' route views for the same reason as the Z overlay.
 #'
@@ -277,7 +279,7 @@ plotPathXMY <- function(x,
   ## semantics) and together with the default decomposed view form four
   ## edge interpretations. Per-arm `MX_is_bZ` / `YM_is_bZ` flags drive
   ## both the label coloring and the edge color ramp downstream so the
-  ## new "anything purely bZ renders in limegreen" convention is
+  ## "anything purely bZ renders in gold (#F6BE00)" convention is
   ## consistent across all view modes.
   z_collapsed <- !is.null(Z_value)
   if (!is.logical(Z_overlay) || length(Z_overlay) != 1L || is.na(Z_overlay))
@@ -409,14 +411,15 @@ plotPathXMY <- function(x,
 
   ## -- Edges -------------------------------------------------------
   ## Label coloring convention: any fragment that is purely a bZ
-  ## coefficient renders in limegreen. There are two display modes:
+  ## coefficient renders in gold (#F6BE00), matching the condition-node
+  ## color used in plotField(). There are two display modes:
   ##  - "decomposed" (default view): the label is "f1 + fZ(Z)"; only
-  ##    the trailing bZ fragment is wrapped in green.
+  ##    the trailing bZ fragment is wrapped in gold.
   ##  - "single" (Z_overlay, Z_value, route): the label is one number.
-  ##    If the arm itself is bZ (is_bZ_arm), the whole label is green;
+  ##    If the arm itself is bZ (is_bZ_arm), the whole label is gold;
   ##    otherwise it stays black.
-  z_green     <- "#32CD32"
-  wrap_green  <- function(s) paste0("<span style='color:", z_green, "'>",
+  z_gold      <- "#F6BE00"
+  wrap_gold   <- function(s) paste0("<span style='color:", z_gold, "'>",
                                     s, "</span>")
   single_mode <- Z_overlay || z_collapsed || route != "none"
   ## Coefficient formatter: f0() strips the leading zero per the
@@ -439,13 +442,13 @@ plotPathXMY <- function(x,
       out <- main
       if (show_pvalues && !is.na(pv))
         out <- paste0(out, "<br>p=", fmt_pv(pv))
-      return(if (is_bZ_arm) wrap_green(out) else out)
+      return(if (is_bZ_arm) wrap_gold(out) else out)
     }
-    ## Decomposed view: b1 head + green bZ fragment.
+    ## Decomposed view: b1 head + gold bZ fragment.
     out <- main
     if (!is.na(bZ) && abs(bZ) > 0) {
       bz_part <- paste0(fmt_coef(bZ), "(", Z_label, ")")
-      out <- paste0(out, " ", wrap_green(bz_part))
+      out <- paste0(out, " ", wrap_gold(bz_part))
     }
     if (show_pvalues && !is.na(pv))
       out <- paste0(out, "<br>p=", fmt_pv(pv))
@@ -500,19 +503,19 @@ plotPathXMY <- function(x,
   ## 0.8 for a B1 field).
   mag_ratio   <- pmin(abs(edges$coef) / scale_max, 1)
   edges$lw    <- mag_ratio^1.4 * 3.0 + 0.05
-  ## Per-edge color ramp: green ramp (saturated limegreen to near-white)
-  ## for arms that ARE a bZ coefficient; grayscale ramp otherwise. This
-  ## handles the Z-overlay (both arms green) and route views (one arm
-  ## green, one black) with the same per-edge logic.
+  ## Per-edge color ramp: gold ramp (#F6BE00 to near-white) for arms
+  ## that ARE a bZ coefficient; grayscale ramp otherwise. This handles
+  ## the Z-overlay (both arms gold) and route views (one arm gold, one
+  ## black) with the same per-edge logic.
   fade        <- (1 - mag_ratio)^3
   gray_col    <- grDevices::gray(fade)
-  g_rgb       <- c(50, 205, 50) / 255
-  green_col   <- grDevices::rgb(
+  g_rgb       <- c(246, 190, 0) / 255   # #F6BE00
+  gold_col    <- grDevices::rgb(
     red   = g_rgb[1] + (1 - g_rgb[1]) * fade,
     green = g_rgb[2] + (1 - g_rgb[2]) * fade,
     blue  = g_rgb[3] + (1 - g_rgb[3]) * fade
   )
-  edges$ecol  <- ifelse(edges$is_bZ, green_col, gray_col)
+  edges$ecol  <- ifelse(edges$is_bZ, gold_col, gray_col)
   edges$from_shape <- nodes$shape[match(edges$from, nodes$name)]
   edges$to_shape   <- nodes$shape[match(edges$to,   nodes$name)]
 

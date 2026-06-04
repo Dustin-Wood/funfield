@@ -150,14 +150,16 @@ funfield visualization conventions:
     intersection for the triangles). Edge labels carry the
     \code{f1 + fZ(Z)} decomposition.
   \item \strong{Moderator (Z) coloring.} Anything that is purely a
-    bZ coefficient renders in limegreen. In the default decomposed
-    label, only the trailing \code{bZ(Z)} fragment is green (the b1
-    portion and the edge itself describe the normative path). In the
-    Z-overlay view (\code{Z_overlay = TRUE}), the entire label and
-    the edge are green, since the edge \emph{is} a bZ coefficient.
-    A Z-collapsed view (\code{Z_value} supplied) renders normally:
-    the label there is a single total slope \code{f1 + fZ * Z_value},
-    not a bZ coefficient on its own.
+    bZ coefficient renders in gold (\code{#F6BE00}), matching the
+    condition-node color used in the deductive \code{plotField()}
+    diagrams. In the default decomposed label, only the trailing
+    \code{bZ(Z)} fragment is gold (the b1 portion and the edge itself
+    describe the normative path). In the Z-overlay view
+    (\code{Z_overlay = TRUE}), the entire label and the edge are gold,
+    since the edge \emph{is} a bZ coefficient. A Z-collapsed view
+    (\code{Z_value} supplied) renders normally: the label there is a
+    single total slope \code{f1 + fZ * Z_value}, not a bZ coefficient
+    on its own.
 }
 
 Two view modes:
@@ -192,14 +194,14 @@ expected scores have no meaning for a per-unit-Z slope.
 
 Passing \code{route = "expectation"} or \code{"valuation"} renders
 a per-route view of the moderation. The \emph{expectation route}
-shows \code{fZ_XM} on the X-to-M arm (green) and \code{f1_MY} on the
+shows \code{fZ_XM} on the X-to-M arm (gold) and \code{f1_MY} on the
 M-to-Y arm (black); the \emph{valuation route} flips the arms
 (\code{f1_XM} on the left, \code{fZ_MY} on the right). The visual
-grammar of the new coloring scheme makes the two route components of
-the moderation decomposition read directly: if both arms of a
-mediator carry visible weight in one of the two graphs, that
-green--black or black--green chain identifies a \emph{reason} that
-the moderator shifts the X-to-Y relationship. Mutually exclusive
+grammar of the coloring scheme makes the two route components of the
+moderation decomposition read directly: if both arms of a mediator
+carry visible weight in one of the two graphs, that gold--black or
+black--gold chain identifies a \emph{reason} that the moderator
+shifts the X-to-Y relationship. Mutually exclusive
 with \code{Z_value} and \code{Z_overlay}; nodes are drawn white in
 route views for the same reason as the Z overlay.
 }

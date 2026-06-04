@@ -547,21 +547,21 @@ The same E×V schematics from the normative section carry over once a
 moderator `Z` is in the field — every coefficient gains a "+ FZ"
 companion that captures how `Z` shifts that arm. To match the
 [field-style convention](#field-style-diagrams) used later in this
-section, every fragment colored [**limegreen**]{style="color:#32CD32"}
+section, every fragment colored [**gold**]{style="color:#F6BE00"}
 is an FZ term (the part of an arm that varies with `Z`); the leading F1
 term stays black.
 
 ```{r mod-schema-setup}
 ## Local helpers for the three moderation schematics below. Wrap a
-## fragment in limegreen to flag it as an FZ coefficient, and in light
+## fragment in gold to flag it as an FZ coefficient, and in light
 ## gray to fade it into "not part of this term".
 ## Note: starred-total cells use &#42; (HTML numeric entity for `*`)
 ## rather than a literal asterisk -- gridtext treats paired `*`
 ## characters as Markdown italic, which would break color spans that
 ## happen to bracket them.
-green <- "#32CD32"; gray <- "#E5E5E5"
-gz <- function(s) paste0("<span style='color:", green, "'>", s, "</span>")
-gr <- function(s) paste0("<span style='color:", gray,  "'>", s, "</span>")
+gold <- "#F6BE00"; gray <- "#E5E5E5"
+gz <- function(s) paste0("<span style='color:", gold, "'>", s, "</span>")
+gr <- function(s) paste0("<span style='color:", gray, "'>", s, "</span>")
 
 f1_XM <- "F<sub>1</sub>[X,M]"
 f1_MY <- "F<sub>1</sub>[M,Y]"
@@ -607,7 +607,7 @@ plotPathSchema(
 **Figure 3 — One panel per term in the decomposition.** Each panel shows
 the same triangle but fades every fragment that is *not* part of the
 term being indexed. Active F1 terms stay black, active FZ terms stay
-limegreen, and arrows whose color matches their label are the ones
+gold, and arrows whose color matches their label are the ones
 contributing to that panel's product; everything else drops to light
 gray.
 
@@ -629,7 +629,7 @@ p1 <- plotPathSchema(
   MY_label = arm_lab(f1_MY, fZ_MY, "f1"),   # f1 active -> black line
   XY_label = arm_off(f1_XY, fZ_XY),         # not in this term
   X_shape  = "rtTri", Y_shape = "lfTri",
-  XM_color = green, MY_color = "black", XY_color = gray,
+  XM_color = gold, MY_color = "black", XY_color = gray,
   title    = "Term 1:  F<sub>Z</sub>[X,M] &middot; F<sub>1</sub>[M,Y]"
 ) + ggplot2::theme(plot.title = ggtext::element_markdown(hjust = 0.5))
 
@@ -640,7 +640,7 @@ p2 <- plotPathSchema(
   MY_label = arm_lab(f1_MY, fZ_MY, "fZ"),
   XY_label = arm_off(f1_XY, fZ_XY),
   X_shape  = "rtTri", Y_shape = "lfTri",
-  XM_color = "black", MY_color = green, XY_color = gray,
+  XM_color = "black", MY_color = gold, XY_color = gray,
   title    = "Term 2:  F<sub>1</sub>[X,M] &middot; F<sub>Z</sub>[M,Y]"
 ) + ggplot2::theme(plot.title = ggtext::element_markdown(hjust = 0.5))
 
@@ -651,7 +651,7 @@ p3 <- plotPathSchema(
   MY_label = arm_off(f1_MY, fZ_MY),
   XY_label = arm_lab(f1_XY, fZ_XY, "fZ"),
   X_shape  = "rtTri", Y_shape = "lfTri",
-  XM_color = gray, MY_color = gray, XY_color = green,
+  XM_color = gray, MY_color = gray, XY_color = gold,
   title    = "Term 3:  F<sub>Z</sub>[X,Y]"
 ) + ggplot2::theme(plot.title = ggtext::element_markdown(hjust = 0.5))
 
@@ -665,7 +665,7 @@ expectation-route moderation operates through `Z` shifting `F1[X,M]`
 carrying, and the valuation route is the mirror image. Term 3 is what
 `Z` does *directly* to `Y` once the
 indirect routes are accounted for. The three terms sum to (an
-approximation of) the green Term-0 arrow in Figure 1.
+approximation of) the gold Term-0 arrow in Figure 1.
 
 **Toggleable overlay.** Side-by-side helps with comparison, but the
 three panels live on the *same* triangle — so it can be easier to see
@@ -820,16 +820,16 @@ per-mediator route effects are the pieces that sum toward it.
 
 `plotPathXMY()` carries a per-route view (`route = "expectation"` /
 `route = "valuation"`) that visualizes the two columns of the table
-below directly. Following the package's new color convention — limegreen
+below directly. Following the package's color convention — gold
 for anything that is a pure `FZ` coefficient — each route panel renders
-one arm in green and the other in black:
+one arm in gold and the other in black:
 
-- **Expectation panel:** `FZ[X,M](SRFast)` on the green left arm,
-  `F1[M,Y]` on the black right arm. A green-black chain through a
+- **Expectation panel:** `FZ[X,M](SRFast)` on the gold left arm,
+  `F1[M,Y]` on the black right arm. A gold-black chain through a
   mediator says fast drivers' *expectations* of speeding's outcomes
   shift on that mediator AND those outcomes carry weight for action.
 - **Valuation panel:** `F1[X,M]` on the black left arm, `FZ[M,Y](SRFast)`
-  on the green right arm. A black-green chain says speeding *produces*
+  on the gold right arm. A black-gold chain says speeding *produces*
   that outcome AND fast drivers *weight* it differently.
 
 A complete left-to-right path through any mediator — one where both arms

@@ -23,7 +23,7 @@ A \code{patchwork} object combining the two \code{ggplot}
 Returns a \pkg{patchwork} composition of two
 \code{\link{plotPathXMY}} panels, one per moderation route. The
 \strong{expectation} panel shows \code{FZ[X,M]} on the X-to-M arm
-(limegreen) and \code{F1[M,Y]} on the M-to-Y arm (black); the
+(gold) and \code{F1[M,Y]} on the M-to-Y arm (black); the
 \strong{valuation} panel shows the converse pairing.
 
 Reading rule: a mediator whose two arms BOTH carry visible weight in
