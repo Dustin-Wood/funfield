@@ -83,15 +83,15 @@ in `plan` -- as `<plan_label><step>` (so Plan A's four rules read
 `a1`, `a2`, `a3`, `a4`). Default `NULL` (plan edges keep their
 coefficient / condition label).}
 
-\item{plan_ramp}{Logical; when `TRUE`, the **action staircase** is coloured
-on a green ramp (the "green means go" cue): each plan edge, its
-`<plan_label><step>` label, and the **action node it fires** take a
-colour stepped along `plan_colors` by plan order (first step = the ramp's
-first colour). An action node fills with its green when it fires and is
-white otherwise; a plan edge shows its green when its condition is met and
-`potential_color` (grey) when merely potential. When `FALSE`, plan edges
-take flat `plan_color` (gold) and action nodes keep the value scale.
-Default `FALSE`.}
+\item{plan_ramp}{Logical; when `TRUE`, the **action plan's forces** are
+coloured on a green ramp (the "green means go" cue): each plan edge and its
+`<plan_label><step>` label take a colour stepped along `plan_colors` by
+plan order (first step = the ramp's first colour), shown when the edge's
+condition is met and `potential_color` (grey) when merely potential. Only
+the **forces** are recoloured --- action *nodes* keep the value scale
+(white when idle, blue on the turn they fire), so the plan adds no new node
+colour. When `FALSE`, plan edges take flat `plan_color` (gold). Default
+`FALSE`.}
 
 \item{plan_colors}{Anchor colours for the `plan_ramp`, interpolated to one
 colour per plan step. Default `c("#00FF00", "#32CD32", "#41A317")`

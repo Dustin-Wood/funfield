@@ -28,10 +28,9 @@ layout <- data.frame(
   glyph = c(NA,NA,NA,NA,NA,NA,NA,NA,NA,"bolt",NA),
   stringsAsFactors = FALSE)
 
-# make has just fired (the first action, fully on) and rig set (s2, the first
-# condition) is present: the action node should carry the green ramp's first
-# (lime) colour, and the condition node the gold ramp's first colour.
-s <- c(choice = 0, make = 1, s2 = 1, TurnOn = 0, HCoPot = 0, Pour = 0,
+# choice and make both on (so the first plan edge is active) and rig set (s2,
+# the first condition) present.
+s <- c(choice = 1, make = 1, s2 = 1, TurnOn = 0, HCoPot = 0, Pour = 0,
        HCoCup = 0, Sip = 0, HCo = 0, Energy = -0.1, L = 0)
 
 test_that("plotField returns a buildable ggplot with the new role args", {
@@ -43,7 +42,7 @@ test_that("plotField returns a buildable ggplot with the new role args", {
   expect_silent(ggplot2::ggplot_build(g))
 })
 
-test_that("plan edges step-labelled; actions green, conditions gold/orange", {
+test_that("plan colours forces (green), conditions colour nodes (gold)", {
   skip_if_not_installed("ggtext")
   g  <- plotField(model_full, field$params, s, layout,
                   plan = full, plan_label = "a", plan_ramp = TRUE,
@@ -56,12 +55,16 @@ test_that("plan edges step-labelled; actions green, conditions gold/orange", {
     if ("label" %in% names(d)) as.character(d$label)))
   expect_true(all(c("a1", "a2", "a3", "a4") %in% labs))
 
-  # The just-fired first action (make) fills with the green ramp's lime end
-  # (white -> #00FF00 at value 1); the active first condition (s2) fills with
-  # the gold ramp's first colour (#FFDF00). Both are drawn as their own
-  # constant-fill polygons, outside the value gradient.
+  # Node FILLS: the active first condition (s2) is gold (#F6BE00); the action
+  # node (make) stays on the value scale, so the green lime (#00FF00) is NOT a
+  # node fill -- the plan colours forces, not nodes.
   fills <- toupper(unlist(lapply(bd$data, function(d)
     if ("fill" %in% names(d)) as.character(d$fill))))
-  expect_true("#00FF00" %in% fills)           # lime, make just fired
-  expect_true("#F6BE00" %in% fills)           # gold, s2 present (ramp start)
+  expect_true("#F6BE00" %in% fills)           # gold, s2 condition node
+  expect_false("#00FF00" %in% fills)          # make is NOT a green node
+
+  # Edge COLOURS: the active first plan edge carries the green ramp's lime end.
+  cols <- toupper(unlist(lapply(bd$data, function(d)
+    if ("colour" %in% names(d)) as.character(d$colour))))
+  expect_true("#00FF00" %in% cols)            # green lives on the plan force
 })

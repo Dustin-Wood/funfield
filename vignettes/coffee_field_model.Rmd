@@ -57,6 +57,112 @@ time, the *same run* answers both questions you can ask of a plan: **what
 does it ultimately afford?** (read the final value) and **how does it
 unfold in time?** (read the whole trajectory).
 
+## The smallest field: prepare, then do
+
+Before the full coffee process, here is the whole idea in miniature — two
+actions and the gate between them.
+
+Many plans have a step whose only job is to make a *later* step work: you
+must **prepare** the ground before the **doing** pays off. The smallest field
+that captures this has two actions, `Prep` and `Do`, tied together by a
+single rule — `Do`'s effect is **gated** on what `Prep` produces:
+
+- `Prep` produces a state `Ready` — the preparation.
+- `Do` produces the outcome `Done`, but **only when `Ready` is on**. Written
+  as the afforded force `Done ~ Ready:Do`, the `Do → Done` push is zero until
+  `Prep` has set `Ready`.
+- `Done` is what the agent values (`L ~ Done`).
+
+```{r prepdo-field}
+library(funfield)
+
+pd_field <- labelF("
+  Ready ~ 1 * Prep      + use * Ready:Do
+  Done  ~ 1 * Ready:Do
+  L     ~ 1 * Done
+", actions = c("Prep", "Do"))
+pd_field$params["use"] <- -1
+
+cat(pd_field$model)
+```
+
+The afforded force `Done ~ Ready:Do` is the gate; the `use` term lets `Do`
+**consume** `Ready` (so once you have done the thing, the preparation is spent
+and the run settles). The policy is two rules — prepare on the agent's
+intention, do once ready:
+
+```{r prepdo-policy}
+pd_policy <- "Prep ~ 1 * choice
+              Do   ~ 1 * Ready"
+pd_s0 <- c(choice = 1, Prep = 0, Ready = 0, Do = 0, Done = 0, L = 0)
+
+pd_out <- simulateF(pd_field$model, pd_field$params, pd_s0, pd_policy,
+                    flows = "choice")
+pd_out$fired
+round(pd_out$trajectory, 2)
+```
+
+`Prep` fires first (its trigger `choice` is on), setting `Ready` at turn 1;
+that makes `Do` eligible, and at turn 2 `Do` produces `Done` — spending
+`Ready` as it goes — so `L` reaches `1`. Now skip the preparation and reach
+straight for `Do`:
+
+```{r prepdo-skip}
+pd_skip <- simulateF(pd_field$model, pd_field$params, pd_s0,
+                     "Do ~ 1 * choice", flows = "choice")
+pd_skip$fired
+pd_skip$trajectory[, "L"]
+```
+
+`Do` *does* fire — but `Ready` was never set, so the gated force stays shut,
+`Done` never moves, and `L` stays `0`. **Doing without preparing is empty
+motion.** That gap is the whole point of the primitive, and the coffee
+pipeline below is just this shape repeated four times over.
+
+**Reading the diagram.** Three colour languages run side by side, kept apart
+so they never blur. Two of them live on the **forces**, and only one extra
+colour is ever added to a **node**:
+
+- **green = the action plan's forces** ("green means go") — the policy edge
+  that fires each action, and its step label (`plan_label = "a"` numbers them
+  `a1`, `a2`). The action *nodes* themselves stay on the value scale.
+- **gold = a condition** — a state that *gates* a later force. Here the
+  condition is the one place a node takes a non-value colour: the gating state,
+  the force it opens, and that force's label all share the gold. The force is
+  light grey while the gate is shut (a *potential* path) and turns gold the
+  instant the gate opens.
+- **red–white–blue = value** for every other node — the actions, the outcome
+  `done`, and `L` — white at zero, blue as they fill.
+
+The diagram reads as a **staircase**: a policy edge runs level (from a
+condition to the action it fires), then the action's force climbs diagonally up
+to the next state; `L` sits back down at the starting level, so the diagram
+closes where it began. Step through with **← Back** / **Forward →** and watch
+the `do → done` force: grey at the start (it needs `ready`), gold the moment
+`prep` sets `ready`, then `do` fires, `done` lights, and `ready` is spent — the
+gate closing behind it.
+
+```{r prepdo-widget, eval=has_ggplot, fig.height=3.6, fig.alt="Minimal prep-and-do field drawn as a staircase: choice and prep on the bottom level, prep climbing to ready, ready and do on the next level, do climbing to done, and L back down at the starting level. The do-to-done force is grey until prep sets ready, then turns gold, then do fires and done and L light up."}
+pd_model  <- paste(pd_field$model, pd_policy, sep = "\n")
+pd_layout <- data.frame(
+  name  = c("choice", "Prep", "Ready", "Do", "Done", "L"),
+  x     = c(0,        2,      3,       5,    6,      8),
+  y     = c(0,        0,      2,       2,    4,      0),
+  shape = c("circle", "rtTri", "diamond", "rtTri", "diamond", "lfTri"),
+  label = c("choice", "prep", "ready", "do", "done", "L"),
+  stringsAsFactors = FALSE)
+
+pd_steps  <- nrow(pd_out$trajectory) - 1L
+pd_frames <- lapply(0:pd_steps, function(t) {
+  plotField(pd_model, pd_field$params, pd_out$trajectory[paste0("t=", t), ],
+            pd_layout, plan = pd_policy, plan_label = "a", plan_ramp = TRUE,
+            condition_ramp = TRUE, title = paste("t =", t))
+})
+
+plotsAsWidget(pd_frames, panel_titles = paste("Step", 0:pd_steps),
+              width = 7, height = 3.6)
+```
+
 ## Step 1: The field
 
 Each stage of the coffee process is an **afforded force**: a path that
@@ -249,30 +355,18 @@ read as strong solid lines and the energy costs (`f = -0.1`) as faint
 dashed ones. The backward **consumption** arcs bow below their forward edge
 so they do not overlay it.
 
-The diagram carries **two parallel staircases**, each on its own ramp, so the
-agent's *doing* and the field's *readiness* never blur together — and neither
-is mistaken for the red–white–blue value scale:
-
-- The **action staircase** is **green** — *green means go*. Naming this plan
-  **Plan A** (`plan_label = "a"`, `plan_ramp = TRUE`), each rule is labelled
-  by its **step** — `a1, a2, a3, a4` — and the policy edge, its label, and the
-  **action node it fires** all share a colour stepped from lime at the first
-  move to dark green at the last. An action node lights green on the turn it
-  fires; its policy edge shows green while its trigger is present and stays
-  light grey while merely *potential*.
-- The **condition staircase** is **gold → deep amber**. The **condition
-  states** — the moderators `Z` that gate each afforded force (`rig set` opens
-  turning-on, `coffee in pot` opens pouring, …) — ride a ramp from gold at the
-  first condition to a darker amber at the last (`condition_ramp = TRUE`). Each
-  condition shares its colour with the force it opens and that force's label:
-  the node fills gold when the state is present (white when absent), and its
-  force shows the colour once the condition is met (grey while potential).
-
-Everything else — the value readout `L`, the cost ledger `Energy`, and the
-bare production forces — keeps the diverging **red–white–blue** value scale
-(negative red, zero white, positive blue). So three colour languages run
-without collision: **green** for what the agent *does*, **gold/amber** for
-what the situation has made *ready*, and **red–white–blue** for *value*.
+The three colour languages from the prep-and-do primer now run the length of
+the coffee chain, each as its own **staircase**. The **action ramp** is green
+— naming this plan **Plan A** (`plan_label = "a"`, `plan_ramp = TRUE`), its
+four moves step from lime to dark green and read `a1, a2, a3, a4` in order. The
+**condition ramp** is gold → deep amber (`condition_ramp = TRUE`): the three
+gating states (`rig set`, `coffee in pot`, `coffee in cup`) darken from gold to
+amber as you climb, each sharing its colour with the force it opens. And
+everything left over — the value readout `L`, the cost ledger `Energy`, and the
+bare production forces — keeps the diverging **red–white–blue** value scale. So
+**green** marks what the agent *does*, **gold/amber** what the situation has
+made *ready*, and **red–white–blue** what the agent *values* — no two
+collide.
 
 We seat `L` and `Energy` on the floor, level with `make`, so the diagram
 closes back where it began. For drawing, we layer the policy onto the
@@ -490,11 +584,16 @@ disp2 <- "
 disp_pol2   <- "TurnOnCM ~ 1*Prepped\nPour ~ 1*HCoPot\nSip ~ 1*HCoCup"
 disp_model2 <- paste(disp2, disp_pol2, sep = "\n")
 
+# The five preps are smushed into a fan in the bottom-left, with `Prepped` in
+# the vertical middle of that group; from there a rising staircase carries
+# brew -> pour -> sip (policy edges level, production forces diagonally up),
+# and `L` drops back to the staircase's base level.
+py <- c(0, 1.3, 2.6, 3.9, 5.2)            # prep-group rows; middle = 2.6
 layout2 <- data.frame(
   name  = c(preps, haves, "Prepped","TurnOnCM","HCoPot","Pour",
             "HCoCup","Sip","HCo","Energy","L"),
-  x     = c(rep(0,5), rep(2,5), 4.5, 6.0, 7.3, 8.6, 9.9, 11.2, 12.5, 10.0, 14.0),
-  y     = c(0,2,4,6,8, 0,2,4,6,8, 4, 5.5, 4, 5.5, 4, 5.5, 4, 0.6, 4),
+  x     = c(rep(0,5), rep(2,5), 4, 6, 7, 9, 10, 12, 13, 13, 15),
+  y     = c(py, py, 2.6, 2.6, 4.4, 4.4, 6.2, 6.2, 8.0, 2.6, 2.6),
   shape = c(rep("rtTri",5), rep("diamond",5), "diamond","rtTri","diamond",
             "rtTri","diamond","rtTri","diamond","square","lfTri"),
   label = c("add\nwater","add\ngrounds","add\nfilter","plug\nin","add\npot",
@@ -506,12 +605,12 @@ layout2 <- data.frame(
 steps2  <- nrow(out2$trajectory) - 1L
 frames2 <- lapply(0:steps2, function(t) {
   plotField(disp_model2, numeric(0), out2$trajectory[paste0("t=", t), ],
-            layout2, plan = disp_pol2, conjunctive = "Prepped",
-            node_size = 0.30, title = paste("t =", t))
+            layout2, plan = disp_pol2, plan_ramp = TRUE, condition_ramp = TRUE,
+            conjunctive = "Prepped", node_size = 0.28, title = paste("t =", t))
 })
 
 plotsAsWidget(frames2, panel_titles = paste("Step", 0:steps2),
-              width = 10, height = 6)
+              width = 11, height = 6)
 ```
 
 ## Consumption is what keeps a field bounded

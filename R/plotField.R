@@ -192,15 +192,15 @@
 #'   in `plan` -- as `<plan_label><step>` (so Plan A's four rules read
 #'   `a1`, `a2`, `a3`, `a4`). Default `NULL` (plan edges keep their
 #'   coefficient / condition label).
-#' @param plan_ramp Logical; when `TRUE`, the **action staircase** is coloured
-#'   on a green ramp (the "green means go" cue): each plan edge, its
-#'   `<plan_label><step>` label, and the **action node it fires** take a
-#'   colour stepped along `plan_colors` by plan order (first step = the ramp's
-#'   first colour). An action node fills with its green when it fires and is
-#'   white otherwise; a plan edge shows its green when its condition is met and
-#'   `potential_color` (grey) when merely potential. When `FALSE`, plan edges
-#'   take flat `plan_color` (gold) and action nodes keep the value scale.
-#'   Default `FALSE`.
+#' @param plan_ramp Logical; when `TRUE`, the **action plan's forces** are
+#'   coloured on a green ramp (the "green means go" cue): each plan edge and its
+#'   `<plan_label><step>` label take a colour stepped along `plan_colors` by
+#'   plan order (first step = the ramp's first colour), shown when the edge's
+#'   condition is met and `potential_color` (grey) when merely potential. Only
+#'   the **forces** are recoloured --- action *nodes* keep the value scale
+#'   (white when idle, blue on the turn they fire), so the plan adds no new node
+#'   colour. When `FALSE`, plan edges take flat `plan_color` (gold). Default
+#'   `FALSE`.
 #' @param plan_colors Anchor colours for the `plan_ramp`, interpolated to one
 #'   colour per plan step. Default `c("#00FF00", "#32CD32", "#41A317")`
 #'   (lime -> limegreen -> dark lime green).
@@ -421,8 +421,7 @@ plotField <- function(model, params, s, layout,
                  stringsAsFactors = FALSE)
   }
 
-  cond_color      <- character(0)   # condition -> gold-ramp colour
-  plan_node_color <- character(0)   # action node -> green-ramp colour
+  cond_color <- character(0)   # condition -> gold-ramp colour (set if ramp on)
   have_edges <- length(edge_rows) > 0L
   if (have_edges) {
     edges <- do.call(rbind, edge_rows)
@@ -473,16 +472,15 @@ plotField <- function(model, params, s, layout,
         paste0(plan_label, edges$step[edges$is_plan])
 
     ## Action staircase (green ramp). "Green means go": when `plan_ramp` is on,
-    ## each plan edge, its step label, and the action node it fires share a
-    ## colour stepped along `plan_colors` (lime -> dark green) by plan order.
-    ## Recolour the plan edges here; the matching node fills (`plan_node_color`)
-    ## are applied when the nodes are drawn.
+    ## each plan edge and its step label take a colour stepped along
+    ## `plan_colors` (lime -> dark green) by plan order. Only the FORCES are
+    ## recoloured --- the action *nodes* stay on the value scale (white when
+    ## idle, blue on the turn they fire), so green marks what the plan *does*
+    ## without adding another node colour.
     if (plan_ramp && any(edges$is_plan)) {
       pramp <- grDevices::colorRampPalette(plan_colors)(length(plan_pairs))
       ip <- which(edges$is_plan)
       edges$base[ip] <- pramp[edges$step[ip]]
-      tgt <- sub("^.*\r", "", plan_pairs)               # action node per step
-      plan_node_color <- stats::setNames(pramp[seq_along(plan_pairs)], tgt)
     }
 
     ## Condition ramp. The moderators Z that gate the afforded forces
@@ -539,13 +537,18 @@ plotField <- function(model, params, s, layout,
       edges$lw[edges$conj]   <- 1.1   # structural, not magnitude-scaled
     }
 
-    ## Backward consumption ('use') edges run anti-parallel to a forward
-    ## (plan) edge between the same two nodes and would overlay it. Draw
-    ## those --- the negative member of an anti-parallel pair --- as curved
-    ## arcs that bow clear of the straight forward edge.
+    ## Consumption ('use') edges are drawn as curved arcs, always --- so a
+    ## consumption path reads the same whether or not anything else runs
+    ## alongside it. A consumption term is `Y ~ use * Y:trigger`: the target
+    ## node `Y` is consumed by its own outflow, so it appears in its own gate.
+    ## (Also curve any other negative edge that runs anti-parallel to a forward
+    ## edge, so the two do not overlay.)
+    consumes <- mapply(function(to, g)
+      nzchar(g) && to %in% strsplit(g, ":", fixed = TRUE)[[1]],
+      edges$to, edges$gate)
     e_key <- paste(edges$from, edges$to, sep = "\r")
     e_rev <- paste(edges$to,   edges$from, sep = "\r")
-    edges$curved <- edges$coef < 0 & e_rev %in% e_key
+    edges$curved <- consumes | (edges$coef < 0 & e_rev %in% e_key)
   }
 
   ## -- Assemble ----------------------------------------------------
@@ -616,19 +619,17 @@ plotField <- function(model, params, s, layout,
       ggplot2::scale_linewidth_identity() +
       ggplot2::scale_linetype_identity()
   }
-  ## Ramped nodes leave the diverging value scale: an action node fills
-  ## white -> its green-ramp colour by how "on" it is (it fires this turn), and
-  ## a condition node fills white -> its gold-ramp colour by how present it is.
-  ## Action (plan) colours win on any name collision. Each is drawn with a
-  ## constant per-node fill (no fill aesthetic) so it sits outside the gradient
-  ## scale, and is removed from the gradient layer below.
-  special <- cond_color
-  special[names(plan_node_color)] <- plan_node_color   # plan wins on collision
+  ## Only CONDITION nodes leave the diverging value scale (one extra node
+  ## colour, to avoid a proliferation): a condition fills white -> its gold-ramp
+  ## colour by how present it is. Actions and ordinary states keep the value
+  ## scale. Each condition node is drawn with a constant per-node fill (no fill
+  ## aesthetic) so it sits outside the gradient scale, and is removed from the
+  ## gradient layer below.
   special_fill <- character(0)
-  for (nm in intersect(names(special), layout$name)) {
+  for (nm in intersect(names(cond_color), layout$name)) {
     v  <- unname(s[nm]); if (is.na(v)) v <- 0
     v  <- min(max(v, 0), 1)
-    cr <- grDevices::col2rgb(special[[nm]]) / 255
+    cr <- grDevices::col2rgb(cond_color[[nm]]) / 255
     mx <- c(1, 1, 1) + (cr[, 1] - c(1, 1, 1)) * v
     special_fill[nm] <- grDevices::rgb(mx[1], mx[2], mx[3])
   }
