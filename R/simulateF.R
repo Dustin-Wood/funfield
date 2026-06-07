@@ -54,7 +54,9 @@
 #'   (the plan): each names an action and the state variable(s) whose joint
 #'   presence makes it eligible. Coefficients are ignored --- only the
 #'   condition variables matter. A single bare variable (`make ~ choice`) is
-#'   a one-variable condition; an interaction (`Pour ~ HCoPot`) likewise.
+#'   a one-variable condition; an interaction (`Pour ~ HCoPot`) likewise. A
+#'   `planF` object may be passed instead of the string (its `$policy` is
+#'   used).
 #' @param readout Name of the node read as the value to appraise against and
 #'   to report. Default `"L"`.
 #' @param aux Character vector of **derived** field nodes that recompute each
@@ -122,6 +124,7 @@ simulateF <- function(field, params, s_0, policy,
                       warn_bounds = TRUE,
                       bound       = 1) {
 
+  if (inherits(policy, "planF")) policy <- policy$policy
   if (is.null(names(s_0)) || any(names(s_0) == ""))
     stop("`s_0` must be a fully named numeric vector.")
   if (!is.character(field)  || length(field)  != 1L)

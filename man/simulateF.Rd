@@ -34,7 +34,9 @@ action node (typically `0`) and any trigger such as `choice`.}
 (the plan): each names an action and the state variable(s) whose joint
 presence makes it eligible. Coefficients are ignored --- only the
 condition variables matter. A single bare variable (`make ~ choice`) is
-a one-variable condition; an interaction (`Pour ~ HCoPot`) likewise.}
+a one-variable condition; an interaction (`Pour ~ HCoPot`) likewise. A
+`planF` object may be passed instead of the string (its `$policy` is
+used).}
 
 \item{readout}{Name of the node read as the value to appraise against and
 to report. Default `"L"`.}

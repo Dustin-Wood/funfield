@@ -75,7 +75,7 @@ Raw ESJT Data (p, s, i, ..., Likelihood)
 
 | Group | Key Functions |
 |---|---|
-| Field construction | `prepField()`, `fieldResults()`, `impliedCov()`, `expOutcomesFF()` |
+| Field construction | `prepField()`, `fieldResults()`, `impliedCov()`, `expOutcomesFF()`, `labelF()`, `costF()`, `andF()`, `planF()` |
 | Covariance estimation | `ecov()`, `ecov_long()`, `ecov_big()`, `ecov.lmh()` |
 | Mediation/moderation | `pathXMY()` (umbrella: X→M→Y, optional moderator), `devPSI()`, `diffPSI()` |
 | Data ingestion | `esjtFromQualtrics()` — build PSI/cond/sit/traits/codebook from raw Qualtrics data + colmap |

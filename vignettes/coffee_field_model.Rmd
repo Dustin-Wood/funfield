@@ -92,15 +92,25 @@ and the run settles). The policy is two rules — prepare on the agent's
 intention, do once ready:
 
 ```{r prepdo-policy}
-pd_policy <- "Prep ~ 1 * choice
-              Do   ~ 1 * Ready"
+pd_plan <- planF("
+  Prep ~ choice   # ready the ground
+  Do   ~ Ready    # do the thing, once ready
+", label = "A")
+pd_plan
+
 pd_s0 <- c(choice = 1, Prep = 0, Ready = 0, Do = 0, Done = 0, L = 0)
 
-pd_out <- simulateF(pd_field$model, pd_field$params, pd_s0, pd_policy,
+pd_out <- simulateF(pd_field$model, pd_field$params, pd_s0, pd_plan,
                     flows = "choice")
 pd_out$fired
 round(pd_out$trajectory, 2)
 ```
+
+The policy is wrapped as a [`planF()`](../reference/planF.html) object: it
+carries the same `action ~ condition` rules but pins each to an ordered **step
+label** (`a1`, `a2`) and a short **description**, which the diagram below writes
+out as a corner **plan-list**. A `planF` stands in for the raw policy string
+anywhere the engine takes one — here in `simulateF()`.
 
 `Prep` fires first (its trigger `choice` is on), setting `Ready` at turn 1;
 that makes `Do` eligible, and at turn 2 `Do` produces `Done` — spending
@@ -124,8 +134,10 @@ so they never blur. Two of them live on the **forces**, and only one extra
 colour is ever added to a **node**:
 
 - **green = the action plan's forces** ("green means go") — the policy edge
-  that fires each action, and its step label (`plan_label = "a"` numbers them
-  `a1`, `a2`). The action *nodes* themselves stay on the value scale.
+  that fires each action, and its step label (the `planF` numbers them `a1`,
+  `a2`). The action *nodes* themselves stay on the value scale. The whole plan
+  is also written out as a **plan-list** in the upper-left corner, each step in
+  its arrow's green, and the step currently firing shown in **bold**.
 - **gold = a condition** — a state that *gates* a later force. Here the
   condition is the one place a node takes a non-value colour: the gating state,
   the force it opens, and that force's label all share the gold. The force is
@@ -143,7 +155,7 @@ the `do → done` force: grey at the start (it needs `ready`), gold the moment
 gate closing behind it.
 
 ```{r prepdo-widget, eval=has_ggplot, fig.height=3.6, fig.alt="Minimal prep-and-do field drawn as a staircase: choice and prep on the bottom level, prep climbing to ready, ready and do on the next level, do climbing to done, and L back down at the starting level. The do-to-done force is grey until prep sets ready, then turns gold, then do fires and done and L light up."}
-pd_model  <- paste(pd_field$model, pd_policy, sep = "\n")
+pd_model  <- paste(pd_field$model, pd_plan$policy, sep = "\n")
 pd_layout <- data.frame(
   name  = c("choice", "Prep", "Ready", "Do", "Done", "L"),
   x     = c(0,        2,      3,       5,    6,      8),
@@ -155,7 +167,7 @@ pd_layout <- data.frame(
 pd_steps  <- nrow(pd_out$trajectory) - 1L
 pd_frames <- lapply(0:pd_steps, function(t) {
   plotField(pd_model, pd_field$params, pd_out$trajectory[paste0("t=", t), ],
-            pd_layout, plan = pd_policy, plan_label = "a", plan_ramp = TRUE,
+            pd_layout, plan = pd_plan, plan_ramp = TRUE,
             condition_ramp = TRUE, title = paste("t =", t))
 })
 
@@ -247,27 +259,33 @@ decides which one actually fires.
 A **policy** is a set of `action ~ condition` rules: fire each action once
 its prerequisite state is present. The first action is launched not by a
 situational state but by the agent's **`choice`** to act — a one-shot
-intention that is spent the moment it sets things in motion.
+intention that is spent the moment it sets things in motion. We name this
+four-step plan **Plan A** and write it as a [`planF()`](../reference/planF.html)
+object — the same rules, plus a one-line description of each step:
 
 ```{r policies}
-full <- "
-  make   ~ 1 * choice
-  TurnOn ~ 1 * s2
-  Pour   ~ 1 * HCoPot
-  Sip    ~ 1 * HCoCup
-"
+planA <- planF("
+  make   ~ choice    # prepare coffee machine
+  TurnOn ~ s2        # once prepared, turn on
+  Pour   ~ HCoPot    # when the pot fills, pour over the cup
+  Sip    ~ HCoCup    # once the cup is full, take a sip
+", label = "A")
+planA
 ```
 
-To have something to compare against later, we also draft a **faulty**
-plan that skips a step — turning the machine on and reaching for a sip
-without ever pouring:
+`planF()` numbers the rules in order (`a1 … a4`), keeps each one's
+description, and assigns the green ramp colour the diagram will give its
+arrow — so the run, the edges, and the corner plan-list all draw from one
+object. To have something to compare against later, we also draft a
+**faulty** Plan B that skips a step — turning the machine on and reaching for
+a sip without ever pouring:
 
 ```{r policies-faulty}
-faulty <- "
-  make   ~ 1 * choice
-  TurnOn ~ 1 * s2
-  Sip    ~ 1 * HCoCup
-"
+planB <- planF("
+  make   ~ choice    # prepare coffee machine
+  TurnOn ~ s2        # once prepared, turn on
+  Sip    ~ HCoCup    # reach for a sip — but the pour never happened
+", label = "B")
 ```
 
 `simulateF()` reads only the *condition variables* of each rule (the
@@ -283,7 +301,7 @@ The agent starts committed (`choice = 1`), everything else off:
 s_0 <- c(choice = 1, make = 0, s2 = 0, TurnOn = 0, HCoPot = 0,
          Pour = 0, HCoCup = 0, Sip = 0, HCo = 0, Energy = 0, L = 0)
 
-out <- simulateF(field$model, field$params, s_0, full, flows = "choice")
+out <- simulateF(field$model, field$params, s_0, planA, flows = "choice")
 round(out$trajectory[, c("choice","make","s2","TurnOn","HCoPot",
                          "Pour","HCoCup","Sip","HCo","Energy","L")], 2)
 out$fired
@@ -326,16 +344,16 @@ the winner. It appends a do-nothing baseline by default.
 
 ```{r choose}
 chooseF(field$model, field$params, s_0,
-        policies = list(full = full, faulty = faulty), flows = "choice")
+        policies = list(A = planA, B = planB), flows = "choice")
 ```
 
 The full plan reaches coffee and, net of cost, earns `L = 0.86`; doing
 nothing reaches nothing, spends nothing, and earns `L = 0`. The telling
-row is **`faulty`**. It makes and turns on — two real actions, so it has
+row is **`B`**. It makes and turns on — two real actions, so it has
 spent `Energy = -0.2` — but never pours, so the cup is never filled, the
 `Sip → HCo` force stays gated shut, and `HCo` stays `0`. With nothing on
 the value side to show for it, its utility goes **negative**
-(`L = -0.02`): the faulty plan scores *below doing nothing*. That is the
+(`L = -0.02`): Plan B scores *below doing nothing*. That is the
 payoff of accounting for cost — without the energy term the two would tie
 at `L = 0`; with it they come apart, and inaction wins by conserving
 effort. Causal gating decides whether a plan reaches the outcome; the cost
@@ -357,23 +375,26 @@ so they do not overlay it.
 
 The three colour languages from the prep-and-do primer now run the length of
 the coffee chain, each as its own **staircase**. The **action ramp** is green
-— naming this plan **Plan A** (`plan_label = "a"`, `plan_ramp = TRUE`), its
-four moves step from lime to dark green and read `a1, a2, a3, a4` in order. The
-**condition ramp** is gold → deep amber (`condition_ramp = TRUE`): the three
-gating states (`rig set`, `coffee in pot`, `coffee in cup`) darken from gold to
-amber as you climb, each sharing its colour with the force it opens. And
-everything left over — the value readout `L`, the cost ledger `Energy`, and the
-bare production forces — keeps the diverging **red–white–blue** value scale. So
-**green** marks what the agent *does*, **gold/amber** what the situation has
-made *ready*, and **red–white–blue** what the agent *values* — no two
-collide.
+— passing `planA` as the plan (`plan_ramp = TRUE`), its four moves step from
+lime to dark green and read `a1, a2, a3, a4` in order. **Plan A** is also
+written out as a **plan-list** in the upper-left corner — each step in its
+arrow's green, and as the run steps through, the step currently firing shown in
+**bold**, so you can read the plain-language plan alongside the staircase it
+drives. The **condition ramp** is gold → deep amber (`condition_ramp = TRUE`):
+the three gating states (`rig set`, `coffee in pot`, `coffee in cup`) darken
+from gold to amber as you climb, each sharing its colour with the force it
+opens. And everything left over — the value readout `L`, the cost ledger
+`Energy`, and the bare production forces — keeps the diverging
+**red–white–blue** value scale. So **green** marks what the agent *does*,
+**gold/amber** what the situation has made *ready*, and **red–white–blue** what
+the agent *values* — no two collide.
 
 We seat `L` and `Energy` on the floor, level with `make`, so the diagram
 closes back where it began. For drawing, we layer the policy onto the
 field so its gold intention-edges appear:
 
 ```{r layout}
-model_full <- paste(field$model, full, sep = "\n")
+model_full <- paste(field$model, planA$policy, sep = "\n")
 
 layout <- data.frame(
   name  = c("choice","make","s2","TurnOn","HCoPot",
@@ -403,7 +424,7 @@ cost:
 steps  <- nrow(out$trajectory) - 1L
 frames <- lapply(0:steps, function(t) {
   plotField(model_full, field$params, out$trajectory[paste0("t=", t), ],
-            layout, plan = full, plan_label = "a", plan_ramp = TRUE,
+            layout, plan = planA, plan_ramp = TRUE,
             condition_ramp = TRUE, title = paste("t =", t))
 })
 
@@ -422,7 +443,7 @@ shows **where** it breaks. It commits to making, turning on, and
 (`b1, b2, b3`) where Plan A had four:
 
 ```{r faulty-run}
-out_np <- simulateF(field$model, field$params, s_0, faulty, flows = "choice")
+out_np <- simulateF(field$model, field$params, s_0, planB, flows = "choice")
 round(out_np$trajectory[, c("make","s2","TurnOn","HCoPot","Pour",
                             "HCoCup","Sip","HCo","Energy","L")], 2)
 out_np$fired
@@ -437,11 +458,11 @@ already cost `Energy = -0.2`, so the readout settles **negative**
 and halts — the staircase ends mid-flight:
 
 ```{r faulty-widget, eval=has_ggplot, fig.alt="Interactive staircase field diagram for the faulty (no-pour) plan; the lit token climbs to coffee-in-pot and halts there, with the pour, cup, sip and have-coffee stages left dark."}
-model_np  <- paste(field$model, faulty, sep = "\n")
+model_np  <- paste(field$model, planB$policy, sep = "\n")
 steps_np  <- nrow(out_np$trajectory) - 1L
 frames_np <- lapply(0:steps_np, function(t) {
   plotField(model_np, field$params, out_np$trajectory[paste0("t=", t), ],
-            layout, plan = faulty, plan_label = "b", plan_ramp = TRUE,
+            layout, plan = planB, plan_ramp = TRUE,
             condition_ramp = TRUE, title = paste("t =", t))
 })
 
@@ -568,6 +589,13 @@ numeric edges of an additive relationship, which would misleadingly read as
 regression weights. (For the diagram we show the
 conjunction as a direct five-way merge; under the hood it is the pairwise
 chain `andF()` built.)
+
+The five preps are a single *phase* of any-order moves rather than an ordered
+sequence, so they don't slot cleanly into the `a1, a2, …` numbering a linear
+plan gets. A natural extension is to label such a phase with a shared step and
+a sub-letter — `a1a, a1b, a1c, …` for the interchangeable preps — which a
+later turn on the plan object will support; for now this fan is drawn without a
+corner plan-list.
 
 ```{r blowout-widget, eval=has_ggplot, fig.alt="Interactive field diagram for the blown-out prep: five prep actions in parallel converge on a 'prepped' node, then a linear brew-pour-sip staircase to coffee."}
 disp2 <- "

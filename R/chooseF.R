@@ -36,7 +36,8 @@
 #' @param s_0 Named numeric vector of the initial state, including any
 #'   trigger such as `choice = 1`.
 #' @param policies A **named** list of candidate policies, each a
-#'   `lavaan`-syntax string of `action ~ condition` rows (see [simulateF()]).
+#'   `lavaan`-syntax string of `action ~ condition` rows (see [simulateF()])
+#'   or a `planF` object (its `$policy` is used).
 #' @param readout Name of the node read as expected utility and used to pick
 #'   the chosen policy. Default `"L"`.
 #' @param report Character vector of node names to tabulate at the final
@@ -119,6 +120,7 @@ chooseF <- function(field, params, s_0, policies,
   ## Run each policy to its final (quiescent) state; read the report nodes.
   finals <- lapply(names(policies), function(nm) {
     pl <- policies[[nm]]
+    if (inherits(pl, "planF")) pl <- pl$policy
     if (!is.character(pl) || length(pl) != 1L)
       stop("Policy '", nm, "' must be a single model string.")
     o <- simulateF(field, params, s_0, pl, readout = readout, flows = flows,

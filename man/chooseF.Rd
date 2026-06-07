@@ -30,7 +30,8 @@ right-hand sides.}
 trigger such as `choice = 1`.}
 
 \item{policies}{A **named** list of candidate policies, each a
-`lavaan`-syntax string of `action ~ condition` rows (see [simulateF()]).}
+`lavaan`-syntax string of `action ~ condition` rows (see [simulateF()])
+or a `planF` object (its `$policy` is used).}
 
 \item{readout}{Name of the node read as expected utility and used to pick
 the chosen policy. Default `"L"`.}

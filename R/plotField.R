@@ -33,6 +33,45 @@
   list(px = cx + bx * s, py = cy + by * s)
 }
 
+## A hollow "block arrow" silhouette traced along a sampled path: a thin
+## rectangular shaft of half-width `hw` that opens into a triangular head
+## (half-width `hh`, length `hl`) at the tip. Returned as one closed polygon
+## (`px`, `py`) so it can be drawn with a grey outline and white fill to mark a
+## *potential* (not-yet-active) path. `NULL` for a degenerate path.
+.block_arrow <- function(px, py, hw, hh, hl) {
+  n <- length(px)
+  if (n < 2L) return(NULL)
+  dx <- diff(px); dy <- diff(py)
+  seg <- sqrt(dx^2 + dy^2)
+  L   <- sum(seg)
+  if (L < 1e-9) return(NULL)
+  hl <- min(hl, L * 0.85)                 # head no longer than the whole arrow
+  cs <- c(0, cumsum(seg))
+  base_s <- L - hl                        # arc-length where the head begins
+  keep <- which(cs <= base_s); if (!length(keep)) keep <- 1L
+  j <- max(keep)
+  if (j < n) {
+    t  <- (base_s - cs[j]) / seg[j]
+    bx <- px[j] + t * dx[j]; by <- py[j] + t * dy[j]
+  } else { bx <- px[n]; by <- py[n] }
+  shx <- c(px[keep], bx); shy <- c(py[keep], by)   # shaft path to the head base
+  m <- length(shx)
+  nx <- ny <- numeric(m)                  # left-hand unit normal per shaft point
+  for (k in seq_len(m)) {
+    if      (k == 1L) { tx <- shx[2] - shx[1];     ty <- shy[2] - shy[1] }
+    else if (k == m)  { tx <- shx[m] - shx[m - 1]; ty <- shy[m] - shy[m - 1] }
+    else              { tx <- shx[k+1] - shx[k-1]; ty <- shy[k+1] - shy[k-1] }
+    tl <- sqrt(tx^2 + ty^2); if (tl < 1e-9) tl <- 1
+    nx[k] <- -ty / tl; ny[k] <- tx / tl
+  }
+  bnx <- nx[m]; bny <- ny[m]              # normal at the head base (for wings)
+  tipx <- px[n]; tipy <- py[n]
+  left_x  <- shx + nx * hw; left_y  <- shy + ny * hw
+  right_x <- shx - nx * hw; right_y <- shy - ny * hw
+  list(px = c(left_x, bx + bnx * hh, tipx, bx - bnx * hh, rev(right_x)),
+       py = c(left_y, by + bny * hh, tipy, by - bny * hh, rev(right_y)))
+}
+
 ## Sample an edge as a path of points plus its unit end-tangent. A straight
 ## edge is the two endpoints; a curved edge is a quadratic Bezier whose
 ## control point is offset perpendicular to the chord by `curvature`, which
@@ -182,10 +221,13 @@
 #'   the shape and no caption is placed beneath it. The body is still
 #'   value-shaded like any other node --- e.g. an `Energy` node drawn as a
 #'   square holding a lightning bolt that reddens as energy is spent.
-#' @param plan Optional `lavaan`-syntax sub-model string. Edges whose
-#'   source -> target identity appears in `plan` take `plan_color` as their
-#'   base colour. Typically the action-plan half of a stitched model.
-#'   Default `NULL` (no gold edges).
+#' @param plan Optional `lavaan`-syntax sub-model string, or a [planF()]
+#'   object. Edges whose source -> target identity appears in the plan take
+#'   `plan_color` as their base colour. Typically the action-plan half of a
+#'   stitched model. When a `planF` is supplied, its `$policy` supplies those
+#'   edges, its `$prefix` defaults `plan_label`, and its step descriptions
+#'   drive the corner **plan-list** (see `plan_legend`). Default `NULL` (no
+#'   gold edges).
 #' @param plan_label Optional single-character prefix naming the plan (e.g.
 #'   `"a"` for "Plan A"). When supplied, each plan edge is labelled by its
 #'   **step** in the plan -- the order its `action ~ condition` rule appears
@@ -279,11 +321,35 @@
 #' @param arrow_gap Distance (data units) the head end is pulled back from
 #'   the node perimeter, so the arrowhead tip rests on the outline rather
 #'   than poking inside. Default `0.06`.
+#' @param hollow_potential Logical; when `TRUE` (default), a **potential**
+#'   path --- one whose condition is less than half met --- is drawn as a
+#'   **hollow block arrow**: a thin grey perimeter outline with a white
+#'   interior (a rectangular shaft opening into an arrowhead), rather than a
+#'   solid line. This keeps a merely available path from blending with a faint
+#'   small-magnitude *active* force, which keeps its solid colour-filled line.
+#'   Conjunctive (dotted) edges are exempt. Set `FALSE` to draw every edge as a
+#'   solid line.
 #' @param edge_labels Logical: label each drawn edge with its resolved
 #'   force level. Default `TRUE`.
 #' @param edge_label_fmt Function formatting the resolved coefficient for
 #'   the edge label. Default the no-leading-zero house style with trailing
 #'   zeros trimmed (`1`, `.9`, `-.1`).
+#' @param plan_legend Logical; when `TRUE` (default) and `plan` is a [planF()]
+#'   object, draw the **plan-list** in the upper-left corner: a "Plan <label>"
+#'   heading then one line per step (`a1: prepare coffee machine`, ...), each in
+#'   the green ramp colour of its arrow, with the step whose policy arrow is
+#'   **active** in this frame --- its condition is met, so it is the action the
+#'   agent intends next --- shown in **bold**. Has no effect for a plain-string
+#'   `plan`.
+#' @param plan_legend_x,plan_legend_y Data coordinates of the plan-list's
+#'   top-left anchor. Default `NULL` --- the layout's upper-left
+#'   (`min(x)`, `max(y)`), which the staircase layouts leave empty.
+#' @param plan_legend_size Text size for the plan-list. Default `3.2`.
+#' @param plan_legend_title Heading for the plan-list. Default `NULL` ---
+#'   `"Plan <label>"` from the `planF` object.
+#' @param active_min Minimum activation of a plan step's condition
+#'   (`prod(s[condition])`) for it to count as the **active** step --- the one
+#'   bolded in the plan-list and lit green in the diagram. Default `0.5`.
 #' @param title Optional plot title.
 #'
 #' @return A `ggplot` object.
@@ -337,13 +403,30 @@ plotField <- function(model, params, s, layout,
                       arrow_size      = 0.26,
                       arrow_stroke    = 0.8,
                       arrow_gap       = 0.06,
+                      hollow_potential = TRUE,
                       edge_labels     = TRUE,
                       edge_label_fmt  = function(x) {
                         s <- f0(x, digits = 2)
                         s <- sub("0+$", "", s)
                         sub("\\.$", "", s)
                       },
+                      plan_legend       = TRUE,
+                      plan_legend_x     = NULL,
+                      plan_legend_y     = NULL,
+                      plan_legend_size  = 3.2,
+                      plan_legend_title = NULL,
+                      active_min        = 0.5,
                       title = NULL) {
+
+  ## A `planF` plan object carries its own policy string, step prefix, and the
+  ## per-step descriptions/colours used to draw the corner plan-list. Unpack it
+  ## here so the rest of the function sees the policy as a plain string.
+  plan_obj <- NULL
+  if (inherits(plan, "planF")) {
+    plan_obj <- plan
+    plan     <- plan_obj$policy
+    if (is.null(plan_label)) plan_label <- plan_obj$prefix
+  }
 
   if (is.null(names(s)) || any(names(s) == ""))
     stop("`s` must be a fully named numeric vector.")
@@ -389,22 +472,28 @@ plotField <- function(model, params, s, layout,
   for (i in seq_len(nrow(pt))) {
     lbl       <- pt$label[i]
     is_lab    <- !is.na(lbl) && nzchar(lbl)
+    rhs_vars  <- strsplit(pt$rhs[i], ":", fixed = TRUE)[[1]]
+    parsed    <- .field_parse_label(lbl)
+    ## Source comes from the label; failing that, the convention places
+    ## the action/source last (`Z:X`), so fall back to the final rhs var.
+    src     <- if (!is.null(parsed)) parsed$source else rhs_vars[length(rhs_vars)]
+    gate    <- setdiff(rhs_vars, src)
+    pair    <- paste(src, pt$lhs[i], sep = "\r")
+    is_plan <- pair %in% plan_pairs
+    step    <- if (is_plan) match(pair, plan_pairs) else NA_integer_
+    ## Resolve the edge's coefficient: from `params` for a labelled term, from
+    ## the fixed start value for a `c * X` term, and --- so a bare policy edge
+    ## (`Do ~ Ready`, no coefficient) still draws --- a nominal `1` for a
+    ## recognised plan edge. Any other free/unfixed term has no force to show.
     if (is_lab) {
       if (!lbl %in% names(params)) next
       coef <- params[[lbl]]
     } else if (pt$free[i] == 0 && !is.na(pt$ustart[i])) {
       coef <- pt$ustart[i]                       # fixed structural coef
+    } else if (is_plan) {
+      coef <- 1                                  # bare policy edge: nominal 1
     } else next
-    rhs_vars <- strsplit(pt$rhs[i], ":", fixed = TRUE)[[1]]
-    parsed   <- .field_parse_label(lbl)
-    ## Source comes from the label; failing that, the convention places
-    ## the action/source last (`Z:X`), so fall back to the final rhs var.
-    src <- if (!is.null(parsed)) parsed$source else rhs_vars[length(rhs_vars)]
-    gate <- setdiff(rhs_vars, src)
     if (is.na(coef) || abs(coef) <= edge_min) next   # no structural force
-    pair    <- paste(src, pt$lhs[i], sep = "\r")
-    is_plan <- pair %in% plan_pairs
-    step    <- if (is_plan) match(pair, plan_pairs) else NA_integer_
     ## Activation: how "on" the path's condition is. A gated situation force
     ## (`Y ~ Z:X`) is afforded to the degree its gate `Z` is present; a plan
     ## rule (`action ~ condition`) to the degree its condition (the source)
@@ -511,6 +600,7 @@ plotField <- function(model, params, s, layout,
     ## interpolate. So a path appears as soon as it exists in the model and
     ## darkens to black exactly when its condition is met.
     mag_ratio   <- pmin(abs(edges$coef) / edge_scale_max, 1)
+    edges$mag_ratio <- mag_ratio
     edges$lw    <- mag_ratio^1.4 * (edge_linewidth - 0.45) + 0.45
     edges$lty   <- ifelse(edges$coef < 0, "dashed", "solid")
 
@@ -527,6 +617,15 @@ plotField <- function(model, params, s, layout,
     act <- pmin(pmax(ifelse(is.na(act), 0, act), 0), 1)
     mix <- pot_rgb + (active_rgb - pot_rgb) * act
     edges$ecol <- grDevices::rgb(mix[, 1], mix[, 2], mix[, 3])
+
+    ## Potential (not-yet-active) paths are drawn as a *hollow block arrow* --- a
+    ## thin grey outline with a white interior (a rectangular shaft opening into
+    ## an arrowhead) --- rather than a solid line. This keeps a merely available
+    ## path from blending with a faint small-magnitude *active* force, which
+    ## keeps its solid, colour-filled line. A path counts as potential when its
+    ## condition is less than half on. Conjunctive (dotted) edges keep their
+    ## product styling rather than becoming a block arrow.
+    edges$hollow <- hollow_potential & act < 0.5 & !edges$conj
 
     ## Conjunctive ("joint") inputs: edges into a node that fires only when
     ## *all* of them are on are drawn dotted (a product, not an additive
@@ -572,22 +671,45 @@ plotField <- function(model, params, s, layout,
                  edges$ey[i] - d0$diry * arrow_gap, cv)
     })
 
-    shaft_df <- do.call(rbind, lapply(seq_len(nrow(edges)), function(i) {
-      g <- geoms[[i]]
-      data.frame(id = i, x = g$x, y = g$y, ecol = edges$ecol[i],
-                 lw = edges$lw[i], lty = edges$lty[i],
-                 stringsAsFactors = FALSE)
-    }))
-    tip_df <- do.call(rbind, lapply(seq_len(nrow(edges)), function(i) {
-      g  <- geoms[[i]]; n <- length(g$x)
-      ex <- g$x[n]; ey <- g$y[n]
-      data.frame(id = i,
-                 x  = ex - g$dirx * arrow_size,
-                 y  = ey - g$diry * arrow_size,
-                 xe = ex, ye = ey,
-                 ecol = edges$ecol[i], lw = edges$lw[i],
-                 stringsAsFactors = FALSE)
-    }))
+    ## Active / structural forces (`solid`) are drawn as a line shaft plus a
+    ## solid closed arrowhead; potential forces (`hollow`) are drawn as an
+    ## outlined block-arrow polygon (grey perimeter, white fill). Split them.
+    solid_idx  <- which(!edges$hollow)
+    hollow_idx <- which( edges$hollow)
+
+    shaft_df <- if (length(solid_idx))
+      do.call(rbind, lapply(solid_idx, function(i) {
+        g <- geoms[[i]]
+        data.frame(id = i, x = g$x, y = g$y, ecol = edges$ecol[i],
+                   lw = edges$lw[i], lty = edges$lty[i],
+                   stringsAsFactors = FALSE)
+      })) else NULL
+    tip_df <- if (length(solid_idx))
+      do.call(rbind, lapply(solid_idx, function(i) {
+        g  <- geoms[[i]]; n <- length(g$x)
+        ex <- g$x[n]; ey <- g$y[n]
+        data.frame(id = i,
+                   x  = ex - g$dirx * arrow_size,
+                   y  = ey - g$diry * arrow_size,
+                   xe = ex, ye = ey,
+                   ecol = edges$ecol[i], lw = edges$lw[i],
+                   stringsAsFactors = FALSE)
+      })) else NULL
+
+    ## Hollow block-arrow polygons. The shaft half-width grows a little with the
+    ## force magnitude (so a strong potential force is a wider hollow arrow), and
+    ## the head fans out past it; all in data units, scaling with `node_size`.
+    block_df <- if (length(hollow_idx))
+      do.call(rbind, lapply(hollow_idx, function(i) {
+        g  <- geoms[[i]]
+        hw <- node_size * (0.05 + 0.10 * edges$mag_ratio[i])
+        ba <- .block_arrow(g$x, g$y, hw,
+                           hh = node_size * 0.30, hl = node_size * 0.55)
+        if (is.null(ba)) return(NULL)
+        data.frame(id = i, x = ba$px, y = ba$py, ecol = edges$ecol[i],
+                   stringsAsFactors = FALSE)
+      })) else NULL
+
     ## Force-level label sits on the shaft midpoint --- the mean of the two
     ## endpoints for a straight edge, the arc's mid-sample for a curved one
     ## --- formatted in the house no-leading-zero style.
@@ -600,21 +722,30 @@ plotField <- function(model, params, s, layout,
     }))
     lab_df <- lab_df[!is.na(lab_df$elab) & nzchar(lab_df$elab), , drop = FALSE]
 
-    p <- p +
-      ggplot2::geom_path(
+    head_closed <- grid::arrow(length = grid::unit(arrow_inches, "inches"),
+                               type = "closed")
+    ## Hollow block arrows first (so any active edge sits on top of them).
+    if (!is.null(block_df) && nrow(block_df))
+      p <- p + ggplot2::geom_polygon(
+        data = block_df,
+        ggplot2::aes(x = .data$x, y = .data$y, group = .data$id,
+                     colour = .data$ecol),
+        fill = "white", linewidth = 0.5)
+    if (!is.null(shaft_df))
+      p <- p + ggplot2::geom_path(
         data = shaft_df,
         ggplot2::aes(x = .data$x, y = .data$y, group = .data$id,
                      colour = .data$ecol, linewidth = .data$lw,
                      linetype = .data$lty),
-        lineend = "butt", linejoin = "round") +
-      ggplot2::geom_segment(
+        lineend = "butt", linejoin = "round")
+    if (!is.null(tip_df))
+      p <- p + ggplot2::geom_segment(
         data = tip_df,
         ggplot2::aes(x = .data$x, y = .data$y, xend = .data$xe, yend = .data$ye,
                      colour = .data$ecol),
-        linewidth = arrow_stroke,
-        arrow = grid::arrow(length = grid::unit(arrow_inches, "inches"),
-                            type = "closed"),
-        lineend = "butt", linejoin = "mitre") +
+        linewidth = arrow_stroke, arrow = head_closed,
+        lineend = "butt", linejoin = "mitre")
+    p <- p +
       ggplot2::scale_colour_identity() +
       ggplot2::scale_linewidth_identity() +
       ggplot2::scale_linetype_identity()
@@ -695,6 +826,48 @@ plotField <- function(model, params, s, layout,
                    colour = .data$ecol),
       size = edge_label_size, label.size = 0,
       label.padding = grid::unit(0.1, "lines"), fill = "white")
+  }
+  ## Corner plan-list. When a `planF` object is supplied, write the whole plan
+  ## out in the upper-left: a "Plan A" heading then one line per step, each in
+  ## its arrow's ramp colour, with the *active* step (the plan action whose
+  ## state is on in this frame) bolded. Built as a single multi-line
+  ## `ggtext::geom_richtext` so the per-line colours and bolding render as HTML.
+  if (!is.null(plan_obj) && plan_legend) {
+    st     <- plan_obj$steps
+    ## Bold the step whose policy arrow is *active* --- its condition is
+    ## currently met --- which is the action the agent intends to do next, and
+    ## keeps the bolded step in lock-step with the green arrow that lights for
+    ## it. (This is the same activation `prod(s[condition])` that colours the
+    ## edge, not whether the action has already fired.)
+    act_of <- function(cond) {
+      cv <- trimws(sub("^.*\\*", "", strsplit(cond, ":", fixed = TRUE)[[1]]))
+      v  <- s[cv]
+      if (any(is.na(v))) 0 else prod(v)
+    }
+    active <- vapply(st$condition, act_of, numeric(1)) >= active_min
+    desc   <- ifelse(is.na(st$desc) | !nzchar(st$desc),
+                     paste(st$action, "~", st$condition), st$desc)
+    body   <- sprintf("<span style='color:%s'>%s%s: %s%s</span>",
+                      st$color,
+                      ifelse(active, "<b>", ""),
+                      st$step, desc,
+                      ifelse(active, "</b>", ""))
+    ttl    <- if (is.null(plan_legend_title)) paste("Plan", plan_obj$label)
+              else plan_legend_title
+    ## Heading in the green of the ramp's midpoint, so "Plan A" reads as the
+    ## plan's own colour rather than a neutral black.
+    mid_col <- grDevices::colorRampPalette(plan_obj$plan_colors)(3)[2]
+    ttl_html <- sprintf("<span style='color:%s'><b>%s</b></span>", mid_col, ttl)
+    html   <- paste(c(ttl_html, body), collapse = "<br>")
+    lx     <- if (is.null(plan_legend_x)) min(layout$x) else plan_legend_x
+    ly     <- if (is.null(plan_legend_y)) max(layout$y) else plan_legend_y
+    leg_df <- data.frame(x = lx, y = ly, label = html, stringsAsFactors = FALSE)
+    p <- p + ggtext::geom_richtext(
+      data = leg_df,
+      ggplot2::aes(x = .data$x, y = .data$y, label = .data$label),
+      hjust = 0, vjust = 1, size = plan_legend_size, label.size = 0,
+      label.padding = grid::unit(0.2, "lines"), fill = NA,
+      inherit.aes = FALSE)
   }
   p +
     ggplot2::coord_equal(clip = "off") +
