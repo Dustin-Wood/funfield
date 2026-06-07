@@ -576,9 +576,15 @@ plotField <- function(model, params, s, layout,
     ## (`Y ~ Z:X`) carry a gold -> orange colour, ordered by appearance, shared
     ## by the condition node, the gated force it opens, and that force's label.
     ## Recolour the gated (non-plan) edges here; node fills are held in
-    ## `cond_color` and applied when the nodes are drawn.
+    ## `cond_color` and applied when the nodes are drawn. A self-consumption
+    ## term (`Y ~ use * Y:trigger`) puts the *target* in its own gate; that is
+    ## an outflow, not a moderator, so exclude it -- otherwise a consumed stock
+    ## would be mis-coloured as a condition node.
     if (condition_ramp) {
-      gidx <- which(nzchar(edges$gate) & !edges$is_plan)
+      selfcons <- mapply(function(to, g)
+        nzchar(g) && to %in% strsplit(g, ":", fixed = TRUE)[[1]],
+        edges$to, edges$gate)
+      gidx <- which(nzchar(edges$gate) & !edges$is_plan & !selfcons)
       cond_order <- unique(unlist(
         strsplit(edges$gate[gidx], ":", fixed = TRUE)))
       if (length(cond_order)) {

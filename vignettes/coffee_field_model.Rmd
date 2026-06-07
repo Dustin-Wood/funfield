@@ -641,6 +641,175 @@ plotsAsWidget(frames2, panel_titles = paste("Step", 0:steps2),
               width = 11, height = 6)
 ```
 
+## Step 8: Unpacking the conjunction into a process
+
+Step 7 compressed the whole coffee maker into a single conjunction: five
+conditions met, `Prepped` fires, one `TurnOnCM` step turns the prepped machine
+into a pot of coffee. But a drip machine does not check five boxes and brew in a
+single motion --- it runs a *sequence*, and each condition enters the story at
+its own stage. Power heats the plate; the hot plate boils the water; the hot
+water wets the grounds; the steeped slurry drips through the filter; the drips
+collect in the pot. The single `turn on -> pot coffee` step is itself a little
+process, and we can **blow it up** the same way we blew up the prep --- except
+this time the five conditions are not interchangeable, they are *ordered gates*
+along a chain.
+
+Each stage is an **internal action** of the machine: a prior machine-state
+drives an action which, gated by the relevant condition, produces the next
+machine-state and empties the one before it --- `[state -> action -> state]`,
+one rung per turn. These are the machine's own moves rather than the agent's, so
+they cost no effort; the agent's one overt act is pressing the button.
+
+```{r step8-field}
+machine  <- c("IsHotCM", "HotWaterCM", "HotSlurryCM", "DripCoffeeCM")
+actions3 <- c(preps, "TurnOnCM", "heatW", "wetG", "drip", "fill")
+prepped3 <- andF("Prepped", haves)          # the AND, built pairwise as before
+
+field3 <- labelF(paste("
+  HasWater   ~ 1 * AddWater + use * HasWater:heatW
+  HasGrounds ~ 1 * AddGrounds
+  HasFilter  ~ 1 * AddFilter
+  HasPower   ~ 1 * PlugIn
+  HasPot     ~ 1 * AddPot
+  IsHotCM      ~ 1 * HasPower:TurnOnCM  + use * IsHotCM:heatW
+  HotWaterCM   ~ 1 * HasWater:heatW     + use * HotWaterCM:wetG
+  HotSlurryCM  ~ 1 * HasGrounds:wetG    + use * HotSlurryCM:drip
+  DripCoffeeCM ~ 1 * HasFilter:drip     + use * DripCoffeeCM:fill
+  HCoPot       ~ 1 * HasPot:fill",
+  prepped3$model,
+  costF(c(preps, "TurnOnCM"), cost = -0.1),
+  "L ~ 0.9 * HCoPot + 0.1 * Energy", sep = "\n"),
+  actions = actions3)
+field3$params["use"] <- -1
+```
+
+Two choices make the chain **self-limiting** without any one-shot token.
+Brewing is gated on the full conjunction (`TurnOnCM ~ Prepped`), and heating
+**consumes the water** --- it boils out of the reservoir and through the machine
+(`use * HasWater:heatW`). The moment `heatW` fires the water is gone, `Prepped`
+is no longer satisfied, and the button cannot start a second brew.
+
+```{r step8-policy}
+policy3 <- "
+  AddWater   ~ toWater
+  AddGrounds ~ toGrounds
+  AddFilter  ~ toFilter
+  PlugIn     ~ toPower
+  AddPot     ~ toPot
+  TurnOnCM   ~ Prepped
+  heatW      ~ IsHotCM
+  wetG       ~ HotWaterCM
+  drip       ~ HotSlurryCM
+  fill       ~ DripCoffeeCM
+"
+s3_0 <- c(todo,
+          setNames(rep(0, length(haves)),        haves),
+          setNames(rep(0, length(prepped3$aux)), prepped3$aux),
+          setNames(rep(0, length(machine)),      machine),
+          setNames(rep(0, length(actions3)),     actions3),
+          HCoPot = 0, Energy = 0, L = 0)
+```
+
+`aux = prepped3$aux` again marks the conjunction nodes as derived; the machine
+states are ordinary latching stocks, each emptied by the next internal action.
+
+```{r step8-run}
+out3 <- simulateF(field3$model, field3$params, s3_0, policy3,
+                  aux = prepped3$aux, flows = names(todo), max_turns = 20)
+round(out3$trajectory[, c("HasWater", "Prepped", "IsHotCM", "HotWaterCM",
+                          "HotSlurryCM", "DripCoffeeCM", "HCoPot", "L")], 2)
+out3$fired
+```
+
+The five preps go first, in any order, then `TurnOnCM` heats the plate. From
+there the machine climbs on its own --- `heatW`, `wetG`, `drip`, `fill`, one
+rung per turn --- and the run halts the moment coffee reaches the pot, ten turns
+in. Watch `HasWater` and `Prepped`: both fall to `0` at the heating step, which
+is why the button never fires twice. (The button's energy cost helps too: on
+the one turn that both the button and `heatW` are eligible, the free machine
+step yields the slightly higher `L`, so the machine advances rather than
+re-brewing.)
+
+Drawn, the single brew arrow of Step 7 becomes a **staircase**. The left fan is
+kept exactly as before --- the adds still feed the five conditions, which still
+converge on `prepped` --- but `prepped` now does no production work: the
+*individual* conditions open the staircase forces. Two edge styles carry the
+climb, a convention worth stating in general for these diagrams: a
+**`condition -> action`** edge (the plan saying "now you may act") runs
+**level**, in green; an **`action -> condition`** edge (the force the act
+exerts on the world) runs **diagonally up**, in the gold-to-amber of the
+condition that gates it. Read as treads and risers, the machine becomes a
+literal flight of stairs.
+
+```{r step8-widget, eval=has_ggplot, fig.alt="Interactive field diagram unpacking the prepped conjunction into a drip-brew process: the Step 7 fan of conditions feeds a now-inert 'prepped' node, and the single brew step is blown up into a rising staircase of internal machine actions, each gated by one condition in its own gold-to-amber shade, with a consumption arc returning the water as it heats."}
+disp3 <- "
+  HasWater   ~ 1*AddWater + -1*HasWater:heatW
+  HasGrounds ~ 1*AddGrounds
+  HasFilter  ~ 1*AddFilter
+  HasPower   ~ 1*PlugIn
+  HasPot     ~ 1*AddPot
+  prepped ~ 1*HasWater + 1*HasGrounds + 1*HasFilter + 1*HasPower + 1*HasPot
+  IsHotCM      ~ 1*HasPower:TurnOnCM
+  HotWaterCM   ~ 1*HasWater:heatW
+  HotSlurryCM  ~ 1*HasGrounds:wetG
+  DripCoffeeCM ~ 1*HasFilter:drip
+  HCoPot       ~ 1*HasPot:fill
+  L ~ 0.9*HCoPot"
+disp_pol3 <- "
+  TurnOnCM ~ 1*prepped
+  heatW ~ 1*IsHotCM
+  wetG  ~ 1*HotWaterCM
+  drip  ~ 1*HotSlurryCM
+  fill  ~ 1*DripCoffeeCM"
+disp_model3 <- paste(disp3, disp_pol3, sep = "\n")
+
+# `prepped` is now inert; show it as the AND of the five conditions (blue while
+# they all hold, white once heating spends the water).
+condcols <- c("HasWater", "HasGrounds", "HasFilter", "HasPower", "HasPot")
+traj3 <- cbind(out3$trajectory,
+               prepped = apply(out3$trajectory[, condcols], 1, prod))
+
+# Left fan as in Step 7, but the conditions are ordered by their place in the
+# PROCESS (power lowest ... pot highest) so the fan ascends in step with the
+# risers. The single brew arrow is blown up into a staircase: treads
+# (condition -> action) level, risers (action -> condition) diagonally up.
+fy <- c(1.3, 2.6, 3.9, 0, 5.2)            # rows for water, grounds, filter, power, pot
+bx <- 6; by <- 2.6; run <- 1.4; rise <- 0.9
+ax <- function(k) bx + (k - 1) * 2 * run; ay <- function(k) by + (k - 1) * rise
+yx <- function(k) ax(k) + run;            yy <- function(k) ay(k) + rise
+layout3 <- data.frame(
+  name = c(preps, haves, "prepped",
+           "TurnOnCM", "heatW", "wetG", "drip", "fill",
+           "IsHotCM", "HotWaterCM", "HotSlurryCM", "DripCoffeeCM", "HCoPot", "L"),
+  x = c(rep(0, 5), rep(2, 5), 4, ax(1:5), yx(1:5), yx(5) + run),
+  y = c(fy, fy, 2.6, ay(1:5), yy(1:5), yy(5)),
+  shape = c(rep("rtTri", 5), rep("diamond", 5), "diamond",
+            rep("rtTri", 5), rep("diamond", 5), "lfTri"),
+  label = c("add\nwater", "add\ngrounds", "add\nfilter", "plug\nin", "add\npot",
+            "water", "grounds", "filter", "power", "pot", "prepped",
+            "turn\non", "heat", "wet", "drip", "fill",
+            "hot\nplate", "hot\nwater", "slurry", "drip\ncoffee", "pot\ncoffee", "L"),
+  stringsAsFactors = FALSE)
+
+steps3  <- nrow(traj3) - 1L
+frames3 <- lapply(0:steps3, function(t) {
+  plotField(disp_model3, numeric(0), traj3[paste0("t=", t), ], layout3,
+            plan = disp_pol3, plan_ramp = TRUE, condition_ramp = TRUE,
+            conjunctive = "prepped", node_size = 0.30, title = paste("t =", t))
+})
+plotsAsWidget(frames3, panel_titles = paste("Step", 0:steps3),
+              width = 12, height = 7)
+```
+
+The conditions, ordered bottom-to-top by their place in the process, each light
+their own riser in their own amber; `prepped` sits inert at the elbow, blue
+while the five hold and white the instant the water is spent. The long dashed
+arc curving from `heat` back to `water` is that water leaving --- the one
+consumption that, by breaking the conjunction, keeps the brew to a single pot.
+This is a first pass at the expansion: the machine's other ingredients are not
+yet spent the way the water is, so the process model is faithful in shape more
+than in full bookkeeping --- a thread to pull on later.
+
 ## Consumption is what keeps a field bounded
 
 `simulateF()` does **not** clamp. Functional-field state is expected to
