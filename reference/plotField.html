@@ -111,6 +111,7 @@ throughout and the active sub-path lights up as conditions are met.</p>
 <span>  arrow_size <span class="op">=</span> <span class="fl">0.26</span>,</span>
 <span>  arrow_stroke <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  arrow_gap <span class="op">=</span> <span class="fl">0.06</span>,</span>
+<span>  hollow_potential <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  edge_labels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  edge_label_fmt <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
 <span><span class="va">s</span> <span class="op">&lt;-</span> <span class="fu"><a href="f0.html">f0</a></span><span class="op">(</span><span class="va">x</span>, digits <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
@@ -118,6 +119,12 @@ throughout and the active sub-path lights up as conditions are met.</p>
 <span></span>
 <span>        <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">sub</a></span><span class="op">(</span><span class="st">"\\.$"</span>, <span class="st">""</span>, <span class="va">s</span><span class="op">)</span></span>
 <span> <span class="op">}</span>,</span>
+<span>  plan_legend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  plan_legend_x <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plan_legend_y <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  plan_legend_size <span class="op">=</span> <span class="fl">3.2</span>,</span>
+<span>  plan_legend_title <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  active_min <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -156,10 +163,13 @@ square holding a lightning bolt that reddens as energy is spent.</p></dd>
 
 
 <dt id="arg-plan">plan<a class="anchor" aria-label="anchor" href="#arg-plan"></a></dt>
-<dd><p>Optional `lavaan`-syntax sub-model string. Edges whose
-source -&gt; target identity appears in `plan` take `plan_color` as their
-base colour. Typically the action-plan half of a stitched model.
-Default `NULL` (no gold edges).</p></dd>
+<dd><p>Optional `lavaan`-syntax sub-model string, or a [planF()]
+object. Edges whose source -&gt; target identity appears in the plan take
+`plan_color` as their base colour. Typically the action-plan half of a
+stitched model. When a `planF` is supplied, its `$policy` supplies those
+edges, its `$prefix` defaults `plan_label`, and its step descriptions
+drive the corner **plan-list** (see `plan_legend`). Default `NULL` (no
+gold edges).</p></dd>
 
 
 <dt id="arg-plan-label">plan_label<a class="anchor" aria-label="anchor" href="#arg-plan-label"></a></dt>
@@ -330,6 +340,17 @@ the node perimeter, so the arrowhead tip rests on the outline rather
 than poking inside. Default `0.06`.</p></dd>
 
 
+<dt id="arg-hollow-potential">hollow_potential<a class="anchor" aria-label="anchor" href="#arg-hollow-potential"></a></dt>
+<dd><p>Logical; when `TRUE` (default), a **potential**
+path — one whose condition is less than half met — is drawn as a
+**hollow block arrow**: a thin grey perimeter outline with a white
+interior (a rectangular shaft opening into an arrowhead), rather than a
+solid line. This keeps a merely available path from blending with a faint
+small-magnitude *active* force, which keeps its solid colour-filled line.
+Conjunctive (dotted) edges are exempt. Set `FALSE` to draw every edge as a
+solid line.</p></dd>
+
+
 <dt id="arg-edge-labels">edge_labels<a class="anchor" aria-label="anchor" href="#arg-edge-labels"></a></dt>
 <dd><p>Logical: label each drawn edge with its resolved
 force level. Default `TRUE`.</p></dd>
@@ -339,6 +360,37 @@ force level. Default `TRUE`.</p></dd>
 <dd><p>Function formatting the resolved coefficient for
 the edge label. Default the no-leading-zero house style with trailing
 zeros trimmed (`1`, `.9`, `-.1`).</p></dd>
+
+
+<dt id="arg-plan-legend">plan_legend<a class="anchor" aria-label="anchor" href="#arg-plan-legend"></a></dt>
+<dd><p>Logical; when `TRUE` (default) and `plan` is a [planF()]
+object, draw the **plan-list** in the upper-left corner: a "Plan &lt;label&gt;"
+heading then one line per step (`a1: prepare coffee machine`, ...), each in
+the green ramp colour of its arrow, with the step whose policy arrow is
+**active** in this frame — its condition is met, so it is the action the
+agent intends next — shown in **bold**. Has no effect for a plain-string
+`plan`.</p></dd>
+
+
+<dt id="arg-plan-legend-x-plan-legend-y">plan_legend_x, plan_legend_y<a class="anchor" aria-label="anchor" href="#arg-plan-legend-x-plan-legend-y"></a></dt>
+<dd><p>Data coordinates of the plan-list's
+top-left anchor. Default `NULL` — the layout's upper-left
+(`min(x)`, `max(y)`), which the staircase layouts leave empty.</p></dd>
+
+
+<dt id="arg-plan-legend-size">plan_legend_size<a class="anchor" aria-label="anchor" href="#arg-plan-legend-size"></a></dt>
+<dd><p>Text size for the plan-list. Default `3.2`.</p></dd>
+
+
+<dt id="arg-plan-legend-title">plan_legend_title<a class="anchor" aria-label="anchor" href="#arg-plan-legend-title"></a></dt>
+<dd><p>Heading for the plan-list. Default `NULL` —
+`"Plan &lt;label&gt;"` from the `planF` object.</p></dd>
+
+
+<dt id="arg-active-min">active_min<a class="anchor" aria-label="anchor" href="#arg-active-min"></a></dt>
+<dd><p>Minimum activation of a plan step's condition
+(`prod(s[condition])`) for it to count as the **active** step — the one
+bolded in the plan-list and lit green in the diagram. Default `0.5`.</p></dd>
 
 
 <dt id="arg-title">title<a class="anchor" aria-label="anchor" href="#arg-title"></a></dt>

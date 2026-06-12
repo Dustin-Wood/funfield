@@ -30,14 +30,16 @@ Edges are solid for positive paths and dashed for
     intersection for the triangles). Edge labels carry the
     f1 + fZ(Z) decomposition.
 Moderator (Z) coloring. Anything that is purely a
-    bZ coefficient renders in limegreen. In the default decomposed
-    label, only the trailing bZ(Z) fragment is green (the b1
-    portion and the edge itself describe the normative path). In the
-    Z-overlay view (Z_overlay = TRUE), the entire label and
-    the edge are green, since the edge is a bZ coefficient.
-    A Z-collapsed view (Z_value supplied) renders normally:
-    the label there is a single total slope f1 + fZ * Z_value,
-    not a bZ coefficient on its own.
+    bZ coefficient renders in gold (#F6BE00), matching the
+    condition-node color used in the deductive plotField()
+    diagrams. In the default decomposed label, only the trailing
+    bZ(Z) fragment is gold (the b1 portion and the edge itself
+    describe the normative path). In the Z-overlay view
+    (Z_overlay = TRUE), the entire label and the edge are gold,
+    since the edge is a bZ coefficient. A Z-collapsed view
+    (Z_value supplied) renders normally: the label there is a
+    single total slope f1 + fZ * Z_value, not a bZ coefficient
+    on its own.
 
 
 Two view modes:
@@ -69,14 +71,14 @@ the normative field. Nodes are drawn white in that view since
 expected scores have no meaning for a per-unit-Z slope.
 Passing route = &quot;expectation&quot; or &quot;valuation&quot; renders
 a per-route view of the moderation. The expectation route
-shows fZ_XM on the X-to-M arm (green) and f1_MY on the
+shows fZ_XM on the X-to-M arm (gold) and f1_MY on the
 M-to-Y arm (black); the valuation route flips the arms
 (f1_XM on the left, fZ_MY on the right). The visual
-grammar of the new coloring scheme makes the two route components of
-the moderation decomposition read directly: if both arms of a
-mediator carry visible weight in one of the two graphs, that
-green–black or black–green chain identifies a reason that
-the moderator shifts the X-to-Y relationship. Mutually exclusive
+grammar of the coloring scheme makes the two route components of the
+moderation decomposition read directly: if both arms of a mediator
+carry visible weight in one of the two graphs, that gold–black or
+black–gold chain identifies a reason that the moderator
+shifts the X-to-Y relationship. Mutually exclusive
 with Z_value and Z_overlay; nodes are drawn white in
 route views for the same reason as the Z overlay."><meta property="og:description" content="Renders the X to M to Y structure as a ggplot2 object using the
 funfield visualization conventions:
@@ -109,14 +111,16 @@ Edges are solid for positive paths and dashed for
     intersection for the triangles). Edge labels carry the
     f1 + fZ(Z) decomposition.
 Moderator (Z) coloring. Anything that is purely a
-    bZ coefficient renders in limegreen. In the default decomposed
-    label, only the trailing bZ(Z) fragment is green (the b1
-    portion and the edge itself describe the normative path). In the
-    Z-overlay view (Z_overlay = TRUE), the entire label and
-    the edge are green, since the edge is a bZ coefficient.
-    A Z-collapsed view (Z_value supplied) renders normally:
-    the label there is a single total slope f1 + fZ * Z_value,
-    not a bZ coefficient on its own.
+    bZ coefficient renders in gold (#F6BE00), matching the
+    condition-node color used in the deductive plotField()
+    diagrams. In the default decomposed label, only the trailing
+    bZ(Z) fragment is gold (the b1 portion and the edge itself
+    describe the normative path). In the Z-overlay view
+    (Z_overlay = TRUE), the entire label and the edge are gold,
+    since the edge is a bZ coefficient. A Z-collapsed view
+    (Z_value supplied) renders normally: the label there is a
+    single total slope f1 + fZ * Z_value, not a bZ coefficient
+    on its own.
 
 
 Two view modes:
@@ -148,14 +152,14 @@ the normative field. Nodes are drawn white in that view since
 expected scores have no meaning for a per-unit-Z slope.
 Passing route = &quot;expectation&quot; or &quot;valuation&quot; renders
 a per-route view of the moderation. The expectation route
-shows fZ_XM on the X-to-M arm (green) and f1_MY on the
+shows fZ_XM on the X-to-M arm (gold) and f1_MY on the
 M-to-Y arm (black); the valuation route flips the arms
 (f1_XM on the left, fZ_MY on the right). The visual
-grammar of the new coloring scheme makes the two route components of
-the moderation decomposition read directly: if both arms of a
-mediator carry visible weight in one of the two graphs, that
-green–black or black–green chain identifies a reason that
-the moderator shifts the X-to-Y relationship. Mutually exclusive
+grammar of the coloring scheme makes the two route components of the
+moderation decomposition read directly: if both arms of a mediator
+carry visible weight in one of the two graphs, that gold–black or
+black–gold chain identifies a reason that the moderator
+shifts the X-to-Y relationship. Mutually exclusive
 with Z_value and Z_overlay; nodes are drawn white in
 route views for the same reason as the Z overlay."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -229,14 +233,16 @@ funfield visualization conventions:</p>
     intersection for the triangles). Edge labels carry the
     <code>f1 + fZ(Z)</code> decomposition.</p></li>
 <li><p><strong>Moderator (Z) coloring.</strong> Anything that is purely a
-    bZ coefficient renders in limegreen. In the default decomposed
-    label, only the trailing <code>bZ(Z)</code> fragment is green (the b1
-    portion and the edge itself describe the normative path). In the
-    Z-overlay view (<code>Z_overlay = TRUE</code>), the entire label and
-    the edge are green, since the edge <em>is</em> a bZ coefficient.
-    A Z-collapsed view (<code>Z_value</code> supplied) renders normally:
-    the label there is a single total slope <code>f1 + fZ * Z_value</code>,
-    not a bZ coefficient on its own.</p></li>
+    bZ coefficient renders in gold (<code>#F6BE00</code>), matching the
+    condition-node color used in the deductive <code><a href="plotField.html">plotField()</a></code>
+    diagrams. In the default decomposed label, only the trailing
+    <code>bZ(Z)</code> fragment is gold (the b1 portion and the edge itself
+    describe the normative path). In the Z-overlay view
+    (<code>Z_overlay = TRUE</code>), the entire label and the edge are gold,
+    since the edge <em>is</em> a bZ coefficient. A Z-collapsed view
+    (<code>Z_value</code> supplied) renders normally: the label there is a
+    single total slope <code>f1 + fZ * Z_value</code>, not a bZ coefficient
+    on its own.</p></li>
 </ul><p>Two view modes:</p><ul><li><p><strong>Triangle</strong> (single mediator) – X at bottom-left, M at
     top, Y at bottom-right.</p></li>
 <li><p><strong>Fan</strong> (multiple mediators) – X at left, mediators
@@ -260,14 +266,14 @@ the normative field. Nodes are drawn white in that view since
 expected scores have no meaning for a per-unit-Z slope.</p>
 <p>Passing <code>route = "expectation"</code> or <code>"valuation"</code> renders
 a per-route view of the moderation. The <em>expectation route</em>
-shows <code>fZ_XM</code> on the X-to-M arm (green) and <code>f1_MY</code> on the
+shows <code>fZ_XM</code> on the X-to-M arm (gold) and <code>f1_MY</code> on the
 M-to-Y arm (black); the <em>valuation route</em> flips the arms
 (<code>f1_XM</code> on the left, <code>fZ_MY</code> on the right). The visual
-grammar of the new coloring scheme makes the two route components of
-the moderation decomposition read directly: if both arms of a
-mediator carry visible weight in one of the two graphs, that
-green–black or black–green chain identifies a <em>reason</em> that
-the moderator shifts the X-to-Y relationship. Mutually exclusive
+grammar of the coloring scheme makes the two route components of the
+moderation decomposition read directly: if both arms of a mediator
+carry visible weight in one of the two graphs, that gold–black or
+black–gold chain identifies a <em>reason</em> that the moderator
+shifts the X-to-Y relationship. Mutually exclusive
 with <code>Z_value</code> and <code>Z_overlay</code>; nodes are drawn white in
 route views for the same reason as the Z overlay.</p>
     </div>

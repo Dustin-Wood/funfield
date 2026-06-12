@@ -47,7 +47,8 @@ chooseF(
 - policies:
 
   A \*\*named\*\* list of candidate policies, each a \`lavaan\`-syntax
-  string of \`action ~ condition\` rows (see \[simulateF()\]).
+  string of \`action ~ condition\` rows (see \[simulateF()\]) or a
+  \`planF\` object (its \`\$policy\` is used).
 
 - readout:
 

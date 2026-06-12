@@ -3,7 +3,7 @@
 Returns a patchwork composition of two
 [`plotPathXMY`](https://dustin-wood.github.io/funfield/reference/plotPathXMY.md)
 panels, one per moderation route. The **expectation** panel shows
-`FZ[X,M]` on the X-to-M arm (limegreen) and `F1[M,Y]` on the M-to-Y arm
+`FZ[X,M]` on the X-to-M arm (gold) and `F1[M,Y]` on the M-to-Y arm
 (black); the **valuation** panel shows the converse pairing.
 
 Reading rule: a mediator whose two arms BOTH carry visible weight in the

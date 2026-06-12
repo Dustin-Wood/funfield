@@ -58,7 +58,9 @@ simulateF(
   each names an action and the state variable(s) whose joint presence
   makes it eligible. Coefficients are ignored — only the condition
   variables matter. A single bare variable (\`make ~ choice\`) is a
-  one-variable condition; an interaction (\`Pour ~ HCoPot\`) likewise.
+  one-variable condition; an interaction (\`Pour ~ HCoPot\`) likewise. A
+  \`planF\` object may be passed instead of the string (its \`\$policy\`
+  is used).
 
 - readout:
 

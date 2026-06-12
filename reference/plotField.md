@@ -51,6 +51,7 @@ plotField(
   arrow_size = 0.26,
   arrow_stroke = 0.8,
   arrow_gap = 0.06,
+  hollow_potential = TRUE,
   edge_labels = TRUE,
   edge_label_fmt = function(x) {
 s <- f0(x, digits = 2)
@@ -58,6 +59,12 @@ s <- sub("0+$", "", s)
 
         sub("\\.$", "", s)
  },
+  plan_legend = TRUE,
+  plan_legend_x = NULL,
+  plan_legend_y = NULL,
+  plan_legend_size = 3.2,
+  plan_legend_title = NULL,
+  active_min = 0.5,
   title = NULL
 )
 ```
@@ -96,10 +103,13 @@ s <- sub("0+$", "", s)
 
 - plan:
 
-  Optional \`lavaan\`-syntax sub-model string. Edges whose source -\>
-  target identity appears in \`plan\` take \`plan_color\` as their base
-  colour. Typically the action-plan half of a stitched model. Default
-  \`NULL\` (no gold edges).
+  Optional \`lavaan\`-syntax sub-model string, or a \[planF()\] object.
+  Edges whose source -\> target identity appears in the plan take
+  \`plan_color\` as their base colour. Typically the action-plan half of
+  a stitched model. When a \`planF\` is supplied, its \`\$policy\`
+  supplies those edges, its \`\$prefix\` defaults \`plan_label\`, and
+  its step descriptions drive the corner \*\*plan-list\*\* (see
+  \`plan_legend\`). Default \`NULL\` (no gold edges).
 
 - plan_label:
 
@@ -264,6 +274,17 @@ s <- sub("0+$", "", s)
   perimeter, so the arrowhead tip rests on the outline rather than
   poking inside. Default \`0.06\`.
 
+- hollow_potential:
+
+  Logical; when \`TRUE\` (default), a \*\*potential\*\* path — one whose
+  condition is less than half met — is drawn as a \*\*hollow block
+  arrow\*\*: a thin grey perimeter outline with a white interior (a
+  rectangular shaft opening into an arrowhead), rather than a solid
+  line. This keeps a merely available path from blending with a faint
+  small-magnitude \*active\* force, which keeps its solid colour-filled
+  line. Conjunctive (dotted) edges are exempt. Set \`FALSE\` to draw
+  every edge as a solid line.
+
 - edge_labels:
 
   Logical: label each drawn edge with its resolved force level. Default
@@ -274,6 +295,38 @@ s <- sub("0+$", "", s)
   Function formatting the resolved coefficient for the edge label.
   Default the no-leading-zero house style with trailing zeros trimmed
   (\`1\`, \`.9\`, \`-.1\`).
+
+- plan_legend:
+
+  Logical; when \`TRUE\` (default) and \`plan\` is a \[planF()\] object,
+  draw the \*\*plan-list\*\* in the upper-left corner: a "Plan
+  \<label\>" heading then one line per step (\`a1: prepare coffee
+  machine\`, ...), each in the green ramp colour of its arrow, with the
+  step whose policy arrow is \*\*active\*\* in this frame — its
+  condition is met, so it is the action the agent intends next — shown
+  in \*\*bold\*\*. Has no effect for a plain-string \`plan\`.
+
+- plan_legend_x, plan_legend_y:
+
+  Data coordinates of the plan-list's top-left anchor. Default \`NULL\`
+  — the layout's upper-left (\`min(x)\`, \`max(y)\`), which the
+  staircase layouts leave empty.
+
+- plan_legend_size:
+
+  Text size for the plan-list. Default \`3.2\`.
+
+- plan_legend_title:
+
+  Heading for the plan-list. Default \`NULL\` — \`"Plan \<label\>"\`
+  from the \`planF\` object.
+
+- active_min:
+
+  Minimum activation of a plan step's condition
+  (\`prod(s\[condition\])\`) for it to count as the \*\*active\*\* step
+  — the one bolded in the plan-list and lit green in the diagram.
+  Default \`0.5\`.
 
 - title:
 

@@ -123,7 +123,9 @@ action node (typically `0`) and any trigger such as `choice`.</p></dd>
 (the plan): each names an action and the state variable(s) whose joint
 presence makes it eligible. Coefficients are ignored — only the
 condition variables matter. A single bare variable (`make ~ choice`) is
-a one-variable condition; an interaction (`Pour ~ HCoPot`) likewise.</p></dd>
+a one-variable condition; an interaction (`Pour ~ HCoPot`) likewise. A
+`planF` object may be passed instead of the string (its `$policy` is
+used).</p></dd>
 
 
 <dt id="arg-readout">readout<a class="anchor" aria-label="anchor" href="#arg-readout"></a></dt>

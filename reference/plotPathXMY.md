@@ -33,13 +33,16 @@ visualization conventions:
   decomposition.
 
 - **Moderator (Z) coloring.** Anything that is purely a bZ coefficient
-  renders in limegreen. In the default decomposed label, only the
-  trailing `bZ(Z)` fragment is green (the b1 portion and the edge itself
-  describe the normative path). In the Z-overlay view
-  (`Z_overlay = TRUE`), the entire label and the edge are green, since
-  the edge *is* a bZ coefficient. A Z-collapsed view (`Z_value`
-  supplied) renders normally: the label there is a single total slope
-  `f1 + fZ * Z_value`, not a bZ coefficient on its own.
+  renders in gold (`#F6BE00`), matching the condition-node color used in
+  the deductive
+  [`plotField()`](https://dustin-wood.github.io/funfield/reference/plotField.md)
+  diagrams. In the default decomposed label, only the trailing `bZ(Z)`
+  fragment is gold (the b1 portion and the edge itself describe the
+  normative path). In the Z-overlay view (`Z_overlay = TRUE`), the
+  entire label and the edge are gold, since the edge *is* a bZ
+  coefficient. A Z-collapsed view (`Z_value` supplied) renders normally:
+  the label there is a single total slope `f1 + fZ * Z_value`, not a bZ
+  coefficient on its own.
 
 Two view modes:
 
@@ -72,12 +75,12 @@ meaning for a per-unit-Z slope.
 
 Passing `route = "expectation"` or `"valuation"` renders a per-route
 view of the moderation. The *expectation route* shows `fZ_XM` on the
-X-to-M arm (green) and `f1_MY` on the M-to-Y arm (black); the *valuation
+X-to-M arm (gold) and `f1_MY` on the M-to-Y arm (black); the *valuation
 route* flips the arms (`f1_XM` on the left, `fZ_MY` on the right). The
-visual grammar of the new coloring scheme makes the two route components
-of the moderation decomposition read directly: if both arms of a
-mediator carry visible weight in one of the two graphs, that green–black
-or black–green chain identifies a *reason* that the moderator shifts the
+visual grammar of the coloring scheme makes the two route components of
+the moderation decomposition read directly: if both arms of a mediator
+carry visible weight in one of the two graphs, that gold–black or
+black–gold chain identifies a *reason* that the moderator shifts the
 X-to-Y relationship. Mutually exclusive with `Z_value` and `Z_overlay`;
 nodes are drawn white in route views for the same reason as the Z
 overlay.

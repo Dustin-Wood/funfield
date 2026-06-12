@@ -79,11 +79,13 @@ plotPathSchema(
 
 - XM_color, MY_color, XY_color:
 
-  Per-edge arrow colors. All default to `"black"`. Use `"#32CD32"`
-  (limegreen, the bZ convention) when an arm represents a bZ moderation
-  route, and a light gray (e.g. `"#BBBBBB"`) to fade arms that are not
-  part of the term being highlighted in a panel. Ignored for any edge
-  not drawn (e.g. `XY_color` when `XY_label` is NULL).
+  Per-edge arrow colors. All default to `"black"`. Use `"#F6BE00"`
+  (gold, the bZ moderator convention matching
+  [`plotField()`](https://dustin-wood.github.io/funfield/reference/plotField.md)
+  condition nodes) when an arm represents a bZ moderation route, and a
+  light gray (e.g. `"#BBBBBB"`) to fade arms that are not part of the
+  term being highlighted in a panel. Ignored for any edge not drawn
+  (e.g. `XY_color` when `XY_label` is NULL).
 
 - node_size:
 
