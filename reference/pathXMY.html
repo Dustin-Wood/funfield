@@ -238,7 +238,11 @@ suffix <code>_joint</code>. See <em>Details</em>.</p></dd>
 <dd><p>A named list of the lavaan fit objects (one per mediator,
       named by the mediator variable name; <code>"_direct"</code> when
       <code>M = NULL</code>; <code>"_joint"</code> for the joint multi-mediator fit
-      when present).</p></dd>
+      when present). Every fit is estimated through the shared
+      <code><a href="pathF.html">pathF</a></code> engine, so the lavaan objects internally use
+      the engine's token variable names (<code>v1, v2, ...</code>) and
+      source-target labels (<code>f1_1_2, ...</code>); the tidy tables
+      translate these to the canonical <code>f1_XM</code> vocabulary.</p></dd>
 
 
 </dl></div>

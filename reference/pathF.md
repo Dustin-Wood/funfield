@@ -135,10 +135,11 @@ A list of class `"pathF"` with:
 - tidy:
 
   A tidy data frame, one row per structural edge and per indirect-effect
-  term. Columns: `param`, `src`, `tgt`, `est`, `se`, `z`, `pvalue`,
-  `ci.lower`, `ci.upper`. Edge `param`s use the F-schema source-target
-  form `f1_<src>_<tgt>` / `fZ_<src>_<tgt>`; indirect rows use a
-  ` * `-joined product string (e.g. `f1_X_M * f1_M_Y`,
+  term. Columns: `param`, `src`, `tgt`, `label` (the internal lavaan
+  parameter label, for debugging against `$fit`), `est`, `se`, `z`,
+  `pvalue`, `ci.lower`, `ci.upper`. Edge `param`s use the F-schema
+  source-target form `f1_<src>_<tgt>` / `fZ_<src>_<tgt>`; indirect rows
+  use a ` * `-joined product string (e.g. `f1_X_M * f1_M_Y`,
   `fZ_X_M * f1_M_Y`).
 
 - fit:
@@ -152,6 +153,12 @@ A list of class `"pathF"` with:
 - model:
 
   The generated lavaan model string (useful for debugging).
+
+- data:
+
+  The prepared data frame the model was fit to (deviated, with the `.Z`
+  moderator, token alias columns `v1..vK`, and interaction product
+  columns). Used by resampling wrappers.
 
 ## Details
 

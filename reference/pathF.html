@@ -216,9 +216,11 @@ returned).</p></dd>
     <p>A list of class <code>"pathF"</code> with:</p><dl><dt>tidy</dt>
 <dd><p>A tidy data frame, one row per structural edge and per
       indirect-effect term. Columns: <code>param</code>, <code>src</code>, <code>tgt</code>,
-      <code>est</code>, <code>se</code>, <code>z</code>, <code>pvalue</code>, <code>ci.lower</code>,
-      <code>ci.upper</code>. Edge <code>param</code>s use the F-schema source-target
-      form <code>f1_&lt;src&gt;_&lt;tgt&gt;</code> / <code>fZ_&lt;src&gt;_&lt;tgt&gt;</code>; indirect rows use
+      <code>label</code> (the internal lavaan parameter label, for debugging
+      against <code>$fit</code>), <code>est</code>, <code>se</code>, <code>z</code>,
+      <code>pvalue</code>, <code>ci.lower</code>, <code>ci.upper</code>. Edge
+      <code>param</code>s use the F-schema source-target form
+      <code>f1_&lt;src&gt;_&lt;tgt&gt;</code> / <code>fZ_&lt;src&gt;_&lt;tgt&gt;</code>; indirect rows use
       a <code> * </code>-joined product string (e.g.
       <code>f1_X_M * f1_M_Y</code>, <code>fZ_X_M * f1_M_Y</code>).</p></dd>
 
@@ -231,6 +233,11 @@ returned).</p></dd>
 
     <dt>model</dt>
 <dd><p>The generated lavaan model string (useful for debugging).</p></dd>
+
+    <dt>data</dt>
+<dd><p>The prepared data frame the model was fit to (deviated,
+      with the <code>.Z</code> moderator, token alias columns <code>v1..vK</code>,
+      and interaction product columns). Used by resampling wrappers.</p></dd>
 
 
 </dl></div>

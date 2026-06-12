@@ -176,7 +176,13 @@ A list with three elements:
 
   A named list of the lavaan fit objects (one per mediator, named by the
   mediator variable name; `"_direct"` when `M = NULL`; `"_joint"` for
-  the joint multi-mediator fit when present).
+  the joint multi-mediator fit when present). Every fit is estimated
+  through the shared
+  [`pathF`](https://dustin-wood.github.io/funfield/reference/pathF.md)
+  engine, so the lavaan objects internally use the engine's token
+  variable names (`v1, v2, ...`) and source-target labels
+  (`f1_1_2, ...`); the tidy tables translate these to the canonical
+  `f1_XM` vocabulary.
 
 ## Details
 
