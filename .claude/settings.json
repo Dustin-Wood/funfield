@@ -11,7 +11,7 @@
             "type": "command",
             "shell": "bash",
             "timeout": 15,
-            "command": "input=$(cat); fp=$(printf '%s' \"$input\" | sed -n 's/.*\"file_path\" *: *\"\\([^\"]*\\)\".*/\\1/p'); case \"$fp\" in *vignettes*[Rr]md) echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"A vignette .Rmd was just edited. User-configured workflow: once this batch of vignette edits is complete and BEFORE committing, run devtools::document(), then devtools::install(quick=TRUE, upgrade=FALSE, build_vignettes=FALSE), then knit-verify the edited vignette with rmarkdown::render() (RSTUDIO_PANDOC set). One knit per batch of edits - not after every individual edit.\"}}';; esac"
+            "command": "input=$(cat); fp=$(printf '%s' \"$input\" | sed -n 's/.*\"file_path\" *: *\"\\([^\"]*\\)\".*/\\1/p'); case \"$fp\" in *vignettes*[Rr]md) echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"A vignette .Rmd was just edited. User-configured workflow: once this batch of vignette edits is complete and BEFORE committing, run devtools::document(), then devtools::install(quick=TRUE, upgrade=FALSE, build_vignettes=FALSE), then knit-verify the edited vignette with rmarkdown::render() (RSTUDIO_PANDOC set), rendering to the STANDARD vignettes/<name>.html - no temporary _check.html; leave the refreshed html in place for the user. One knit per batch of edits - not after every individual edit.\"}}';; esac"
           }
         ]
       }
