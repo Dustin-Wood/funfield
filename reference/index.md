@@ -96,6 +96,8 @@
   : Draw one frame of a functional field at a given state
 - [`plotFieldSequence()`](https://dustin-wood.github.io/funfield/reference/plotFieldSequence.md)
   : Plot a Sequence of Functional Field Time Steps
+- [`plotPathF()`](https://dustin-wood.github.io/funfield/reference/plotPathF.md)
+  : Field-style path diagram for a pathF() cascade or DAG
 - [`plotPathSchema()`](https://dustin-wood.github.io/funfield/reference/plotPathSchema.md)
   : Symbolic path-schema diagram (X to Y, optionally through one M)
 - [`plotPathXMY()`](https://dustin-wood.github.io/funfield/reference/plotPathXMY.md)
