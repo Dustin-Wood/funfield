@@ -1566,6 +1566,30 @@ three-edge route `Speed → Crash → Injured → Likelihood` carries `-.09`
 (*p* \< .001) — a chained *reason not to speed* that the parallel model
 can state only piecemeal.
 
+`plotPathF()` draws the fitted model directly from the `pathF()`
+return, with no layout arguments: each node's horizontal position is
+its causal depth, edges between adjacent depths draw straight, and
+skip edges (here, the residual direct paths) bow into arcs —
+alternating above and below the chain so converging arrows stay
+legible. The familiar conventions carry over from `plotPathXMY()`:
+node fill is the implied expected score at `Speed = 1` propagated
+through the cascade, negative edges are dashed, and edge thickness and
+darkness scale with magnitude.
+
+```{r pathf-plot-cascade, fig.width = 9, fig.height = 4.5, out.width = "100%"}
+plotPathF(chain1,
+          title = "The crash-injury cascade as a field diagram")
+```
+
+The diagram makes the chain's verdict visible at a glance: the
+production line along the baseline (`Speed → Crash → Injured`, with
+the `.69` crash-injury edge the thickest in the field), the two dashed
+cost routes arcing into `Likelihood` from above, and the residual
+direct `Speed → Likelihood` arc below the chain rendered so faint it
+nearly vanishes — the structural restatement of the near-zero `-.03`
+residual. `Likelihood`'s pale red fill is the implied total at
+`Speed = 1` propagated through every route.
+
 ### The ticket-money chain
 
 ```{r pathf-ticket-chain}
@@ -1635,6 +1659,26 @@ of three or four small coefficients has a small estimate and a wide
 relative SE, so individual slide terms in long chains are rarely
 significant even when the accounting as a whole is nearly exact.
 
+The same moderated cascade as a field diagram — `plotPathF()` accepts
+the `pathF_decompose()` return directly, and each edge label carries
+the `F1` coefficient with its [gold]{style="color:#F6BE00"} `FZ`
+companion, following the package's moderator-color convention:
+
+```{r pathf-plot-moderated, fig.width = 9, fig.height = 4.5, out.width = "100%"}
+plotPathF(dec_pf, Z_label = "SRFast",
+          title = "The crash-injury cascade, moderated by fast-driver tendency")
+```
+
+The gold fragments locate the moderation visually: the working shifts
+sit on the first edge (`-.07(SRFast)` on `Speed → Crash`) and on the
+residual direct arc below the chain (`+.22(SRFast)`), while the
+interior production edge `Crash → Injured` is essentially unmoderated
+(`-.01`) — fast drivers discount the *onset* of trouble, not its
+physical consequences once underway. A `Z_value` argument collapses
+the same diagram to the effective field at a chosen level of the
+moderator, and `Z_overlay = TRUE` renders the all-gold `FZ` field on
+its own.
+
 ### Arbitrary path structures
 
 The cascade is the default reading of an ordered variable list, but
@@ -1654,10 +1698,18 @@ kable0(dag$tidy[, c("param","est","se","z","pvalue")], digits = 3,
 ```
 
 Every directed route from `X` to `Y` present in the diagram is
-enumerated automatically, exactly as in the cascade. `pathXMY()`
-remains the right tool for the parallel-mediator screening passes that
-make up most of this vignette; `pathF()` takes over where the mediators
-themselves have causal structure worth modeling.
+enumerated automatically, exactly as in the cascade. The same
+`plotPathF()` call handles this structure with no layout hints —
+parallel mediators share a causal depth, so they stack vertically and
+the familiar fan re-emerges on its own:
+
+```{r pathf-plot-dag, fig.width = 7, fig.height = 4.5}
+plotPathF(dag, title = "The two-route DAG")
+```
+
+`pathXMY()` remains the right tool for the parallel-mediator screening
+passes that make up most of this vignette; `pathF()` takes over where
+the mediators themselves have causal structure worth modeling.
 
 ## Scoring named trait composites
 
