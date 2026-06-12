@@ -24,10 +24,16 @@ Edges follow the shared conventions: solid positive
     (capped at scale_max), arrowheads clipped to the node
     perimeter, and edge labels carrying the f1 + fZ(Z)
     decomposition with the fZ fragment in gold (#F6BE00).
-View modes. Z_value collapses each edge to
-    its effective slope at that Z; Z_overlay = TRUE swaps
-    every f1 for its fZ counterpart (all edges and labels gold,
-    node fill suppressed). Mutually exclusive.
+View modes. view selects what the edges
+    display: &quot;decomposed&quot; (default) shows the f1 field with
+    the gold fZ fragment on each label; &quot;normative&quot; shows the
+    same f1 field with the moderation hidden (black labels only);
+    &quot;moderation&quot; swaps every f1 for its fZ counterpart (all
+    edges and labels gold, node fill suppressed).
+    Z_value instead collapses each edge to its effective
+    slope at that Z. Z_value and a non-default view
+    are mutually exclusive. plotPathF_widget stitches
+    the three views into a Back/Forward widget.
 
 "><meta property="og:description" content="Renders a pathF model as a ggplot2 object in the
 funfield visualization style, generalizing plotPathXMY
@@ -54,10 +60,16 @@ Edges follow the shared conventions: solid positive
     (capped at scale_max), arrowheads clipped to the node
     perimeter, and edge labels carrying the f1 + fZ(Z)
     decomposition with the fZ fragment in gold (#F6BE00).
-View modes. Z_value collapses each edge to
-    its effective slope at that Z; Z_overlay = TRUE swaps
-    every f1 for its fZ counterpart (all edges and labels gold,
-    node fill suppressed). Mutually exclusive.
+View modes. view selects what the edges
+    display: &quot;decomposed&quot; (default) shows the f1 field with
+    the gold fZ fragment on each label; &quot;normative&quot; shows the
+    same f1 field with the moderation hidden (black labels only);
+    &quot;moderation&quot; swaps every f1 for its fZ counterpart (all
+    edges and labels gold, node fill suppressed).
+    Z_value instead collapses each edge to its effective
+    slope at that Z. Z_value and a non-default view
+    are mutually exclusive. plotPathF_widget stitches
+    the three views into a Back/Forward widget.
 
 "></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -125,10 +137,16 @@ from the X-M-Y triangle/fan to causal cascades and arbitrary DAGs:</p>
     (capped at <code>scale_max</code>), arrowheads clipped to the node
     perimeter, and edge labels carrying the <code>f1 + fZ(Z)</code>
     decomposition with the fZ fragment in gold (<code>#F6BE00</code>).</p></li>
-<li><p><strong>View modes.</strong> <code>Z_value</code> collapses each edge to
-    its effective slope at that Z; <code>Z_overlay = TRUE</code> swaps
-    every f1 for its fZ counterpart (all edges and labels gold,
-    node fill suppressed). Mutually exclusive.</p></li>
+<li><p><strong>View modes.</strong> <code>view</code> selects what the edges
+    display: <code>"decomposed"</code> (default) shows the f1 field with
+    the gold fZ fragment on each label; <code>"normative"</code> shows the
+    same f1 field with the moderation hidden (black labels only);
+    <code>"moderation"</code> swaps every f1 for its fZ counterpart (all
+    edges and labels gold, node fill suppressed).
+    <code>Z_value</code> instead collapses each edge to its effective
+    slope at that Z. <code>Z_value</code> and a non-default <code>view</code>
+    are mutually exclusive. <code><a href="plotPathF_widget.html">plotPathF_widget</a></code> stitches
+    the three views into a Back/Forward widget.</p></li>
 </ul></div>
 
     <div class="section level2">
@@ -143,8 +161,8 @@ from the X-M-Y triangle/fan to causal cascades and arbitrary DAGs:</p>
 <span>  strip0 <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  scale_max <span class="op">=</span> <span class="fl">0.8</span>,</span>
 <span>  score_intensity_max <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  view <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"decomposed"</span>, <span class="st">"normative"</span>, <span class="st">"moderation"</span><span class="op">)</span>,</span>
 <span>  Z_value <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  Z_overlay <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  Z_label <span class="op">=</span> <span class="st">"Z"</span>,</span>
 <span>  node_size <span class="op">=</span> <span class="fl">0.07</span>,</span>
 <span>  label_pad <span class="op">=</span> <span class="fl">0.03</span>,</span>
@@ -198,7 +216,7 @@ per the funfield house style (default <code>TRUE</code>).</p></dd>
 <dt id="arg-scale-max">scale_max<a class="anchor" aria-label="anchor" href="#arg-scale-max"></a></dt>
 <dd><p>Path magnitude mapping to maximum edge linewidth
 (default <code>0.8</code>; use a tighter cap such as <code>0.3</code> for
-<code>Z_overlay</code> views, where fZ magnitudes run smaller).</p></dd>
+the <code>"moderation"</code> view, where fZ magnitudes run smaller).</p></dd>
 
 
 <dt id="arg-score-intensity-max">score_intensity_max<a class="anchor" aria-label="anchor" href="#arg-score-intensity-max"></a></dt>
@@ -206,14 +224,16 @@ per the funfield house style (default <code>TRUE</code>).</p></dd>
 maximum node-fill intensity (default <code>1</code>).</p></dd>
 
 
+<dt id="arg-view">view<a class="anchor" aria-label="anchor" href="#arg-view"></a></dt>
+<dd><p>One of <code>"decomposed"</code> (default), <code>"normative"</code>,
+or <code>"moderation"</code>; see the description. <code>"moderation"</code>
+requires a fit with Z.</p></dd>
+
+
 <dt id="arg-z-value">Z_value<a class="anchor" aria-label="anchor" href="#arg-z-value"></a></dt>
 <dd><p>Optional numeric scalar; render the field conditional
-on Z at this value (each edge becomes <code>f1 + fZ * Z_value</code>).</p></dd>
-
-
-<dt id="arg-z-overlay">Z_overlay<a class="anchor" aria-label="anchor" href="#arg-z-overlay"></a></dt>
-<dd><p>Logical; render the fZ field (per-unit-Z change in
-every path weight). Node fill is suppressed.</p></dd>
+on Z at this value (each edge becomes <code>f1 + fZ * Z_value</code>).
+Mutually exclusive with a non-default <code>view</code>.</p></dd>
 
 
 <dt id="arg-z-label">Z_label<a class="anchor" aria-label="anchor" href="#arg-z-label"></a></dt>

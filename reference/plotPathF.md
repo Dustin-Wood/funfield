@@ -30,9 +30,15 @@ from the X-M-Y triangle/fan to causal cascades and arbitrary DAGs:
   labels carrying the `f1 + fZ(Z)` decomposition with the fZ fragment in
   gold (`#F6BE00`).
 
-- **View modes.** `Z_value` collapses each edge to its effective slope
-  at that Z; `Z_overlay = TRUE` swaps every f1 for its fZ counterpart
-  (all edges and labels gold, node fill suppressed). Mutually exclusive.
+- **View modes.** `view` selects what the edges display: `"decomposed"`
+  (default) shows the f1 field with the gold fZ fragment on each label;
+  `"normative"` shows the same f1 field with the moderation hidden
+  (black labels only); `"moderation"` swaps every f1 for its fZ
+  counterpart (all edges and labels gold, node fill suppressed).
+  `Z_value` instead collapses each edge to its effective slope at
+  that Z. `Z_value` and a non-default `view` are mutually exclusive.
+  [`plotPathF_widget`](https://dustin-wood.github.io/funfield/reference/plotPathF_widget.md)
+  stitches the three views into a Back/Forward widget.
 
 ## Usage
 
@@ -47,8 +53,8 @@ plotPathF(
   strip0 = TRUE,
   scale_max = 0.8,
   score_intensity_max = 1,
+  view = c("decomposed", "normative", "moderation"),
   Z_value = NULL,
-  Z_overlay = FALSE,
   Z_label = "Z",
   node_size = 0.07,
   label_pad = 0.03,
@@ -102,23 +108,24 @@ plotPathF(
 - scale_max:
 
   Path magnitude mapping to maximum edge linewidth (default `0.8`; use a
-  tighter cap such as `0.3` for `Z_overlay` views, where fZ magnitudes
-  run smaller).
+  tighter cap such as `0.3` for the `"moderation"` view, where fZ
+  magnitudes run smaller).
 
 - score_intensity_max:
 
   Expected-score absolute value mapping to maximum node-fill intensity
   (default `1`).
 
+- view:
+
+  One of `"decomposed"` (default), `"normative"`, or `"moderation"`; see
+  the description. `"moderation"` requires a fit with Z.
+
 - Z_value:
 
   Optional numeric scalar; render the field conditional on Z at this
-  value (each edge becomes `f1 + fZ * Z_value`).
-
-- Z_overlay:
-
-  Logical; render the fZ field (per-unit-Z change in every path weight).
-  Node fill is suppressed.
+  value (each edge becomes `f1 + fZ * Z_value`). Mutually exclusive with
+  a non-default `view`.
 
 - Z_label:
 

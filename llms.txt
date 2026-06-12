@@ -152,6 +152,9 @@ devtools::install_github("Dustin-Wood/funfield")
   : Plot a Sequence of Functional Field Time Steps
 - [`plotPathF()`](https://dustin-wood.github.io/funfield/reference/plotPathF.md)
   : Field-style path diagram for a pathF() cascade or DAG
+- [`plotPathF_widget()`](https://dustin-wood.github.io/funfield/reference/plotPathF_widget.md)
+  : Back/Forward widget stepping through the views of a moderated pathF
+  field
 - [`plotPathSchema()`](https://dustin-wood.github.io/funfield/reference/plotPathSchema.md)
   : Symbolic path-schema diagram (X to Y, optionally through one M)
 - [`plotPathXMY()`](https://dustin-wood.github.io/funfield/reference/plotPathXMY.md)
