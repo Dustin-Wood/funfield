@@ -14,8 +14,8 @@ plotPathF(
   strip0 = TRUE,
   scale_max = 0.8,
   score_intensity_max = 1,
+  view = c("decomposed", "normative", "moderation"),
   Z_value = NULL,
-  Z_overlay = FALSE,
   Z_label = "Z",
   node_size = 0.07,
   label_pad = 0.03,
@@ -50,16 +50,18 @@ per the funfield house style (default \code{TRUE}).}
 
 \item{scale_max}{Path magnitude mapping to maximum edge linewidth
 (default \code{0.8}; use a tighter cap such as \code{0.3} for
-\code{Z_overlay} views, where fZ magnitudes run smaller).}
+the \code{"moderation"} view, where fZ magnitudes run smaller).}
 
 \item{score_intensity_max}{Expected-score absolute value mapping to
 maximum node-fill intensity (default \code{1}).}
 
-\item{Z_value}{Optional numeric scalar; render the field conditional
-on Z at this value (each edge becomes \code{f1 + fZ * Z_value}).}
+\item{view}{One of \code{"decomposed"} (default), \code{"normative"},
+or \code{"moderation"}; see the description. \code{"moderation"}
+requires a fit with Z.}
 
-\item{Z_overlay}{Logical; render the fZ field (per-unit-Z change in
-every path weight). Node fill is suppressed.}
+\item{Z_value}{Optional numeric scalar; render the field conditional
+on Z at this value (each edge becomes \code{f1 + fZ * Z_value}).
+Mutually exclusive with a non-default \code{view}.}
 
 \item{Z_label}{Display label for the moderator in decomposed edge
 labels (default \code{"Z"}).}
@@ -114,10 +116,16 @@ from the X-M-Y triangle/fan to causal cascades and arbitrary DAGs:
     (capped at \code{scale_max}), arrowheads clipped to the node
     perimeter, and edge labels carrying the \code{f1 + fZ(Z)}
     decomposition with the fZ fragment in gold (\code{#F6BE00}).
-  \item \strong{View modes.} \code{Z_value} collapses each edge to
-    its effective slope at that Z; \code{Z_overlay = TRUE} swaps
-    every f1 for its fZ counterpart (all edges and labels gold,
-    node fill suppressed). Mutually exclusive.
+  \item \strong{View modes.} \code{view} selects what the edges
+    display: \code{"decomposed"} (default) shows the f1 field with
+    the gold fZ fragment on each label; \code{"normative"} shows the
+    same f1 field with the moderation hidden (black labels only);
+    \code{"moderation"} swaps every f1 for its fZ counterpart (all
+    edges and labels gold, node fill suppressed).
+    \code{Z_value} instead collapses each edge to its effective
+    slope at that Z. \code{Z_value} and a non-default \code{view}
+    are mutually exclusive. \code{\link{plotPathF_widget}} stitches
+    the three views into a Back/Forward widget.
 }
 }
 \seealso{

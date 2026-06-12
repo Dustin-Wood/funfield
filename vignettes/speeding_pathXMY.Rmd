@@ -1662,22 +1662,35 @@ significant even when the accounting as a whole is nearly exact.
 The same moderated cascade as a field diagram — `plotPathF()` accepts
 the `pathF_decompose()` return directly, and each edge label carries
 the `F1` coefficient with its [gold]{style="color:#F6BE00"} `FZ`
-companion, following the package's moderator-color convention:
+companion, following the package's moderator-color convention.
+`plotPathF_widget()` stitches the diagram's three *views* into a
+Back/Forward toggle at pixel-identical layout: the decomposed field
+first, then the **normative** frame (the same `F1` paths with the
+moderation hidden), then the **moderation** frame (every edge swapped
+for its `FZ` counterpart, all gold). Clicking **Forward** peels the
+one diagram apart into its black and gold layers in place. The
+moderation frame is drawn with `scale_max_moderation = .3` — tighter
+than the normative `.8` cap, as elsewhere in this vignette, because
+`FZ` magnitudes run smaller:
 
-```{r pathf-plot-moderated, fig.width = 9, fig.height = 4.5, out.width = "100%"}
-plotPathF(dec_pf, Z_label = "SRFast",
-          title = "The crash-injury cascade, moderated by fast-driver tendency")
+```{r pathf-widget-moderated, eval = knitr::is_html_output()}
+plotPathF_widget(dec_pf, Z_label = "SRFast",
+                 title = "The crash-injury cascade, moderated by fast-driver tendency",
+                 scale_max_moderation = 0.3,
+                 format = "svg")
 ```
 
-The gold fragments locate the moderation visually: the working shifts
+The gold fragments of the decomposed frame locate the moderation
+visually, and the moderation frame isolates them: the working shifts
 sit on the first edge (`-.07(SRFast)` on `Speed → Crash`) and on the
 residual direct arc below the chain (`+.22(SRFast)`), while the
 interior production edge `Crash → Injured` is essentially unmoderated
 (`-.01`) — fast drivers discount the *onset* of trouble, not its
-physical consequences once underway. A `Z_value` argument collapses
-the same diagram to the effective field at a chosen level of the
-moderator, and `Z_overlay = TRUE` renders the all-gold `FZ` field on
-its own.
+physical consequences once underway. A `Z_value` argument to
+`plotPathF()` instead collapses the diagram to the effective field at
+a chosen level of the moderator, as in the
+[two-panel low-Z/high-Z view](#two-panel-low-z-vs-high-z-view)
+earlier.
 
 ### Arbitrary path structures
 

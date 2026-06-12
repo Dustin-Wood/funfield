@@ -27,10 +27,16 @@
 #'     (capped at \code{scale_max}), arrowheads clipped to the node
 #'     perimeter, and edge labels carrying the \code{f1 + fZ(Z)}
 #'     decomposition with the fZ fragment in gold (\code{#F6BE00}).
-#'   \item \strong{View modes.} \code{Z_value} collapses each edge to
-#'     its effective slope at that Z; \code{Z_overlay = TRUE} swaps
-#'     every f1 for its fZ counterpart (all edges and labels gold,
-#'     node fill suppressed). Mutually exclusive.
+#'   \item \strong{View modes.} \code{view} selects what the edges
+#'     display: \code{"decomposed"} (default) shows the f1 field with
+#'     the gold fZ fragment on each label; \code{"normative"} shows the
+#'     same f1 field with the moderation hidden (black labels only);
+#'     \code{"moderation"} swaps every f1 for its fZ counterpart (all
+#'     edges and labels gold, node fill suppressed).
+#'     \code{Z_value} instead collapses each edge to its effective
+#'     slope at that Z. \code{Z_value} and a non-default \code{view}
+#'     are mutually exclusive. \code{\link{plotPathF_widget}} stitches
+#'     the three views into a Back/Forward widget.
 #' }
 #'
 #' @param x A \code{\link{pathF}} return, or a \code{\link{pathF_decompose}}
@@ -48,13 +54,15 @@
 #'   per the funfield house style (default \code{TRUE}).
 #' @param scale_max Path magnitude mapping to maximum edge linewidth
 #'   (default \code{0.8}; use a tighter cap such as \code{0.3} for
-#'   \code{Z_overlay} views, where fZ magnitudes run smaller).
+#'   the \code{"moderation"} view, where fZ magnitudes run smaller).
 #' @param score_intensity_max Expected-score absolute value mapping to
 #'   maximum node-fill intensity (default \code{1}).
+#' @param view One of \code{"decomposed"} (default), \code{"normative"},
+#'   or \code{"moderation"}; see the description. \code{"moderation"}
+#'   requires a fit with Z.
 #' @param Z_value Optional numeric scalar; render the field conditional
 #'   on Z at this value (each edge becomes \code{f1 + fZ * Z_value}).
-#' @param Z_overlay Logical; render the fZ field (per-unit-Z change in
-#'   every path weight). Node fill is suppressed.
+#'   Mutually exclusive with a non-default \code{view}.
 #' @param Z_label Display label for the moderator in decomposed edge
 #'   labels (default \code{"Z"}).
 #' @param node_size Half-extent of each node shape in data coordinates
@@ -86,8 +94,8 @@ plotPathF <- function(x,
                       strip0 = TRUE,
                       scale_max = 0.8,
                       score_intensity_max = 1,
+                      view = c("decomposed", "normative", "moderation"),
                       Z_value = NULL,
-                      Z_overlay = FALSE,
                       Z_label = "Z",
                       node_size = 0.07,
                       label_pad = 0.03,
@@ -113,13 +121,13 @@ plotPathF <- function(x,
   nodes_v <- spec$nodes
   edges <- spec$edges
 
+  view <- match.arg(view)
   z_collapsed <- !is.null(Z_value)
-  if (!is.logical(Z_overlay) || length(Z_overlay) != 1L || is.na(Z_overlay))
-    stop("`Z_overlay` must be TRUE or FALSE.")
-  if (z_collapsed && Z_overlay)
-    stop("Pass at most one of `Z_value`, `Z_overlay`.")
+  if (z_collapsed && view != "decomposed")
+    stop("Pass at most one of `Z_value`, a non-default `view`.")
   if (z_collapsed && (!is.numeric(Z_value) || length(Z_value) != 1L))
     stop("`Z_value` must be a single numeric scalar.")
+  is_mod <- view == "moderation"
 
   ## -- Pull edge coefficients --------------------------------------
   pull1 <- function(param) {
@@ -136,12 +144,13 @@ plotPathF <- function(x,
     edges$fZ[r] <- eZ$est; edges$pZ[r] <- eZ$pvalue
   }
   has_Z <- any(!is.na(edges$fZ))
-  if ((z_collapsed || Z_overlay) && !has_Z)
+  if ((z_collapsed || is_mod) && !has_Z)
     stop("The fit has no fZ coefficients; refit pathF() with Z.")
   naz <- function(v) { v[is.na(v)] <- 0; v }
 
-  ## Effective coefficient per view mode
-  if (Z_overlay) {
+  ## Effective coefficient per view mode ("normative" displays the same
+  ## f1 field as "decomposed"; only its labels differ, below)
+  if (is_mod) {
     edges$coef <- naz(edges$fZ)
     edges$pv   <- edges$pZ
   } else if (z_collapsed) {
@@ -188,9 +197,9 @@ plotPathF <- function(x,
                   ifelse(role == "Y", Y_shape, "square"))
 
   ## Implied expected scores at X = 1, propagated in depth order.
-  ## Suppressed under Z_overlay (a per-unit-Z slope field has no
+  ## Suppressed in the moderation view (a per-unit-Z slope field has no
   ## expected-score reading).
-  if (Z_overlay) {
+  if (is_mod) {
     scores <- rep(NA_real_, K)
   } else {
     scores <- rep(NA_real_, K)
@@ -250,13 +259,13 @@ plotPathF <- function(x,
     if (strip0) f0(p, digits = 3, keep_sign = FALSE)
     else        sprintf("%.3f", p)
   }
-  single_mode <- Z_overlay || z_collapsed
+  single_mode <- is_mod || z_collapsed
   fmt_path <- function(coef, bZ, pv) {
     if (is.na(coef)) return("")
     out <- fmt_coef(coef)
     if (single_mode) {
       if (show_pvalues && !is.na(pv)) out <- paste0(out, "<br>p=", fmt_pv(pv))
-      return(if (Z_overlay) wrap_gold(out) else out)
+      return(if (is_mod) wrap_gold(out) else out)
     }
     if (!is.na(bZ) && abs(bZ) > 0) {
       out <- paste0(out, " ", wrap_gold(paste0(fmt_coef(bZ), "(", Z_label, ")")))
@@ -264,7 +273,10 @@ plotPathF <- function(x,
     if (show_pvalues && !is.na(pv)) out <- paste0(out, "<br>p=", fmt_pv(pv))
     out
   }
-  edges$label <- mapply(fmt_path, edges$coef, edges$fZ, edges$pv)
+  ## The normative view shows the f1 field with the moderation hidden:
+  ## suppress the gold fZ fragment by withholding fZ from the labeler.
+  label_fZ <- if (view == "normative") rep(NA_real_, nrow(edges)) else edges$fZ
+  edges$label <- mapply(fmt_path, edges$coef, label_fZ, edges$pv)
 
   ## -- Edge geometry: straight for adjacent depths, arcs for skips --
   edges$from_x <- nodes$x[idx[edges$src]]
@@ -290,7 +302,7 @@ plotPathF <- function(x,
     green = g_rgb[2] + (1 - g_rgb[2]) * fade,
     blue  = g_rgb[3] + (1 - g_rgb[3]) * fade
   )
-  edges$ecol <- if (Z_overlay) gold_col else gray_col
+  edges$ecol <- if (is_mod) gold_col else gray_col
 
   ## Shape containment tests for bezier clipping (centered shapes):
   ##   square: |dx| <= s and |dy| <= s
@@ -342,9 +354,12 @@ plotPathF <- function(x,
 
   ## -- Subtitle ------------------------------------------------------
   subtitle <- NULL
-  if (Z_overlay) {
+  if (is_mod) {
     subtitle <- sprintf(
-      "Z overlay: per-unit-%s change in path weight (FZ paths)", Z_label)
+      "Moderation field: per-unit-%s change in path weight (FZ paths)",
+      Z_label)
+  } else if (view == "normative" && has_Z) {
+    subtitle <- "Normative field: F1 paths only (moderation hidden)"
   } else if (z_collapsed) {
     zv_lab <- sprintf("%g", Z_value)
     if (strip0) zv_lab <- sub("^([+-]?)0\\.", "\\1.", zv_lab)
@@ -391,7 +406,7 @@ plotPathF <- function(x,
                  out[!is.na(v) & v == 0] <- "0"
                  out
                } else ggplot2::waiver(),
-      guide = if (Z_overlay) "none" else ggplot2::guide_colorbar(
+      guide = if (is_mod) "none" else ggplot2::guide_colorbar(
         barwidth = grid::unit(2.2, "in"),
         barheight = grid::unit(0.18, "in"))) +
     ggplot2::scale_linetype_identity() +
