@@ -76,6 +76,11 @@
   : Work-Overtime ESJT Dataset
 - [`parView()`](https://dustin-wood.github.io/funfield/reference/parView.md)
   : Provide Rounded Parameter Estimates
+- [`pathF()`](https://dustin-wood.github.io/funfield/reference/pathF.md)
+  : General Path / SEM Field Models with Optional Moderation
+- [`pathF_decompose()`](https://dustin-wood.github.io/funfield/reference/pathF_decompose.md)
+  : Decompose total and Z-moderated X-Y effects across a path model's
+  routes
 - [`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
   : Path Analysis for X -\> M -\> Y Structures with Optional Moderation
 - [`pathXMY_decompose()`](https://dustin-wood.github.io/funfield/reference/pathXMY_decompose.md)
