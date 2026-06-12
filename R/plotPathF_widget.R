@@ -10,6 +10,12 @@
 #' counterpart, all gold). Clicking \strong{Forward} therefore peels
 #' the one diagram apart into its black and gold layers in place.
 #'
+#' To guarantee the frames overlay perfectly — same node and arc
+#' positions to the pixel — the widget strips the per-view subtitles
+#' and the score colorbar from every frame (their presence varies by
+#' view and would otherwise shift the panel). Frame identity is
+#' carried by the title suffix and the widget's caption strip.
+#'
 #' This is a thin convenience over \code{\link{plotsAsWidget}}; for
 #' custom frame sequences (e.g. mixing \code{Z_value} collapses with
 #' view modes), build the frames with \code{plotPathF()} directly and
@@ -87,6 +93,16 @@ plotPathF_widget <- function(x,
       scale_max_moderation else scale_max
     plotPathF(x, view = v, scale_max = sm,
               title = panel_titles[k], ...)
+  })
+  ## Force pixel-identical panel geometry across frames so the nodes
+  ## and arcs overlay perfectly when toggling: the per-view subtitles
+  ## (present for some views, absent for others) and the score
+  ## colorbar (hidden in the moderation view) otherwise shift and
+  ## rescale the panel between frames. Frame identity lives in the
+  ## title suffix and the widget's caption strip instead.
+  plots <- lapply(plots, function(p) {
+    p + ggplot2::labs(subtitle = NULL) +
+      ggplot2::theme(legend.position = "none")
   })
   pxmy_widget_html(plots, panel_titles, width, height, res, format)
 }
