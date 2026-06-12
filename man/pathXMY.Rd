@@ -132,7 +132,11 @@ A list with three elements:
     \item{fits}{A named list of the lavaan fit objects (one per mediator,
       named by the mediator variable name; \code{"_direct"} when
       \code{M = NULL}; \code{"_joint"} for the joint multi-mediator fit
-      when present).}
+      when present). Every fit is estimated through the shared
+      \code{\link{pathF}} engine, so the lavaan objects internally use
+      the engine's token variable names (\code{v1, v2, ...}) and
+      source-target labels (\code{f1_1_2, ...}); the tidy tables
+      translate these to the canonical \code{f1_XM} vocabulary.}
   }
 }
 \description{

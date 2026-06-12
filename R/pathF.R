@@ -71,15 +71,20 @@
 #'   \describe{
 #'     \item{tidy}{A tidy data frame, one row per structural edge and per
 #'       indirect-effect term. Columns: \code{param}, \code{src}, \code{tgt},
-#'       \code{est}, \code{se}, \code{z}, \code{pvalue}, \code{ci.lower},
-#'       \code{ci.upper}. Edge \code{param}s use the F-schema source-target
-#'       form \code{f1_<src>_<tgt>} / \code{fZ_<src>_<tgt>}; indirect rows use
+#'       \code{label} (the internal lavaan parameter label, for debugging
+#'       against \code{$fit}), \code{est}, \code{se}, \code{z},
+#'       \code{pvalue}, \code{ci.lower}, \code{ci.upper}. Edge
+#'       \code{param}s use the F-schema source-target form
+#'       \code{f1_<src>_<tgt>} / \code{fZ_<src>_<tgt>}; indirect rows use
 #'       a \code{ * }-joined product string (e.g.
 #'       \code{f1_X_M * f1_M_Y}, \code{fZ_X_M * f1_M_Y}).}
 #'     \item{fit}{The fitted \code{lavaan} object.}
 #'     \item{spec}{The parsed specification (\code{nodes}, \code{edges},
 #'       \code{X}, \code{Y}).}
 #'     \item{model}{The generated lavaan model string (useful for debugging).}
+#'     \item{data}{The prepared data frame the model was fit to (deviated,
+#'       with the \code{.Z} moderator, token alias columns \code{v1..vK},
+#'       and interaction product columns). Used by resampling wrappers.}
 #'   }
 #'
 #' @details
@@ -189,25 +194,50 @@ pathF <- function(data, order = NULL, paths = NULL, X = NULL, Y = NULL,
     }
   }
 
-  ## token alias columns (v1, v2, ...) so the model string is independent of
-  ## possibly-messy real variable names; interaction product columns vK_Z.
+  eng <- .pathF_engine(dat, spec, has_Z = has_Z, ctrl_terms = ctrl_terms,
+                       cluster = cluster, conf.level = conf.level,
+                       suppress.warnings = suppress.warnings,
+                       max_paths = max_paths)
+
+  structure(list(tidy = eng$tidy, fit = eng$fit, spec = spec,
+                 model = eng$model, data = eng$data),
+            class = c("pathF", "list"))
+}
+
+## ---------- internal helpers ----------
+
+## The shared estimation core: alias the spec's variables to token columns
+## (v1, v2, ...) so the model string is independent of possibly-messy real
+## variable names, build interaction product columns, generate the lavaan
+## model string, fit, and tidy. Assumes `dat` is fully prepared (deviation
+## done, `.Z` and `.c_*` columns in place) -- both pathF() and pathXMY()
+## route every fit through here so there is a single source of truth for
+## model construction and extraction.
+.pathF_engine <- function(dat, spec, has_Z, ctrl_terms, cluster,
+                          conf.level, suppress.warnings,
+                          max_paths = 256L) {
   d <- dat
   K <- length(spec$nodes)
   for (k in seq_len(K)) d[[paste0("v", k)]] <- d[[spec$nodes[k]]]
   if (has_Z) {
     for (k in seq_len(K)) d[[paste0("v", k, "_Z")]] <- d[[paste0("v", k)]] * d$.Z
   }
-
   mb  <- .pathF_build_model(spec, has_Z, ctrl_terms, max_paths)
   fit <- .pathXMY_lavaan(d, mb$model, cluster = cluster,
                          suppress.warnings = suppress.warnings)
   tidy <- .pathF_tidy(fit, mb, spec, conf.level)
-
-  structure(list(tidy = tidy, fit = fit, spec = spec, model = mb$model),
-            class = c("pathF", "list"))
+  list(tidy = tidy, fit = fit, model = mb$model, data = d, mb = mb)
 }
 
-## ---------- internal helpers ----------
+## Build a pathF spec directly from a node list and edge vectors, without
+## formula parsing -- robust to arbitrary column names. Used by pathXMY()
+## to construct its triangle / direct / joint specs.
+.pathF_spec_make <- function(nodes, src, tgt, X, Y) {
+  list(nodes = nodes,
+       edges = data.frame(src = src, tgt = tgt, stringsAsFactors = FALSE),
+       X = X, Y = Y,
+       tok = stats::setNames(seq_along(nodes), nodes))
+}
 
 ## Parse `order` / `paths` into a node set, an edge list (src -> tgt), and the
 ## focal X / Y used for indirect-effect enumeration.
@@ -301,10 +331,12 @@ pathF <- function(data, order = NULL, paths = NULL, X = NULL, Y = NULL,
   }
   edge_lab <- do.call(rbind, edge_lab)
 
-  ## indirect-effect definitions along directed X -> Y paths (>= 2 edges)
+  ## indirect-effect definitions along directed X -> Y paths (>= 2 edges).
+  ## max_paths <= 0 skips enumeration silently (used by pathXMY's joint
+  ## fit, which never carried indirect rows).
   defs <- character(0)
   def_map <- list()
-  if (!is.na(spec$X) && !is.na(spec$Y) &&
+  if (max_paths > 0L && !is.na(spec$X) && !is.na(spec$Y) &&
       spec$X %in% nodes && spec$Y %in% nodes) {
     adj <- lapply(seq_along(nodes), function(i) edges$ti[edges$si == i])
     ptoks <- .pathF_enum_paths(adj, as.integer(tok[spec$X]),
@@ -368,8 +400,8 @@ pathF <- function(data, order = NULL, paths = NULL, X = NULL, Y = NULL,
   nodes <- spec$nodes
   rows <- list()
 
-  pf_row <- function(param, src, tgt, pr) {
-    data.frame(param = param, src = src, tgt = tgt,
+  pf_row <- function(param, src, tgt, label, pr) {
+    data.frame(param = param, src = src, tgt = tgt, label = label,
                est = pr$est[1], se = pr$se[1], z = pr$z[1],
                pvalue = pr$pvalue[1],
                ci.lower = pr$ci.lower[1], ci.upper = pr$ci.upper[1],
@@ -383,7 +415,8 @@ pathF <- function(data, order = NULL, paths = NULL, X = NULL, Y = NULL,
     if (!nrow(pr)) next
     src <- nodes[el$si[r]]; tgt <- nodes[el$ti[r]]
     rows[[length(rows) + 1L]] <-
-      pf_row(sprintf("%s_%s_%s", el$coef[r], src, tgt), src, tgt, pr)
+      pf_row(sprintf("%s_%s_%s", el$coef[r], src, tgt), src, tgt,
+             el$label[r], pr)
   }
 
   ## indirect / route-moderation products
@@ -399,7 +432,7 @@ pathF <- function(data, order = NULL, paths = NULL, X = NULL, Y = NULL,
     }
     rows[[length(rows) + 1L]] <-
       pf_row(paste(comps, collapse = " * "),
-             nodes[p[1]], nodes[p[length(p)]], pr)
+             nodes[p[1]], nodes[p[length(p)]], lab, pr)
   }
 
   out <- do.call(rbind, rows)

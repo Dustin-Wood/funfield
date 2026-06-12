@@ -104,7 +104,11 @@
 #'     \item{fits}{A named list of the lavaan fit objects (one per mediator,
 #'       named by the mediator variable name; \code{"_direct"} when
 #'       \code{M = NULL}; \code{"_joint"} for the joint multi-mediator fit
-#'       when present).}
+#'       when present). Every fit is estimated through the shared
+#'       \code{\link{pathF}} engine, so the lavaan objects internally use
+#'       the engine's token variable names (\code{v1, v2, ...}) and
+#'       source-target labels (\code{f1_1_2, ...}); the tidy tables
+#'       translate these to the canonical \code{f1_XM} vocabulary.}
 #'   }
 #'
 #' @details
@@ -266,7 +270,7 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
   has_Z <- !is.null(Z)
 
   if (!has_M) {
-    fit <- .pathXMY_fit_direct(dat, X = X, Y = Y, Z = Z, has_Z = has_Z,
+    fit <- .pathXMY_fit_direct(dat, X = X, Y = Y, has_Z = has_Z,
                                ctrl_terms = ctrl_terms,
                                cluster = cluster,
                                se = se, nboot = nboot,
@@ -289,7 +293,7 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
   for (k in seq_along(M)) {
     mvar <- M[k]
     fit_k <- .pathXMY_fit_med(dat, X = X, Y = Y, M = mvar,
-                              Z = Z, has_Z = has_Z,
+                              has_Z = has_Z,
                               ctrl_terms = ctrl_terms,
                               cluster = cluster,
                               se = se, nboot = nboot,
@@ -315,7 +319,7 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
               call. = FALSE)
     }
     jfit <- .pathXMY_fit_joint(dat, X = X, Y = Y, M = M,
-                                Z = Z, has_Z = has_Z,
+                                has_Z = has_Z,
                                 ctrl_terms = ctrl_terms,
                                 cluster = cluster,
                                 conf.level = conf.level,
@@ -333,77 +337,88 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
 
 ## ---------- internal helpers ----------
 
-## Build the lavaan model string for the X -> M -> Y case
-.pathXMY_model_med <- function(has_Z, ctrl_terms) {
-  ctrl_M <- if (length(ctrl_terms) > 0)
-    paste0(" + ", paste(ctrl_terms, collapse = " + ")) else ""
-  ctrl_Y <- ctrl_M
-  if (has_Z) {
-    m_eq <- sprintf(
-      "M ~ 1 + f1_XM*X + .Z + fZ_XM*X:.Z%s", ctrl_M)
-    y_eq <- sprintf(
-      "Y ~ 1 + f1_XY*X + .Z + fZ_XY*X:.Z + f1_MY*M + fZ_MY*M:.Z%s",
-      ctrl_Y)
-    defs <- c(
-      "ind   := f1_XM*f1_MY",
-      "indZ_X := fZ_XM*f1_MY",
-      "indZ_Y := f1_XM*fZ_MY"
-    )
-  } else {
-    m_eq <- sprintf("M ~ 1 + f1_XM*X%s", ctrl_M)
-    y_eq <- sprintf("Y ~ 1 + f1_XY*X + f1_MY*M%s", ctrl_Y)
-    defs <- "ind := f1_XM*f1_MY"
-  }
-  paste(c(m_eq, y_eq, defs), collapse = "\n")
+## All estimation routes through the shared pathF engine
+## (.pathF_engine in pathF.R): pathXMY's triangle, direct, and joint
+## fits are pathF specs whose engine params (f1_<src>_<tgt>) are
+## relabeled to the canonical X/M/Y vocabulary below. pathXMY is the
+## X -> M -> Y special case of pathF at the estimation level; what it
+## adds is the per-mediator loop protocol, the canonical labels, and
+## the bootstrap.
+
+## Canonical parameter vocabulary, in display order
+.pathXMY_canon_levels <- c(
+  "f1_XM", "fZ_XM", "f1_XY", "fZ_XY", "f1_MY", "fZ_MY",
+  "f1_XM * f1_MY", "fZ_XM * f1_MY", "f1_XM * fZ_MY"
+)
+
+## Engine-param -> canonical-param map for one X -> m -> Y triangle
+.pathXMY_canon_map <- function(X, m, Y) {
+  e1 <- function(a, b) sprintf("f1_%s_%s", a, b)
+  eZ <- function(a, b) sprintf("fZ_%s_%s", a, b)
+  stats::setNames(
+    .pathXMY_canon_levels,
+    c(e1(X, m), eZ(X, m), e1(X, Y), eZ(X, Y), e1(m, Y), eZ(m, Y),
+      paste(e1(X, m), "*", e1(m, Y)),
+      paste(eZ(X, m), "*", e1(m, Y)),
+      paste(e1(X, m), "*", eZ(m, Y))))
 }
 
-.pathXMY_model_direct <- function(has_Z, ctrl_terms) {
-  ctrl_Y <- if (length(ctrl_terms) > 0)
-    paste0(" + ", paste(ctrl_terms, collapse = " + ")) else ""
-  if (has_Z) {
-    sprintf("Y ~ 1 + f1_XY*X + .Z + fZ_XY*X:.Z%s", ctrl_Y)
-  } else {
-    sprintf("Y ~ 1 + f1_XY*X%s", ctrl_Y)
-  }
+## Relabel an engine tidy to canonical params, drop unmapped rows,
+## order canonically. Keeps the lavaan `label` column for the boot map.
+.pathXMY_relabel <- function(eng_tidy, map, levels) {
+  td <- eng_tidy
+  td$param <- unname(map[td$param])
+  td <- td[!is.na(td$param), , drop = FALSE]
+  td <- td[order(factor(td$param, levels = levels)), , drop = FALSE]
+  rownames(td) <- NULL
+  td
 }
 
-.pathXMY_fit_med <- function(dat, X, Y, M, Z, has_Z, ctrl_terms,
+.pathXMY_tidy_cols <- c("param", "est", "se", "z", "pvalue",
+                        "ci.lower", "ci.upper")
+
+.pathXMY_fit_med <- function(dat, X, Y, M, has_Z, ctrl_terms,
                              cluster, se, nboot, conf.level,
                              suppress.warnings) {
-  d <- dat
-  d$X <- d[[X]]
-  d$Y <- d[[Y]]
-  d$M <- d[[M]]
-  mod <- .pathXMY_model_med(has_Z, ctrl_terms)
-  fit <- .pathXMY_lavaan(d, mod, cluster = cluster,
-                         suppress.warnings = suppress.warnings)
-  tidy <- .pathXMY_tidy(fit, conf.level = conf.level)
+  spec <- .pathF_spec_make(c(X, M, Y),
+                           src = c(X, X, M), tgt = c(M, Y, Y),
+                           X = X, Y = Y)
+  eng <- .pathF_engine(dat, spec, has_Z = has_Z, ctrl_terms = ctrl_terms,
+                       cluster = cluster, conf.level = conf.level,
+                       suppress.warnings = suppress.warnings)
+  td <- .pathXMY_relabel(eng$tidy, .pathXMY_canon_map(X, M, Y),
+                         .pathXMY_canon_levels)
+  tidy <- td[, .pathXMY_tidy_cols]
   if (se == "boot") {
-    boot_se <- .pathXMY_boot(mod, d, cluster = cluster, R = nboot,
-                             conf.level = conf.level,
-                             suppress.warnings = suppress.warnings)
+    boot_se <- .pathXMY_boot(eng$model, eng$data, cluster = cluster,
+                             R = nboot, conf.level = conf.level,
+                             suppress.warnings = suppress.warnings,
+                             label_map = stats::setNames(td$param, td$label))
     tidy <- .merge_boot(tidy, boot_se)
   }
-  list(fit = fit, tidy = tidy)
+  list(fit = eng$fit, tidy = tidy)
 }
 
-.pathXMY_fit_direct <- function(dat, X, Y, Z, has_Z, ctrl_terms,
+.pathXMY_fit_direct <- function(dat, X, Y, has_Z, ctrl_terms,
                                 cluster, se, nboot, conf.level,
                                 suppress.warnings) {
-  d <- dat
-  d$X <- d[[X]]
-  d$Y <- d[[Y]]
-  mod <- .pathXMY_model_direct(has_Z, ctrl_terms)
-  fit <- .pathXMY_lavaan(d, mod, cluster = cluster,
-                         suppress.warnings = suppress.warnings)
-  tidy <- .pathXMY_tidy(fit, conf.level = conf.level)
+  spec <- .pathF_spec_make(c(X, Y), src = X, tgt = Y, X = X, Y = Y)
+  eng <- .pathF_engine(dat, spec, has_Z = has_Z, ctrl_terms = ctrl_terms,
+                       cluster = cluster, conf.level = conf.level,
+                       suppress.warnings = suppress.warnings)
+  map <- stats::setNames(c("f1_XY", "fZ_XY"),
+                         c(sprintf("f1_%s_%s", X, Y),
+                           sprintf("fZ_%s_%s", X, Y)))
+  td <- .pathXMY_relabel(eng$tidy, map, c("f1_XY", "fZ_XY"))
+  tidy <- td[, .pathXMY_tidy_cols]
   if (se == "boot") {
-    boot_se <- .pathXMY_boot(mod, d, cluster = cluster, R = nboot,
-                             conf.level = conf.level,
-                             suppress.warnings = suppress.warnings)
+    boot_se <- .pathXMY_boot(eng$model, eng$data, cluster = cluster,
+                             R = nboot, conf.level = conf.level,
+                             suppress.warnings = suppress.warnings,
+                             label_map = stats::setNames(td$param, td$label))
     tidy <- .merge_boot(tidy, boot_se)
   }
-  list(fit = fit, tidy = tidy)
+  list(fit = eng$fit, tidy = tidy)
 }
 
 .pathXMY_lavaan <- function(d, mod, cluster, suppress.warnings) {
@@ -426,43 +441,12 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
   }
 }
 
-## Rename internal lavaan defined-parameter labels to display labels.
-## (Lavaan cannot use "*" or spaces in defined-parameter names, so we keep
-## the simple identifiers inside the model string and rename on the way out.)
-.relabel_ind <- function(x) {
-  m <- c(ind    = "f1_XM * f1_MY",
-         indZ_X = "fZ_XM * f1_MY",
-         indZ_Y = "f1_XM * fZ_MY")
-  ifelse(x %in% names(m), m[x], x)
-}
-
-## Build the tidy table from a lavaan fit. Suppresses the cosmetic noise
-## rows (the Z-on-outcome row that's structurally zero, the M:Z variance
-## row that lavaan emits for product terms).
-.pathXMY_tidy <- function(fit, conf.level) {
-  pe <- lavaan::parameterestimates(fit, level = conf.level)
-  keep_lab <- c("f1_XM","fZ_XM","f1_XY","fZ_XY","f1_MY","fZ_MY",
-                "ind","indZ_X","indZ_Y")
-  pe <- pe[pe$label %in% keep_lab, , drop = FALSE]
-  ## Order parameters consistently, then apply display labels
-  pe$param <- factor(pe$label, levels = keep_lab)
-  pe <- pe[order(pe$param), , drop = FALSE]
-  out <- data.frame(
-    param    = .relabel_ind(as.character(pe$param)),
-    est      = pe$est,
-    se       = pe$se,
-    z        = pe$z,
-    pvalue   = pe$pvalue,
-    ci.lower = pe$ci.lower,
-    ci.upper = pe$ci.upper,
-    row.names = NULL, stringsAsFactors = FALSE
-  )
-  out
-}
-
-## Cluster bootstrap: resample clusters with replacement and refit
+## Cluster bootstrap: resample clusters with replacement and refit the
+## engine model string on the engine-prepared data. `label_map` maps the
+## fit's internal lavaan labels (f1_1_2, ind_1, ...) to the canonical
+## display params.
 .pathXMY_boot <- function(mod, d, cluster, R, conf.level,
-                          suppress.warnings) {
+                          suppress.warnings, label_map) {
   if (is.null(cluster)) {
     stop("Cluster bootstrap requires a cluster variable.", call. = FALSE)
   }
@@ -481,9 +465,7 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
       error = function(e) NULL)
     if (is.null(fb)) next
     pb <- lavaan::parameterestimates(fb)
-    pb <- pb[pb$label %in% c("f1_XM","fZ_XM","f1_XY","fZ_XY",
-                             "f1_MY","fZ_MY","ind","indZ_X","indZ_Y"),
-             , drop = FALSE]
+    pb <- pb[pb$label %in% names(label_map), , drop = FALSE]
     if (is.null(par_mat)) {
       par_mat <- matrix(NA_real_, R, length(pb$label),
                         dimnames = list(NULL, pb$label))
@@ -492,7 +474,7 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
   }
   alpha <- (1 - conf.level) / 2
   data.frame(
-    param    = .relabel_ind(colnames(par_mat)),
+    param    = unname(label_map[colnames(par_mat)]),
     se_boot  = apply(par_mat, 2, sd,        na.rm = TRUE),
     ci_lo_boot = apply(par_mat, 2, quantile, alpha,         na.rm = TRUE),
     ci_hi_boot = apply(par_mat, 2, quantile, 1 - alpha,     na.rm = TRUE),
@@ -513,111 +495,53 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
 
 ## ---------- joint multi-mediator fit ----------
 
-## Build the lavaan model string for the joint multi-mediator case.
-## Interactions are passed as explicit product columns (X_Z, M_1_Z, ...)
-## rather than the `X:.Z` syntax so the rhs in parameterestimates() is
-## predictable across lavaan versions and across long equations.
-.pathXMY_model_joint <- function(K, has_Z, ctrl_terms) {
-  ctrl_M <- if (length(ctrl_terms) > 0)
-    paste0(" + ", paste(ctrl_terms, collapse = " + ")) else ""
-  ctrl_Y <- ctrl_M
-
-  m_eqs <- vapply(seq_len(K), function(k) {
-    if (has_Z) {
-      sprintf("M_%d ~ 1 + f1_XM_J_%d*X + .Z + fZ_XM_J_%d*X_Z%s",
-              k, k, k, ctrl_M)
-    } else {
-      sprintf("M_%d ~ 1 + f1_XM_J_%d*X%s", k, k, ctrl_M)
-    }
-  }, character(1))
-
-  ym_terms <- if (has_Z) {
-    paste(vapply(seq_len(K), function(k)
-      sprintf("f1_MY_J_%d*M_%d + fZ_MY_J_%d*M_%d_Z", k, k, k, k),
-      character(1)), collapse = " + ")
-  } else {
-    paste(vapply(seq_len(K), function(k)
-      sprintf("f1_MY_J_%d*M_%d", k, k), character(1)),
-      collapse = " + ")
-  }
-
-  y_eq <- if (has_Z) {
-    sprintf("Y ~ 1 + f1_XY_J*X + .Z + fZ_XY_J*X_Z + %s%s",
-            ym_terms, ctrl_Y)
-  } else {
-    sprintf("Y ~ 1 + f1_XY_J*X + %s%s", ym_terms, ctrl_Y)
-  }
-
-  paste(c(m_eqs, y_eq), collapse = "\n")
-}
-
-.pathXMY_fit_joint <- function(dat, X, Y, M, Z, has_Z, ctrl_terms,
+## The joint fit is the pathF DAG X -> {M_1..M_K} -> Y (plus the direct
+## X -> Y edge) fit through the shared engine; route enumeration is
+## skipped (max_paths = 0) since the joint table never carried indirect
+## rows. Engine params are relabeled to *_joint and reordered to the
+## canonical per-mediator interleaving.
+.pathXMY_fit_joint <- function(dat, X, Y, M, has_Z, ctrl_terms,
                                 cluster, conf.level, suppress.warnings) {
-  d <- dat
-  d$X <- d[[X]]
-  d$Y <- d[[Y]]
   K <- length(M)
-  Mn <- paste0("M_", seq_len(K))
-  for (k in seq_len(K)) d[[Mn[k]]] <- d[[M[k]]]
+  spec <- .pathF_spec_make(c(X, M, Y),
+                           src = c(rep(X, K), X, M),
+                           tgt = c(M, Y, rep(Y, K)),
+                           X = X, Y = Y)
+  eng <- .pathF_engine(dat, spec, has_Z = has_Z, ctrl_terms = ctrl_terms,
+                       cluster = cluster, conf.level = conf.level,
+                       suppress.warnings = suppress.warnings,
+                       max_paths = 0L)
+  pe <- eng$tidy
 
-  ## Explicit product columns for the interactions. d$.Z was set in the
-  ## main pathXMY() preflight (within-deviated or z-standardized).
-  if (has_Z) {
-    d$X_Z <- d$X * d$.Z
-    for (k in seq_len(K)) d[[paste0(Mn[k], "_Z")]] <- d[[Mn[k]]] * d$.Z
-  }
-
-  mod <- .pathXMY_model_joint(K, has_Z, ctrl_terms)
-  fit <- .pathXMY_lavaan(d, mod, cluster = cluster,
-                         suppress.warnings = suppress.warnings)
-  tidy <- .pathXMY_tidy_joint(fit, M, has_Z = has_Z,
-                              conf.level = conf.level)
-  list(fit = fit, tidy = tidy)
-}
-
-## Tidy the joint-fit lavaan output by pulling parameters structurally
-## from (lhs, op, rhs) triples in parameterestimates(). Product columns
-## are explicit (X_Z, M_k_Z) so the rhs matches are exact strings —
-## no reliance on lavaan's handling of `:` syntax for interactions.
-.pathXMY_tidy_joint <- function(fit, M, has_Z, conf.level) {
-  pe <- lavaan::parameterestimates(fit, level = conf.level)
-  K  <- length(M)
-  Mn <- paste0("M_", seq_len(K))
-
-  one_row <- function(mediator, param, lhs, op, rhs) {
-    r <- pe[pe$lhs == lhs & pe$op == op & pe$rhs == rhs, , drop = FALSE]
+  grab <- function(mediator, canon, pf_param) {
+    r <- pe[pe$param == pf_param, , drop = FALSE]
     if (nrow(r) == 0L) return(NULL)
     data.frame(
-      mediator = mediator,
-      param    = param,
-      est      = r$est[1],
-      se       = r$se[1],
-      z        = r$z[1],
-      pvalue   = r$pvalue[1],
-      ci.lower = r$ci.lower[1],
-      ci.upper = r$ci.upper[1],
+      mediator = mediator, param = canon,
+      est = r$est[1], se = r$se[1], z = r$z[1], pvalue = r$pvalue[1],
+      ci.lower = r$ci.lower[1], ci.upper = r$ci.upper[1],
       row.names = NULL, stringsAsFactors = FALSE
     )
   }
 
   rows <- list()
   for (k in seq_len(K)) {
-    rows[[length(rows) + 1L]] <- one_row(M[k], "f1_XM_joint",
-                                         Mn[k], "~", "X")
+    rows[[length(rows) + 1L]] <-
+      grab(M[k], "f1_XM_joint", sprintf("f1_%s_%s", X, M[k]))
     if (has_Z)
-      rows[[length(rows) + 1L]] <- one_row(M[k], "fZ_XM_joint",
-                                           Mn[k], "~", "X_Z")
-    rows[[length(rows) + 1L]] <- one_row(M[k], "f1_MY_joint",
-                                         "Y", "~", Mn[k])
+      rows[[length(rows) + 1L]] <-
+        grab(M[k], "fZ_XM_joint", sprintf("fZ_%s_%s", X, M[k]))
+    rows[[length(rows) + 1L]] <-
+      grab(M[k], "f1_MY_joint", sprintf("f1_%s_%s", M[k], Y))
     if (has_Z)
-      rows[[length(rows) + 1L]] <- one_row(M[k], "fZ_MY_joint",
-                                           "Y", "~", paste0(Mn[k], "_Z"))
+      rows[[length(rows) + 1L]] <-
+        grab(M[k], "fZ_MY_joint", sprintf("fZ_%s_%s", M[k], Y))
   }
-  rows[[length(rows) + 1L]] <- one_row(NA_character_, "f1_XY_joint",
-                                       "Y", "~", "X")
+  rows[[length(rows) + 1L]] <-
+    grab(NA_character_, "f1_XY_joint", sprintf("f1_%s_%s", X, Y))
   if (has_Z)
-    rows[[length(rows) + 1L]] <- one_row(NA_character_, "fZ_XY_joint",
-                                         "Y", "~", "X_Z")
+    rows[[length(rows) + 1L]] <-
+      grab(NA_character_, "fZ_XY_joint", sprintf("fZ_%s_%s", X, Y))
 
   rows <- rows[!vapply(rows, is.null, logical(1))]
   if (length(rows) == 0L) {
@@ -625,14 +549,14 @@ pathXMY <- function(data, X, Y, M = NULL, Z = NULL, Z.within = FALSE,
             "skipping joint output. Inspect ",
             "lavaan::parameterestimates(<fit>$fits[['_joint']]) to debug.",
             call. = FALSE)
-    return(data.frame(
+    return(list(fit = eng$fit, tidy = data.frame(
       mediator = character(0), param = character(0),
       est = numeric(0), se = numeric(0), z = numeric(0),
       pvalue = numeric(0), ci.lower = numeric(0), ci.upper = numeric(0),
       stringsAsFactors = FALSE
-    ))
+    )))
   }
-  do.call(rbind, rows)
+  list(fit = eng$fit, tidy = do.call(rbind, rows))
 }
 
 ## Within-(person, situation) deviate Level-1 columns (X, M, Y).

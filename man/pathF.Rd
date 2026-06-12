@@ -80,15 +80,20 @@ A list of class \code{"pathF"} with:
   \describe{
     \item{tidy}{A tidy data frame, one row per structural edge and per
       indirect-effect term. Columns: \code{param}, \code{src}, \code{tgt},
-      \code{est}, \code{se}, \code{z}, \code{pvalue}, \code{ci.lower},
-      \code{ci.upper}. Edge \code{param}s use the F-schema source-target
-      form \code{f1_<src>_<tgt>} / \code{fZ_<src>_<tgt>}; indirect rows use
+      \code{label} (the internal lavaan parameter label, for debugging
+      against \code{$fit}), \code{est}, \code{se}, \code{z},
+      \code{pvalue}, \code{ci.lower}, \code{ci.upper}. Edge
+      \code{param}s use the F-schema source-target form
+      \code{f1_<src>_<tgt>} / \code{fZ_<src>_<tgt>}; indirect rows use
       a \code{ * }-joined product string (e.g.
       \code{f1_X_M * f1_M_Y}, \code{fZ_X_M * f1_M_Y}).}
     \item{fit}{The fitted \code{lavaan} object.}
     \item{spec}{The parsed specification (\code{nodes}, \code{edges},
       \code{X}, \code{Y}).}
     \item{model}{The generated lavaan model string (useful for debugging).}
+    \item{data}{The prepared data frame the model was fit to (deviated,
+      with the \code{.Z} moderator, token alias columns \code{v1..vK},
+      and interaction product columns). Used by resampling wrappers.}
   }
 }
 \description{
