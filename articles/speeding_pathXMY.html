@@ -3640,12 +3640,497 @@ not itself significant.</p>
 </div>
 </div>
 <div class="section level3">
+<h3 id="pathf-chains">Ordered mediators: causal chains with <code>pathF()</code><a class="anchor" aria-label="anchor" href="#pathf-chains"></a>
+</h3>
+<p>Everything to this point treats the eight expected outcomes as
+<strong>parallel</strong> mediators: each sits side by side between
+<code>Speed</code> and <code>Likelihood</code>, and no mediator is
+allowed to affect another. For most of the outcome set that is a
+reasonable default — but for some pairs the parallel reading is clearly
+wrong. An injury expectation should ride on a crash expectation (you are
+not injured by a crash that doesn’t happen), and a speeding ticket is
+the most obvious way driving fast costs money. Pairs like
+<code>Crash → Injured</code> and <code>Ticket → MoneyCost</code> are
+<em>ordered</em>: one expected outcome sits causally upstream of the
+other.</p>
+<p><code><a href="../reference/pathF.html">pathF()</a></code> generalizes <code><a href="../reference/pathXMY.html">pathXMY()</a></code> to this case.
+Given the variables in presumed causal order, it expands them into the
+<strong>saturated cascade</strong> — every causally upstream variable
+predicts every downstream variable — fits the whole system as a single
+lavaan model, and enumerates the indirect effect along every directed
+route from <code>X</code> to <code>Y</code>. Parameter labels carry the
+full source-target names (<code>f1_Speed_Crash</code> is the display
+form <code>F1[Speed,Crash]</code>), and routes appear as
+<code>*</code>-joined products of their edges.</p>
+<div class="section level4">
+<h4 id="the-crash-injury-chain">The crash-injury chain<a class="anchor" aria-label="anchor" href="#the-crash-injury-chain"></a>
+</h4>
+<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chain1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pathF.html">pathF</a></span><span class="op">(</span><span class="va">dat</span>, order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Speed"</span>, <span class="st">"Crash"</span>, <span class="st">"Injured"</span>, <span class="st">"Likelihood"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/kable0.html">kable0</a></span><span class="op">(</span><span class="va">chain1</span><span class="op">$</span><span class="va">tidy</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"param"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>, digits <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>       caption <span class="op">=</span> <span class="st">"Saturated cascade Speed -&gt; Crash -&gt; Injured -&gt; Likelihood"</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>Saturated cascade Speed -&gt; Crash -&gt; Injured -&gt;
+Likelihood</caption>
+<colgroup>
+<col width="69%">
+<col width="7%">
+<col width="6%">
+<col width="8%">
+<col width="8%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">param</th>
+<th align="right">est</th>
+<th align="right">se</th>
+<th align="right">z</th>
+<th align="right">pvalue</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">f1_Speed_Crash</td>
+<td align="right">.306</td>
+<td align="right">.015</td>
+<td align="right">19.846</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_Speed_Injured</td>
+<td align="right">.093</td>
+<td align="right">.016</td>
+<td align="right">5.940</td>
+<td align="right">.000</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Crash_Injured</td>
+<td align="right">.688</td>
+<td align="right">.042</td>
+<td align="right">16.530</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_Speed_Likelihood</td>
+<td align="right">-.034</td>
+<td align="right">.041</td>
+<td align="right">-.842</td>
+<td align="right">.400</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Crash_Likelihood</td>
+<td align="right">-.402</td>
+<td align="right">.089</td>
+<td align="right">-4.510</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_Injured_Likelihood</td>
+<td align="right">-.401</td>
+<td align="right">.103</td>
+<td align="right">-3.893</td>
+<td align="right">.000</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Speed_Crash * f1_Crash_Injured *
+f1_Injured_Likelihood</td>
+<td align="right">-.085</td>
+<td align="right">.022</td>
+<td align="right">-3.853</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_Speed_Crash * f1_Crash_Likelihood</td>
+<td align="right">-.123</td>
+<td align="right">.028</td>
+<td align="right">-4.445</td>
+<td align="right">.000</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Speed_Injured * f1_Injured_Likelihood</td>
+<td align="right">-.037</td>
+<td align="right">.012</td>
+<td align="right">-3.034</td>
+<td align="right">.002</td>
+</tr>
+</tbody>
+</table>
+<p>The structural edges tell an intuitive story.
+<code>F1[Speed,Crash] = .31</code>: faster speeds raise the crash
+expectation, as in the parallel fan. The new information is in the next
+two rows. <code>F1[Crash,Injured] = .69</code> is the strongest edge in
+the model — the injury expectation tracks the crash expectation closely
+— while the <em>direct</em> <code>F1[Speed,Injured]</code> path, net of
+<code>Crash</code>, falls to <code>.09</code>. In the parallel fan the
+<code>Speed → Injured</code> slope was about <code>.30</code>; the
+cascade attributes the bulk of that movement to the crash expectation
+sitting upstream (<code>.31 × .69 ≈ .21</code> of it), leaving a
+comparatively small residual direct path. That accords with how the
+injury expectation should work: speed raises injury risk
+<em>because</em> it raises crash risk.</p>
+<p>The bottom three rows are the route decomposition: the cascade has
+three directed routes from <code>Speed</code> to <code>Likelihood</code>
+through the mediators (through both, via <code>Crash</code> alone, via
+<code>Injured</code> alone), each estimated as the product of its edges
+with a delta-method SE. The three-edge route
+<code>Speed → Crash → Injured → Likelihood</code> carries
+<code>-.09</code> (<em>p</em> &lt; .001) — a chained <em>reason not to
+speed</em> that the parallel model can state only piecemeal.</p>
+</div>
+<div class="section level4">
+<h4 id="the-ticket-money-chain">The ticket-money chain<a class="anchor" aria-label="anchor" href="#the-ticket-money-chain"></a>
+</h4>
+<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">chain2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pathF.html">pathF</a></span><span class="op">(</span><span class="va">dat</span>, order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Speed"</span>, <span class="st">"Ticket"</span>, <span class="st">"MoneyCost"</span>, <span class="st">"Likelihood"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/kable0.html">kable0</a></span><span class="op">(</span><span class="va">chain2</span><span class="op">$</span><span class="va">tidy</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"param"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>, digits <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>       caption <span class="op">=</span> <span class="st">"Saturated cascade Speed -&gt; Ticket -&gt; MoneyCost -&gt; Likelihood"</span><span class="op">)</span></span></code></pre></div>
+<table style="width:100%;" class="table">
+<caption>Saturated cascade Speed -&gt; Ticket -&gt; MoneyCost -&gt;
+Likelihood</caption>
+<colgroup>
+<col width="71%">
+<col width="6%">
+<col width="5%">
+<col width="7%">
+<col width="7%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">param</th>
+<th align="right">est</th>
+<th align="right">se</th>
+<th align="right">z</th>
+<th align="right">pvalue</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">f1_Speed_Ticket</td>
+<td align="right">.551</td>
+<td align="right">.017</td>
+<td align="right">31.909</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_Speed_MoneyCost</td>
+<td align="right">-.001</td>
+<td align="right">.020</td>
+<td align="right">-.074</td>
+<td align="right">.941</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Ticket_MoneyCost</td>
+<td align="right">.255</td>
+<td align="right">.039</td>
+<td align="right">6.544</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_Speed_Likelihood</td>
+<td align="right">.020</td>
+<td align="right">.051</td>
+<td align="right">.393</td>
+<td align="right">.694</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Ticket_Likelihood</td>
+<td align="right">-.492</td>
+<td align="right">.077</td>
+<td align="right">-6.376</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_MoneyCost_Likelihood</td>
+<td align="right">-.204</td>
+<td align="right">.085</td>
+<td align="right">-2.408</td>
+<td align="right">.016</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Speed_Ticket * f1_Ticket_MoneyCost *
+f1_MoneyCost_Likelihood</td>
+<td align="right">-.029</td>
+<td align="right">.013</td>
+<td align="right">-2.214</td>
+<td align="right">.027</td>
+</tr>
+<tr class="even">
+<td align="left">f1_Speed_Ticket * f1_Ticket_Likelihood</td>
+<td align="right">-.271</td>
+<td align="right">.043</td>
+<td align="right">-6.333</td>
+<td align="right">.000</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Speed_MoneyCost * f1_MoneyCost_Likelihood</td>
+<td align="right">.000</td>
+<td align="right">.004</td>
+<td align="right">.074</td>
+<td align="right">.941</td>
+</tr>
+</tbody>
+</table>
+<p>Here the upstream attribution is nearly complete:
+<code>F1[Speed,MoneyCost] = -.00</code> (<em>p</em> = .92) once
+<code>Ticket</code> is in the model. Respondents do not appear to expect
+faster driving to cost money in itself; the money-cost expectation moves
+with speed only by way of the ticket expectation
+(<code>F1[Speed,Ticket] = .55</code>,
+<code>F1[Ticket,MoneyCost] = .26</code>). The parallel fan reported a
+modest positive <code>Speed → MoneyCost</code> loading; the cascade
+locates its origin one step upstream.</p>
+</div>
+<div class="section level4">
+<h4 id="sliding-z-moderation-decomposed-through-a-chain">Sliding-Z: moderation decomposed through a chain<a class="anchor" aria-label="anchor" href="#sliding-z-moderation-decomposed-through-a-chain"></a>
+</h4>
+<p>The moderation decomposition generalizes along with the model. With a
+single mediator, <code>Z</code>’s total moderation splits into an
+expectation term, a valuation term, and a residual. In a chain, the same
+logic produces one term per <strong>edge position</strong> as the
+moderator “slides” through the route — for the two-mediator chain
+<code>X → M1 → M2 → Y</code>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>F</mi><mi>Z</mi><mo>*</mo></msubsup><mo stretchy="false" form="prefix">[</mo><mi>X</mi><mo>,</mo><mi>Y</mi><mo stretchy="false" form="postfix">]</mo><mspace width="0.278em"></mspace><mo>≈</mo><mspace width="0.278em"></mspace><msub><mi>F</mi><mi>Z</mi></msub><mo stretchy="false" form="prefix">[</mo><mi>X</mi><mo>,</mo><msub><mi>M</mi><mn>1</mn></msub><mo stretchy="false" form="postfix">]</mo><mspace width="0.167em"></mspace><msub><mi>F</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">[</mo><msub><mi>M</mi><mn>1</mn></msub><mo>,</mo><msub><mi>M</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">]</mo><mspace width="0.167em"></mspace><msub><mi>F</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">[</mo><msub><mi>M</mi><mn>2</mn></msub><mo>,</mo><mi>Y</mi><mo stretchy="false" form="postfix">]</mo><mspace width="0.278em"></mspace><mo>+</mo><mspace width="0.278em"></mspace><msub><mi>F</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">[</mo><mi>X</mi><mo>,</mo><msub><mi>M</mi><mn>1</mn></msub><mo stretchy="false" form="postfix">]</mo><mspace width="0.167em"></mspace><msub><mi>F</mi><mi>Z</mi></msub><mo stretchy="false" form="prefix">[</mo><msub><mi>M</mi><mn>1</mn></msub><mo>,</mo><msub><mi>M</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">]</mo><mspace width="0.167em"></mspace><msub><mi>F</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">[</mo><msub><mi>M</mi><mn>2</mn></msub><mo>,</mo><mi>Y</mi><mo stretchy="false" form="postfix">]</mo><mspace width="0.278em"></mspace><mo>+</mo><mspace width="0.278em"></mspace><msub><mi>F</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">[</mo><mi>X</mi><mo>,</mo><msub><mi>M</mi><mn>1</mn></msub><mo stretchy="false" form="postfix">]</mo><mspace width="0.167em"></mspace><msub><mi>F</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">[</mo><msub><mi>M</mi><mn>1</mn></msub><mo>,</mo><msub><mi>M</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">]</mo><mspace width="0.167em"></mspace><msub><mi>F</mi><mi>Z</mi></msub><mo stretchy="false" form="prefix">[</mo><msub><mi>M</mi><mn>2</mn></msub><mo>,</mo><mi>Y</mi><mo stretchy="false" form="postfix">]</mo><mspace width="0.278em"></mspace><mo>+</mo><mspace width="0.278em"></mspace><mi>⋯</mi><mspace width="0.278em"></mspace><mo>+</mo><mspace width="0.278em"></mspace><msub><mi>F</mi><mi>Z</mi></msub><mo stretchy="false" form="prefix">[</mo><mi>X</mi><mo>,</mo><mi>Y</mi><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">F_{Z}^{*}[X,Y] \;\approx\;
+F_{Z}[X,M_1]\,F_{1}[M_1,M_2]\,F_{1}[M_2,Y] \;+\;
+F_{1}[X,M_1]\,F_{Z}[M_1,M_2]\,F_{1}[M_2,Y] \;+\;
+F_{1}[X,M_1]\,F_{1}[M_1,M_2]\,F_{Z}[M_2,Y] \;+\;
+\cdots \;+\; F_{Z}[X,Y]</annotation></semantics></math></p>
+<p>with the <code>⋯</code> collecting the analogous slide terms for the
+shorter sub-routes of the saturated cascade, and <code>FZ[X,Y]</code>
+the residual direct moderation. <code><a href="../reference/pathF_decompose.html">pathF_decompose()</a></code> fits the
+bare total model alongside the cascade and tabulates every term, their
+sum, and the gap between the sum and the total:</p>
+<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dec_pf</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pathF_decompose.html">pathF_decompose</a></span><span class="op">(</span><span class="va">dat2</span>,</span>
+<span>                          order <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Speed"</span>, <span class="st">"Crash"</span>, <span class="st">"Injured"</span>, <span class="st">"Likelihood"</span><span class="op">)</span>,</span>
+<span>                          Z <span class="op">=</span> <span class="st">"SRFastDriver"</span>, Z.within <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/kable0.html">kable0</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">dec_pf</span><span class="op">$</span><span class="va">components</span>, <span class="va">block</span> <span class="op">==</span> <span class="st">"fZ"</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"term"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>       digits <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>       caption <span class="op">=</span> <span class="st">"Sliding-Z decomposition of the fast-driver moderation through the crash-injury chain"</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>Sliding-Z decomposition of the fast-driver moderation through
+the crash-injury chain</caption>
+<colgroup>
+<col width="3%">
+<col width="67%">
+<col width="6%">
+<col width="5%">
+<col width="8%">
+<col width="8%">
+</colgroup>
+<thead><tr class="header">
+<th align="left"></th>
+<th align="left">term</th>
+<th align="right">est</th>
+<th align="right">se</th>
+<th align="right">z</th>
+<th align="right">pvalue</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">8</td>
+<td align="left">fZ_Speed_Crash * f1_Crash_Injured *
+f1_Injured_Likelihood</td>
+<td align="right">.015</td>
+<td align="right">.005</td>
+<td align="right">2.742</td>
+<td align="right">.006</td>
+</tr>
+<tr class="even">
+<td align="left">9</td>
+<td align="left">f1_Speed_Crash * fZ_Crash_Injured *
+f1_Injured_Likelihood</td>
+<td align="right">.001</td>
+<td align="right">.005</td>
+<td align="right">.202</td>
+<td align="right">.840</td>
+</tr>
+<tr class="odd">
+<td align="left">10</td>
+<td align="left">f1_Speed_Crash * f1_Crash_Injured *
+fZ_Injured_Likelihood</td>
+<td align="right">.012</td>
+<td align="right">.023</td>
+<td align="right">.504</td>
+<td align="right">.615</td>
+</tr>
+<tr class="even">
+<td align="left">11</td>
+<td align="left">fZ_Speed_Crash * f1_Crash_Likelihood</td>
+<td align="right">.023</td>
+<td align="right">.008</td>
+<td align="right">2.918</td>
+<td align="right">.004</td>
+</tr>
+<tr class="odd">
+<td align="left">12</td>
+<td align="left">f1_Speed_Crash * fZ_Crash_Likelihood</td>
+<td align="right">-.037</td>
+<td align="right">.024</td>
+<td align="right">-1.563</td>
+<td align="right">.118</td>
+</tr>
+<tr class="even">
+<td align="left">13</td>
+<td align="left">fZ_Speed_Injured * f1_Injured_Likelihood</td>
+<td align="right">.007</td>
+<td align="right">.006</td>
+<td align="right">1.286</td>
+<td align="right">.199</td>
+</tr>
+<tr class="odd">
+<td align="left">14</td>
+<td align="left">f1_Speed_Injured * fZ_Injured_Likelihood</td>
+<td align="right">.006</td>
+<td align="right">.011</td>
+<td align="right">.504</td>
+<td align="right">.614</td>
+</tr>
+<tr class="even">
+<td align="left">15</td>
+<td align="left">fZ_Speed_Likelihood (direct)</td>
+<td align="right">.225</td>
+<td align="right">.035</td>
+<td align="right">6.345</td>
+<td align="right">.000</td>
+</tr>
+<tr class="odd">
+<td align="left">16</td>
+<td align="left">sum (routes + direct)</td>
+<td align="right">.251</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+<tr class="even">
+<td align="left">17</td>
+<td align="left">total (no-mediator)</td>
+<td align="right">.253</td>
+<td align="right">.028</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+<tr class="odd">
+<td align="left">18</td>
+<td align="left">gap (total - sum)</td>
+<td align="right">.002</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+<td align="right">NA</td>
+</tr>
+</tbody>
+</table>
+<p>The total being decomposed is the same <code>FZ*[X,Y] ≈ .25</code>
+indexed in the fast-driver section above. The only slide terms that
+reach significance are the two where the moderation sits on the
+<em>first</em> edge — <code>FZ[Speed,Crash]</code> propagating down the
+three-edge route (+.01, <em>p</em> = .006) and down the two-edge route
+through <code>Crash</code> (+.02, <em>p</em> = .003). That is the
+chain-level restatement of the expectation-route story from the parallel
+analysis: self-described fast drivers expect less crash risk from speed,
+and that one shifted expectation echoes down every route it heads. The
+residual direct term (+.22) again absorbs what the other seven mediators
+would carry.</p>
+<p>The <code>sum (routes + direct)</code> and
+<code>total (no-mediator)</code> rows put the approximation quality on
+the table: the first-order identity is accurate here to about
+<code>.002</code> (the <code>gap</code> row), or under 1% of the total.
+Across these data the gap stays similarly small for three-, four-, and
+five-node chains — the dropped higher-order terms are products of two or
+more <code>FZ</code> coefficients and shrink quickly. What <em>does</em>
+erode with chain length is per-term precision: a route product of three
+or four small coefficients has a small estimate and a wide relative SE,
+so individual slide terms in long chains are rarely significant even
+when the accounting as a whole is nearly exact.</p>
+</div>
+<div class="section level4">
+<h4 id="arbitrary-path-structures">Arbitrary path structures<a class="anchor" aria-label="anchor" href="#arbitrary-path-structures"></a>
+</h4>
+<p>The cascade is the default reading of an ordered variable list, but
+<code><a href="../reference/pathF.html">pathF()</a></code> also accepts an explicit path diagram via
+lavaan-style formulas — useful when some edges should be absent rather
+than estimated. For instance, a two-route model in which
+<code>OnTime</code> and <code>Appropriate</code> mediate in parallel but
+no direct <code>Speed → Likelihood</code> edge through the other six
+outcomes is wanted:</p>
+<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dag</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pathF.html">pathF</a></span><span class="op">(</span><span class="va">dat</span>, paths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Likelihood ~ Appropriate + OnTime"</span>,</span>
+<span>                            <span class="st">"Appropriate ~ Speed"</span>,</span>
+<span>                            <span class="st">"OnTime ~ Speed"</span><span class="op">)</span>,</span>
+<span>             X <span class="op">=</span> <span class="st">"Speed"</span>, Y <span class="op">=</span> <span class="st">"Likelihood"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/kable0.html">kable0</a></span><span class="op">(</span><span class="va">dag</span><span class="op">$</span><span class="va">tidy</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"param"</span>,<span class="st">"est"</span>,<span class="st">"se"</span>,<span class="st">"z"</span>,<span class="st">"pvalue"</span><span class="op">)</span><span class="op">]</span>, digits <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>       caption <span class="op">=</span> <span class="st">"A two-route DAG specified with paths="</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>A two-route DAG specified with paths=</caption>
+<colgroup>
+<col width="65%">
+<col width="8%">
+<col width="6%">
+<col width="10%">
+<col width="9%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">param</th>
+<th align="right">est</th>
+<th align="right">se</th>
+<th align="right">z</th>
+<th align="right">pvalue</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">f1_Appropriate_Likelihood</td>
+<td align="right">.698</td>
+<td align="right">.043</td>
+<td align="right">16.060</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_OnTime_Likelihood</td>
+<td align="right">.252</td>
+<td align="right">.063</td>
+<td align="right">4.020</td>
+<td align="right">.000</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Speed_Appropriate</td>
+<td align="right">-.446</td>
+<td align="right">.021</td>
+<td align="right">-20.851</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_Speed_OnTime</td>
+<td align="right">.241</td>
+<td align="right">.018</td>
+<td align="right">13.580</td>
+<td align="right">.000</td>
+</tr>
+<tr class="odd">
+<td align="left">f1_Speed_Appropriate * f1_Appropriate_Likelihood</td>
+<td align="right">-.311</td>
+<td align="right">.026</td>
+<td align="right">-12.115</td>
+<td align="right">.000</td>
+</tr>
+<tr class="even">
+<td align="left">f1_Speed_OnTime * f1_OnTime_Likelihood</td>
+<td align="right">.061</td>
+<td align="right">.016</td>
+<td align="right">3.759</td>
+<td align="right">.000</td>
+</tr>
+</tbody>
+</table>
+<p>Every directed route from <code>X</code> to <code>Y</code> present in
+the diagram is enumerated automatically, exactly as in the cascade.
+<code><a href="../reference/pathXMY.html">pathXMY()</a></code> remains the right tool for the parallel-mediator
+screening passes that make up most of this vignette;
+<code><a href="../reference/pathF.html">pathF()</a></code> takes over where the mediators themselves have
+causal structure worth modeling.</p>
+</div>
+</div>
+<div class="section level3">
 <h3 id="scoring-named-trait-composites">Scoring named trait composites<a class="anchor" aria-label="anchor" href="#scoring-named-trait-composites"></a>
 </h3>
 <p>If you want the Big Five and other named scales from Wood, Harms,
 &amp; Cho (2023), use the recipes in
 <code>speedingESJT$codebook$trait_scales</code>:</p>
-<div class="sourceCode" id="cb48"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tr</span> <span class="op">&lt;-</span> <span class="va">speedingESJT</span><span class="op">$</span><span class="va">traits</span></span>
 <span><span class="va">tr</span><span class="op">$</span><span class="va">Extra</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">tr</span><span class="op">$</span><span class="va">SR_15</span>, <span class="va">tr</span><span class="op">$</span><span class="va">SR_16</span>, <span class="va">tr</span><span class="op">$</span><span class="va">SR_17</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">tr</span><span class="op">$</span><span class="va">Agree</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">tr</span><span class="op">$</span><span class="va">SR_18</span>, <span class="fl">1</span> <span class="op">-</span> <span class="va">tr</span><span class="op">$</span><span class="va">SR_19</span>, <span class="va">tr</span><span class="op">$</span><span class="va">SR_20</span><span class="op">)</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -3658,6 +4143,7 @@ not itself significant.</p>
 </h3>
 <p>See <code><a href="../reference/pathXMY.html">?pathXMY</a></code>, <code><a href="../reference/pathXMY_pairtable.html">?pathXMY_pairtable</a></code>,
 <code><a href="../reference/group_kable.html">?group_kable</a></code>, <code><a href="../reference/pathXMY_decompose.html">?pathXMY_decompose</a></code>,
+<code><a href="../reference/pathF.html">?pathF</a></code>, <code><a href="../reference/pathF_decompose.html">?pathF_decompose</a></code>,
 <code><a href="../reference/plotPathXMY.html">?plotPathXMY</a></code>, <code><a href="../reference/plotPathXMY_ZLH.html">?plotPathXMY_ZLH</a></code>,
 <code><a href="../reference/plotPathXMY_widget.html">?plotPathXMY_widget</a></code>, and <code><a href="../reference/speedingESJT.html">?speedingESJT</a></code>.</p>
 </div>

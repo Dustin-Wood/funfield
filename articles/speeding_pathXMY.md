@@ -2010,6 +2010,217 @@ value in this example is exactly that: it pinpoints *which* expectations
 time pressure shifts, and confirms those shifts are real, even though
 the aggregate moderation is not itself significant.
 
+### Ordered mediators: causal chains with `pathF()`
+
+Everything to this point treats the eight expected outcomes as
+**parallel** mediators: each sits side by side between `Speed` and
+`Likelihood`, and no mediator is allowed to affect another. For most of
+the outcome set that is a reasonable default — but for some pairs the
+parallel reading is clearly wrong. An injury expectation should ride on
+a crash expectation (you are not injured by a crash that doesn’t
+happen), and a speeding ticket is the most obvious way driving fast
+costs money. Pairs like `Crash → Injured` and `Ticket → MoneyCost` are
+*ordered*: one expected outcome sits causally upstream of the other.
+
+[`pathF()`](https://dustin-wood.github.io/funfield/reference/pathF.md)
+generalizes
+[`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
+to this case. Given the variables in presumed causal order, it expands
+them into the **saturated cascade** — every causally upstream variable
+predicts every downstream variable — fits the whole system as a single
+lavaan model, and enumerates the indirect effect along every directed
+route from `X` to `Y`. Parameter labels carry the full source-target
+names (`f1_Speed_Crash` is the display form `F1[Speed,Crash]`), and
+routes appear as `*`-joined products of their edges.
+
+#### The crash-injury chain
+
+``` r
+
+chain1 <- pathF(dat, order = c("Speed", "Crash", "Injured", "Likelihood"))
+kable0(chain1$tidy[, c("param","est","se","z","pvalue")], digits = 3,
+       caption = "Saturated cascade Speed -> Crash -> Injured -> Likelihood")
+```
+
+| param | est | se | z | pvalue |
+|:---|---:|---:|---:|---:|
+| f1_Speed_Crash | .306 | .015 | 19.846 | .000 |
+| f1_Speed_Injured | .093 | .016 | 5.940 | .000 |
+| f1_Crash_Injured | .688 | .042 | 16.530 | .000 |
+| f1_Speed_Likelihood | -.034 | .041 | -.842 | .400 |
+| f1_Crash_Likelihood | -.402 | .089 | -4.510 | .000 |
+| f1_Injured_Likelihood | -.401 | .103 | -3.893 | .000 |
+| f1_Speed_Crash \* f1_Crash_Injured \* f1_Injured_Likelihood | -.085 | .022 | -3.853 | .000 |
+| f1_Speed_Crash \* f1_Crash_Likelihood | -.123 | .028 | -4.445 | .000 |
+| f1_Speed_Injured \* f1_Injured_Likelihood | -.037 | .012 | -3.034 | .002 |
+
+Saturated cascade Speed -\> Crash -\> Injured -\> Likelihood {.table}
+
+The structural edges tell an intuitive story. `F1[Speed,Crash] = .31`:
+faster speeds raise the crash expectation, as in the parallel fan. The
+new information is in the next two rows. `F1[Crash,Injured] = .69` is
+the strongest edge in the model — the injury expectation tracks the
+crash expectation closely — while the *direct* `F1[Speed,Injured]` path,
+net of `Crash`, falls to `.09`. In the parallel fan the
+`Speed → Injured` slope was about `.30`; the cascade attributes the bulk
+of that movement to the crash expectation sitting upstream
+(`.31 × .69 ≈ .21` of it), leaving a comparatively small residual direct
+path. That accords with how the injury expectation should work: speed
+raises injury risk *because* it raises crash risk.
+
+The bottom three rows are the route decomposition: the cascade has three
+directed routes from `Speed` to `Likelihood` through the mediators
+(through both, via `Crash` alone, via `Injured` alone), each estimated
+as the product of its edges with a delta-method SE. The three-edge route
+`Speed → Crash → Injured → Likelihood` carries `-.09` (*p* \< .001) — a
+chained *reason not to speed* that the parallel model can state only
+piecemeal.
+
+#### The ticket-money chain
+
+``` r
+
+chain2 <- pathF(dat, order = c("Speed", "Ticket", "MoneyCost", "Likelihood"))
+kable0(chain2$tidy[, c("param","est","se","z","pvalue")], digits = 3,
+       caption = "Saturated cascade Speed -> Ticket -> MoneyCost -> Likelihood")
+```
+
+| param | est | se | z | pvalue |
+|:---|---:|---:|---:|---:|
+| f1_Speed_Ticket | .551 | .017 | 31.909 | .000 |
+| f1_Speed_MoneyCost | -.001 | .020 | -.074 | .941 |
+| f1_Ticket_MoneyCost | .255 | .039 | 6.544 | .000 |
+| f1_Speed_Likelihood | .020 | .051 | .393 | .694 |
+| f1_Ticket_Likelihood | -.492 | .077 | -6.376 | .000 |
+| f1_MoneyCost_Likelihood | -.204 | .085 | -2.408 | .016 |
+| f1_Speed_Ticket \* f1_Ticket_MoneyCost \* f1_MoneyCost_Likelihood | -.029 | .013 | -2.214 | .027 |
+| f1_Speed_Ticket \* f1_Ticket_Likelihood | -.271 | .043 | -6.333 | .000 |
+| f1_Speed_MoneyCost \* f1_MoneyCost_Likelihood | .000 | .004 | .074 | .941 |
+
+Saturated cascade Speed -\> Ticket -\> MoneyCost -\> Likelihood {.table
+style="width:100%;"}
+
+Here the upstream attribution is nearly complete:
+`F1[Speed,MoneyCost] = -.00` (*p* = .92) once `Ticket` is in the model.
+Respondents do not appear to expect faster driving to cost money in
+itself; the money-cost expectation moves with speed only by way of the
+ticket expectation (`F1[Speed,Ticket] = .55`,
+`F1[Ticket,MoneyCost] = .26`). The parallel fan reported a modest
+positive `Speed → MoneyCost` loading; the cascade locates its origin one
+step upstream.
+
+#### Sliding-Z: moderation decomposed through a chain
+
+The moderation decomposition generalizes along with the model. With a
+single mediator, `Z`’s total moderation splits into an expectation term,
+a valuation term, and a residual. In a chain, the same logic produces
+one term per **edge position** as the moderator “slides” through the
+route — for the two-mediator chain `X → M1 → M2 → Y`:
+
+``` math
+F_{Z}^{*}[X,Y] \;\approx\;
+F_{Z}[X,M_1]\,F_{1}[M_1,M_2]\,F_{1}[M_2,Y] \;+\;
+F_{1}[X,M_1]\,F_{Z}[M_1,M_2]\,F_{1}[M_2,Y] \;+\;
+F_{1}[X,M_1]\,F_{1}[M_1,M_2]\,F_{Z}[M_2,Y] \;+\;
+\cdots \;+\; F_{Z}[X,Y]
+```
+
+with the `⋯` collecting the analogous slide terms for the shorter
+sub-routes of the saturated cascade, and `FZ[X,Y]` the residual direct
+moderation.
+[`pathF_decompose()`](https://dustin-wood.github.io/funfield/reference/pathF_decompose.md)
+fits the bare total model alongside the cascade and tabulates every
+term, their sum, and the gap between the sum and the total:
+
+``` r
+
+dec_pf <- pathF_decompose(dat2,
+                          order = c("Speed", "Crash", "Injured", "Likelihood"),
+                          Z = "SRFastDriver", Z.within = FALSE)
+kable0(subset(dec_pf$components, block == "fZ")[, c("term","est","se","z","pvalue")],
+       digits = 3,
+       caption = "Sliding-Z decomposition of the fast-driver moderation through the crash-injury chain")
+```
+
+|  | term | est | se | z | pvalue |
+|:---|:---|---:|---:|---:|---:|
+| 8 | fZ_Speed_Crash \* f1_Crash_Injured \* f1_Injured_Likelihood | .015 | .005 | 2.742 | .006 |
+| 9 | f1_Speed_Crash \* fZ_Crash_Injured \* f1_Injured_Likelihood | .001 | .005 | .202 | .840 |
+| 10 | f1_Speed_Crash \* f1_Crash_Injured \* fZ_Injured_Likelihood | .012 | .023 | .504 | .615 |
+| 11 | fZ_Speed_Crash \* f1_Crash_Likelihood | .023 | .008 | 2.918 | .004 |
+| 12 | f1_Speed_Crash \* fZ_Crash_Likelihood | -.037 | .024 | -1.563 | .118 |
+| 13 | fZ_Speed_Injured \* f1_Injured_Likelihood | .007 | .006 | 1.286 | .199 |
+| 14 | f1_Speed_Injured \* fZ_Injured_Likelihood | .006 | .011 | .504 | .614 |
+| 15 | fZ_Speed_Likelihood (direct) | .225 | .035 | 6.345 | .000 |
+| 16 | sum (routes + direct) | .251 | NA | NA | NA |
+| 17 | total (no-mediator) | .253 | .028 | NA | NA |
+| 18 | gap (total - sum) | .002 | NA | NA | NA |
+
+Sliding-Z decomposition of the fast-driver moderation through the
+crash-injury chain {.table}
+
+The total being decomposed is the same `FZ*[X,Y] ≈ .25` indexed in the
+fast-driver section above. The only slide terms that reach significance
+are the two where the moderation sits on the *first* edge —
+`FZ[Speed,Crash]` propagating down the three-edge route (+.01, *p* =
+.006) and down the two-edge route through `Crash` (+.02, *p* = .003).
+That is the chain-level restatement of the expectation-route story from
+the parallel analysis: self-described fast drivers expect less crash
+risk from speed, and that one shifted expectation echoes down every
+route it heads. The residual direct term (+.22) again absorbs what the
+other seven mediators would carry.
+
+The `sum (routes + direct)` and `total (no-mediator)` rows put the
+approximation quality on the table: the first-order identity is accurate
+here to about `.002` (the `gap` row), or under 1% of the total. Across
+these data the gap stays similarly small for three-, four-, and
+five-node chains — the dropped higher-order terms are products of two or
+more `FZ` coefficients and shrink quickly. What *does* erode with chain
+length is per-term precision: a route product of three or four small
+coefficients has a small estimate and a wide relative SE, so individual
+slide terms in long chains are rarely significant even when the
+accounting as a whole is nearly exact.
+
+#### Arbitrary path structures
+
+The cascade is the default reading of an ordered variable list, but
+[`pathF()`](https://dustin-wood.github.io/funfield/reference/pathF.md)
+also accepts an explicit path diagram via lavaan-style formulas — useful
+when some edges should be absent rather than estimated. For instance, a
+two-route model in which `OnTime` and `Appropriate` mediate in parallel
+but no direct `Speed → Likelihood` edge through the other six outcomes
+is wanted:
+
+``` r
+
+dag <- pathF(dat, paths = c("Likelihood ~ Appropriate + OnTime",
+                            "Appropriate ~ Speed",
+                            "OnTime ~ Speed"),
+             X = "Speed", Y = "Likelihood")
+kable0(dag$tidy[, c("param","est","se","z","pvalue")], digits = 3,
+       caption = "A two-route DAG specified with paths=")
+```
+
+| param                                             |   est |   se |       z | pvalue |
+|:--------------------------------------------------|------:|-----:|--------:|-------:|
+| f1_Appropriate_Likelihood                         |  .698 | .043 |  16.060 |   .000 |
+| f1_OnTime_Likelihood                              |  .252 | .063 |   4.020 |   .000 |
+| f1_Speed_Appropriate                              | -.446 | .021 | -20.851 |   .000 |
+| f1_Speed_OnTime                                   |  .241 | .018 |  13.580 |   .000 |
+| f1_Speed_Appropriate \* f1_Appropriate_Likelihood | -.311 | .026 | -12.115 |   .000 |
+| f1_Speed_OnTime \* f1_OnTime_Likelihood           |  .061 | .016 |   3.759 |   .000 |
+
+A two-route DAG specified with paths= {.table}
+
+Every directed route from `X` to `Y` present in the diagram is
+enumerated automatically, exactly as in the cascade.
+[`pathXMY()`](https://dustin-wood.github.io/funfield/reference/pathXMY.md)
+remains the right tool for the parallel-mediator screening passes that
+make up most of this vignette;
+[`pathF()`](https://dustin-wood.github.io/funfield/reference/pathF.md)
+takes over where the mediators themselves have causal structure worth
+modeling.
+
 ### Scoring named trait composites
 
 If you want the Big Five and other named scales from Wood, Harms, & Cho
@@ -2032,6 +2243,8 @@ See
 [`?pathXMY_pairtable`](https://dustin-wood.github.io/funfield/reference/pathXMY_pairtable.md),
 [`?group_kable`](https://dustin-wood.github.io/funfield/reference/group_kable.md),
 [`?pathXMY_decompose`](https://dustin-wood.github.io/funfield/reference/pathXMY_decompose.md),
+[`?pathF`](https://dustin-wood.github.io/funfield/reference/pathF.md),
+[`?pathF_decompose`](https://dustin-wood.github.io/funfield/reference/pathF_decompose.md),
 [`?plotPathXMY`](https://dustin-wood.github.io/funfield/reference/plotPathXMY.md),
 [`?plotPathXMY_ZLH`](https://dustin-wood.github.io/funfield/reference/plotPathXMY_ZLH.md),
 [`?plotPathXMY_widget`](https://dustin-wood.github.io/funfield/reference/plotPathXMY_widget.md),
