@@ -11,7 +11,7 @@
 ## Two actions (iOvertime1, iOvertime2) and 9 expected outcomes per action.
 
 suppressMessages({
-  devtools::load_all("C:/Users/dusti/Dropbox/R/fancyr", quiet = TRUE)
+  devtools::load_all("C:/Users/dusti/R/fancyr", quiet = TRUE)
   devtools::load_all(".", quiet = TRUE)
 })
 

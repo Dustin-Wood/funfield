@@ -6,7 +6,7 @@
 ## See also: R/esjtFromQualtrics.R, R/speedingESJT-data.R.
 
 suppressMessages({
-  devtools::load_all("C:/Users/dusti/Dropbox/R/fancyr", quiet = TRUE)
+  devtools::load_all("C:/Users/dusti/R/fancyr", quiet = TRUE)
   devtools::load_all(".", quiet = TRUE)
 })
 
