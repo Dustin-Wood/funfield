@@ -122,7 +122,7 @@ A small worked check — the model parses cleanly and the labels survive
 ``` r
 
 library(lavaan)
-#> This is lavaan 0.6-21
+#> This is lavaan 0.7-3
 #> lavaan is FREE software! Please report any bugs.
 mod <- "Y ~ f1_X.Y * X + fZ_X.Y * Z:X"
 pt  <- lavaanify(mod, fixed.x = FALSE)
