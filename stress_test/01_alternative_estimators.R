@@ -17,7 +17,7 @@
 ## then compute indByZE, indByZV by hand and get SEs via delta method
 ## (for B, C, D — lavaan already does it for A).
 
-speeding_dir <- "G:/My Drive/From Dropbox/Work/functional system model/creating fields from ESJT data/experimental vignettes/EXSJT data & code/speeding OSF"
+speeding_dir <- "G:/My Drive/Work/functional system model/creating fields from ESJT data/experimental vignettes/EXSJT data & code/speeding OSF"
 load(file.path(speeding_dir, "SL prepared dataset.Rdata"))
 
 suppressPackageStartupMessages({

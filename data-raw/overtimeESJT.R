@@ -16,7 +16,7 @@ suppressMessages({
 })
 
 src <- file.path(
-  "G:/My Drive/From Dropbox/Work/functional system model",
+  "G:/My Drive/Work/functional system model",
   "creating fields from ESJT data/experimental vignettes/EXSJT data & code",
   "xsjt data and column map.Rdata"
 )

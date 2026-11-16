@@ -4,7 +4,7 @@
 ##  (3) Test moderator generalizability across the Z trait set.
 ##  (4) Sanity check: does dropping cluster = "p" inflate significance?
 
-speeding_dir <- "G:/My Drive/From Dropbox/Work/functional system model/creating fields from ESJT data/experimental vignettes/EXSJT data & code/speeding OSF"
+speeding_dir <- "G:/My Drive/Work/functional system model/creating fields from ESJT data/experimental vignettes/EXSJT data & code/speeding OSF"
 load(file.path(speeding_dir, "SL prepared dataset.Rdata"))
 
 suppressPackageStartupMessages({
